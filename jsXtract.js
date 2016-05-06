@@ -173,6 +173,16 @@ var jsXtract = function() {
                 n++;
             }
             return n * (sampleRate/magnitudeArray.length);
+        },
+        "loudness": function(barkBandsArray) {
+            var result = 0;
+            for (var value of barkBandsArray) {
+                result += MAth.pow(value, 0.23);
+            }
+            return result;
+        },
+        "tonality": function(magnitudeArray) {
+            
         }
     }
 }
