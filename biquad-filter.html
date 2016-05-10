@@ -9,10 +9,13 @@
             var bufferPlayback;
             var FFT1 = webAudioContext.createAnalyser();
             var FFT2 = webAudioContext.createAnalyser();
+            var draw_interval;
             FFT1.smoothingTimeConstant = 0.25;
             FFT2.smoothingTimeConstant = 0.25;
-            FFT1.fftSize = 2048;
-            FFT2.fftSize = 2048;
+            FFT1.fftSize = 8192;
+            FFT2.fftSize = 8192;
+            var xtract1 = new jsXtractAnalyser(FFT1);
+            var xtract2 = new jsXtractAnalyser(FFT2);
             var processIn = webAudioContext.createGain();
             var filter = webAudioContext.createBiquadFilter();
             processIn.connect(filter);
@@ -61,7 +64,7 @@
                     reader.readAsArrayBuffer(files);
                 });
                 
-                window.setInterval(function() {
+                draw_interval = window.setInterval(function() {
                     draw();
                 },50);
             }
@@ -80,6 +83,16 @@
                         event.currentTarget.textContent = "Play";
                     }
                 }
+            }
+            
+            function xtract_callback(xtract,data) {
+                data.SpectrumData = xtract.features.peak_spectrum(data.SpectrumData, data.sample_rate, 10, data.Frequencies);
+                var f0 = xtract.features.f0(data.TimeData,data.sample_rate);
+                data.SpectrumData = xtract.features.harmonic_spectrum(data.SpectrumData, data.Frequencies,f0,0.2,data.Frequencies);
+                for (var n=0; n<data.SpectrumData.length; n++) {
+                    data.SpectrumLogData[n] = 20*Math.log10(data.SpectrumData[n]);
+                }
+                return data.SpectrumLogData;
             }
             
             function draw() {
@@ -133,8 +146,9 @@
                 {
                     FrequencyPoints[i] = i*((webAudioContext.sampleRate/2)/FrequencyPoints.length);
                 }
-                FrequencyData = new Float32Array(Size);
-                FFT1.getFloatFrequencyData(FrequencyData);
+                //FrequencyData = new Float32Array(Size);
+                //FFT1.getFloatFrequencyData(FrequencyData);
+                FrequencyData = xtract1.processFeatures(xtract_callback);
                 canvContext.strokeStyle="#FF0000";
                 canvContext.beginPath();
                 if (FrequencyData[1] > 10) {
@@ -161,7 +175,8 @@
                 }
                 canvContext.stroke();
                 
-                FFT2.getFloatFrequencyData(FrequencyData);
+                //FFT2.getFloatFrequencyData(FrequencyData);
+                FrequencyData = xtract2.processFeatures(xtract_callback);
                 canvContext.strokeStyle="#0000FF";
                 canvContext.beginPath();
                 if (FrequencyData[1] > 10) {
@@ -217,6 +232,7 @@
                     var y_pixel = canvas.height * y_pos;
                     canvContext.lineTo(x_pixel,y_pixel);
                 }
+                
                 canvContext.stroke();
             }
         </script>
