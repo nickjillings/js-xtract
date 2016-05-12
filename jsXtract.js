@@ -21,26 +21,8 @@
  *
  */
 
-// This work is based upon LibXtract for the Web Audio API
-
-Float32Array.prototype.xtract_subarray = function(offset,N) {
-    if (offset == undefined && N == undefined) {return this;}
-    if (offset == undefined) {offset = 0;}
-    if (N == undefined) {N = this.length;}
-    return this.subarray(offset,N);
-}
-Float64Array.prototype.xtract_subarray = function(offset,N) {
-    if (offset == undefined && N == undefined) {return this;}
-    if (offset == undefined) {offset = 0;}
-    if (N == undefined) {N = this.length;}
-    return this.subarray(offset,N);
-}
-Array.prototype.xtract_subarray = function(offset,N) {
-    if (offset == undefined && N == undefined) {return this;}
-    if (offset == undefined) {offset = 0;}
-    if (N == undefined) {N = this.length;}
-    return this.subarray(offset,N);
-}
+// This work is based upon LibXtract developed by Jamie Bullock
+//https://github.com/jamiebullock/LibXtract
 
 function xtract_is_denormal(num) {
     if (Math.abs(num) <= 2.2250738585072014e-308) {
@@ -50,11 +32,15 @@ function xtract_is_denormal(num) {
 }
 
 function xtract_array_sum(data) {
-    var sum = 0.0;
-    for (var n=0; n<data.length; n++) {
-        sum += data[n];
+    if (data.reduce != undefined) {
+        return data.reduce(function(a,b){return a+b;});
+    } else {
+        var sum = 0;
+        for (var n=0; n<data.length; n++) {
+            sum += data[n];
+        }
+        return sum;
     }
-    return sum;
 }
 
 function xtract_array_min(data) {
@@ -149,12 +135,15 @@ function xtract_kurtosis(array,mean,standard_deviation) {
     return result -= 3.0;
 }
 
-function xtract_spectral_centroid(magnitudeArray,frequencyArray) {
+function xtract_spectral_centroid(spectrum) {
     var FA = 0, A = 0;
-    var n = magnitudeArray.length;
+    var N = spectrum.length;
+    var n = N >> 1;
+    var amps = spectrum.subarray(0,n);
+    var freqs = spectrum.subarray(n);
+    A = amps.reduce(function(a,b){return a+b;});
     while(n--) {
-        FA += magnitudeArray[n] * frequencyArray[n];
-        A += magnitudeArray[n];
+        FA += amps[n] * freqs[n];
     }
     if (A == 0.0) {
         return 0.0;
@@ -167,85 +156,105 @@ function xtract_spectral_mean(magnitudeArray,frequencyArray) {
     return xtract_spectral_centroid(magnitudeArray,frequencyArray);
 }
 
-function xtract_spectral_variance(magnitudeArray,frequencyArray,spectral_mean) {
+function xtract_spectral_variance(spectrum,spectral_mean) {
     if(typeof spectral_mean != "number") {
-        spectral_mean = xtract_spectral_mean(magnitudeArray,frequencyArray);
+        spectral_mean = xtract_spectral_mean(spectrum);
     }
     var A = 0, result = 0;
-    for (var n=0; n<magnitudeArray.length; n++) {
-        A += magnitudeArray[n];
-        result += Math.pow(frequencyArray[n] - spectral_mean,2) * magnitudeArray[n];
+    var N = spectrum.length;
+    var n = N >> 1;
+    var amps = spectrum.subarray(0,n);
+    var freqs = spectrum.subarray(n);
+    A = amps.reduce(function(a,b){return a+b;});
+    while(n--) {
+        result += Math.pow(freqs[n] - spectral_mean,2)*amps[n];
     }
     return result /= A;
 }
 
-function xtract_spectral_standard_deviation(magnitudeArray,frequencyArray,spectral_variance) {
+function xtract_spectral_standard_deviation(spectrum,spectral_variance) {
     if (typeof spectral_variance != "number") {
-        spectral_variance = xtract_spectral_variance(magnitudeArray,frequencyArray);
+        spectral_variance = xtract_spectral_variance(spectrum);
     }
     return Math.sqrt(spectral_variance);
 }
 
-function xtract_spectral_skewness(magnitudeArray,frequencyArray,spectral_mean,spectral_standard_deviation) {
+function xtract_spectral_skewness(spectrum,spectral_mean,spectral_standard_deviation) {
     if (typeof spectral_mean != "number") {
-        spectral_mean = xtract_spectral_mean(magnitudeArray,frequencyArray);
+        spectral_mean = xtract_spectral_mean(spectrum);
     }
     if (typeof spectral_standard_deviation != "number") {
-        spectral_standard_deviation = xtract_spectral_standard_deviation(magnitudeArray,frequencyArray,xtract_spectral_variance(magnitudeArray,frequencyArray,spectral_mean));
+        spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum,xtract_spectral_variance(spectrum,spectral_mean));
     }
     var result = 0;
-    for (var n=0; n<magnitudeArray.length; n++) {
-        result += Math.pow(frequencyArray[n] - spectral_mean,3)*magnitudeArray[n];
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    var freqs = spectrum.subarray(K);
+    for (var n=0; n<K; n++) {
+        result += Math.pow(freqs[n] - spectral_mean,3)*amps[n];
     }
     return result /= Math.pow(spectral_standard_deviation,3);
 }
 
-function xtract_spectral_kurtosis(magnitudeArray,frequencyArray,spectral_mean,spectral_standard_deviation) {
+function xtract_spectral_kurtosis(spectrum,spectral_mean,spectral_standard_deviation) {
     if (typeof spectral_mean != "number") {
-        spectral_mean = xtract_spectral_mean(magnitudeArray,frequencyArray);
+        spectral_mean = xtract_spectral_mean(spectrum);
     }
     if (typeof spectral_standard_deviation != "number") {
-        spectral_standard_deviation = xtract_spectral_standard_deviation(magnitudeArray,frequencyArray,xtract_spectral_variance(magnitudeArray,frequencyArray,spectral_mean));
+        spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum,xtract_spectral_variance(spectrum,spectral_mean));
     }
     var result = 0;
-    var result = 0;
-    for (var n=0; n<magnitudeArray.length; n++) {
-        result += Math.pow(frequencyArray[n] - spectral_mean,4)*magnitudeArray[n];
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    var freqs = spectrum.subarray(K);
+    for (var n=0; n<K; n++) {
+        result += Math.pow(freqs[n] - spectral_mean,4)*amps[n];
     }
     result /= Math.pow(spectral_standard_deviation,4);
     return result -= 3.0;
 }
 
-function xtract_irregularity_k(magnitudeArray) {
+function xtract_irregularity_k(spectrum) {
     var result = 0;
-    for(var n=1; n<magnitudeArray.length-1; n++) {
-        result += Math.abs(magnitudeArray[n] - (magnitudeArray[n-1]+magnitudeArray[n]+magnitudeArray[n+1])/3);
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    for(var n=1; n<K-1; n++) {
+        result += Math.abs(amps[n] - (amps[n-1]+amps[n]+amps[n+1])/3);
     }
     return result;
 }
 
-function xtract_irregularity_j(magnitudeArray) {
+function xtract_irregularity_j(spectrum) {
     var num = 0, den = 0;
-    for (var n=0; n<magnitudeArray.length-1; n++) {
-        num += Math.pow(magnitudeArray[n] - magnitudeArray[n+1],2);
-        den += Math.pow(magnitudeArray[n],2);
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    for (var n=0; n<K-1; n++) {
+        num += Math.pow(amps[n] - amps[n+1],2);
+        den += Math.pow(amps[n],2);
     }
     return num / den;
 }
 
-function xtract_tristimulus_1(magnitudeArray,frequencyArray,f0) {
+function xtract_tristimulus_1(spectrum,f0) {
     if (typeof f0 != "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
     }
     var h=0, den = 0.0, p1 = 0.0, temp = 0.0;
-    var result = 0.0;
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    var freqs = spectrum.subarray(K);
     
-    for (var i=0; i<magnitudeArray.length; i++) {
-        temp = magnitudeArray[i];
+    for (var i=0; i<K; i++) {
+        temp = amps[i];
         if (temp != 0) {
             den += temp;
-            h = Math.floor(frequencyArray[i] / f0 + 0.5);
+            h = Math.floor(freqs[i] / f0 + 0.5);
             if (h == 1) {
                 p1 += temp;
             }
@@ -259,19 +268,23 @@ function xtract_tristimulus_1(magnitudeArray,frequencyArray,f0) {
     }
 }
 
-function xtract_tristimulus_2(magnitudeArray,frequencyArray,f0) {
+function xtract_tristimulus_2(spectrum,f0) {
     if (typeof f0 != "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
     }
     var den, p2, p3, p4, ps, temp, h=0;
     den = p2 = p3 = p4 = ps = temp = 0.0;
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    var freqs = spectrum.subarray(K);
     
-    for (var i = 0; i<magnitudeArray.length; i++) {
-        temp = magnitudeArray[i];
+    for (var i = 0; i<K; i++) {
+        temp = amps[i];
         if (temp != 0) {
             den += temp;
-            h = Math.floor(frequencyArray[i] / f0 + 0.5);
+            h = Math.floor(freqs[i] / f0 + 0.5);
             switch(h) {
                 case 2:
                     p2 += temp;
@@ -295,17 +308,22 @@ function xtract_tristimulus_2(magnitudeArray,frequencyArray,f0) {
     }
 }
 
-function xtract_tristimulus_3(magnitudeArray,frequencyArray,f0) {
+function xtract_tristimulus_3(spectrum,f0) {
     if (typeof f0 != "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
     }
     var den = 0.0, num = 0.0, temp = 0.0;
-    for (var i=0; i<magnitudeArray.length; i++) {
-        temp = magnitudeArray[n];
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,n);
+    var freqs = spectrum.subarray(n);
+    
+    for (var i=0; i<K; i++) {
+        temp = amps[i];
         if (temp != 0.0) {
             den += temp;
-            h = Math.floor(frequencyArray[i] / f0 + 0.5);
+            h = Math.floor(freqs[i] / f0 + 0.5);
             if (h >= 5) {
                 num += temp;
             }
@@ -318,17 +336,19 @@ function xtract_tristimulus_3(magnitudeArray,frequencyArray,f0) {
     }
 }
 
-function xtract_smoothness(magnitudeArray) {
+function xtract_smoothness(spectrum) {
     var prev = 0, current = 0, next = 0, temp = 0;
-    prev = magnitudeArray[0] <= 0 ? 1e-5 : magnitudeArray[0];
-    current = magnitudeArray[1] <= 0 ? 1e-5 : magnitudeArray[1];
-    for (var n=1; n<magnitudeArray.length-1; n++) {
+    var N = spectrum.length;
+    var K = N >> 1;
+    prev = spectrum[0] <= 0 ? 1e-5 : spectrum[0];
+    current = spectrum[1] <= 0 ? 1e-5 : spectrum[1];
+    for (var n=1; n<K-1; n++) {
         if (n>1) {
             prev = current;
             current = next;
         }
-        next = magnitudeArray[n+1] <= 0 ? 1e-5 : magnitudeArray[n+1];
-        temp += Math.abs(20.0*Math.log(current) - (20.0*Math.log(prev) + 20.0*Math.log(current) + 20.0*Math.log(next))/3.0)
+        next = spectrum[n+1] <= 0 ? 1e-5 : spectrum[n+1];
+        temp += Math.abs(20.0*Math.log(current) - (20.0*Math.log(prev) + 20.0*Math.log(current) + 20.0*Math.log(next))/3.0);
     }
     return temp;
 }
@@ -341,62 +361,70 @@ function xtract_zcr(timeArray) {
     return result/timeArray.length;
 }
 
-function xtract_rolloff(magnitudeArray,sampleRate,threshold) {
+function xtract_rolloff(spectrum,sampleRate,threshold) {
     if (typeof sampleRate != "number" || typeof threshold != "number") {
         console.log("xtract_rolloff requires sampleRate and threshold to be defined");
         return null;
     }
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    
     var pivot = 0, temp = 0;
-    for (var n=0; n<magnitudeArray.length; n++) {
-        pivot += magnitudeArray[n];
-    }
+    
+    pivot = xtract_array_sum(amps);
+    
     pivot *= threshold / 100.0;
     var n = 0;
     while(temp < pivot) {
-        temp += magnitudeArray[n];
+        temp += amps[n];
         n++;
     }
-    return n * (sampleRate/magnitudeArray.length);
+    return n * (sampleRate/(spectrum.length));
 }
 
 function xtract_loudness(barkBandsArray) {
     var result = 0;
-    for (var n=0; n<xtract_loudness.length; n++) {
-        result += Math.pow(xtract_loudness[n], 0.23);
+    for (var n=0; n<barkBandsArray.length; n++) {
+        result += Math.pow(barkBandsArray[n], 0.23);
     }
     return result;
 }
 
-function xtract_flatness(magnitudeArray) {
+function xtract_flatness(spectrum) {
     var count = 0, denormal_found = false, num = 1.0, den = 0.0, temp = 0.0;
-    for (var n=0; n<magnitudeArray.length; n++) {
-        if (sub_arr[n] != 0.0) {
-            if (this.parent.helper.is_denormal(num)) {
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,n);
+    
+    for (var n=0; n<K; n++) {
+        if (amps[n] != 0.0) {
+            if (xtract_is_denormal(num)) {
                 denormal_found = true;
                 break;
             }
-            num *= magnitudeArray[n];
-            den *= magnitudeArray[n];
+            num *= amps[n];
+            den += amps[n];
             count++;
         }
     }
     if (count == 0) {return 0;}
-    num = Math.pow(num, 1.0 / magnitudeArray.length);
-    den /= magnitudeArray.length;
+    num = Math.pow(num, 1.0 / K);
+    den /= K;
 
     return num / den;
 }
 
-function xtract_flatness_db(magnitudeArray,flatness) {
+function xtract_flatness_db(spectrum,flatness) {
     if (typeof flatness != "number") {
-        flatness = xtract_flatness(magnitudeArray);
+        flatness = xtract_flatness(spectrum);
     }
     return 10.0 * Math.log10(flatness);
 }
 
-function xtract_tonality(magnitudeArray,flatness_db) {
+function xtract_tonality(spectrum,flatness_db) {
     if (typeof flatness_db != "number") {
-        flatness_db = xtract_flatness_db(magnitudeArray);
+        flatness_db = xtract_flatness_db(spectrum);
     }
     return Math.min(flatness_db / -60.0, 1);
 }
@@ -423,17 +451,21 @@ function xtract_rms_amplitude(timeArray) {
     return Math.sqrt(result/timeArray.length);
 }
 
-function xtract_spectral_inharmonicity(peakArray,frequencyArray,f0) {
+function xtract_spectral_inharmonicity(peakSpectrum,f0) {
     if (typeof f0 != "number") {
         console.error("spectral_inharmonicity requires f0 to be defined.");
         return null;
     }
     var h = 0, num = 0.0, den = 0.0;
-    for (var n=0; n<peakArray.length; n++) {
+    var N = peakSpectrum.length;
+    var K = N >> 1;
+    var amps = peakSpectrum.subarray(0,n);
+    var freqs = peakSpectrum.subarray(n);
+    for (var n=0; n<K; n++) {
         if (peakArray[n] != 0.0) {
-            h = Math.floor(frequencyArray[n] / f0 + 0.5);
-            var mag_sq = Math.pow(peakArray[n],2);
-            num += Math.abs(frequencyArray[n] - h * f0) * mag_sq
+            h = Math.floor(freqs[n] / f0 + 0.5);
+            var mag_sq = Math.pow(amps[n],2);
+            num += Math.abs(freqs[n] - h * f0) * mag_sq
             den += mag_sq;
         }
     }
@@ -444,16 +476,20 @@ function xtract_power(magnitudeArray) {
     return null;
 }
 
-function xtract_odd_even_ratio(harmonicArray, frequencyArray, f0) {
+function xtract_odd_even_ratio(harmonicSpectrum, f0) {
     if (typeof f0 != "number") {
         console.error("spectral_inharmonicity requires f0 to be defined.");
         return null;
     }
     var h=0, odd = 0.0, even = 0.0, temp;
-    for (var n=0; n<harmonicArray.length; n++) {
-        temp = harmonicArray[n];
+    var N = harmonicSpectrum.length;
+    var K = N >> 1;
+    var amps = harmonicSpectrum.subarray(0,n);
+    var freqs = harmonicSpectrum.subarray(n);
+    for (var n=0; n<K; n++) {
+        temp = amps[n];
         if (temp != 0.0) {
-            h = Math.floor(frequencyArray[n] / f0 + 0.5);
+            h = Math.floor(freqs[n] / f0 + 0.5);
             if (h % 2 != 0) {
                 odd += temp;
             } else {
@@ -469,27 +505,30 @@ function xtract_odd_even_ratio(harmonicArray, frequencyArray, f0) {
     }
 }
 
-function xtract_sharpness(magnitudeArray) {
+function xtract_sharpness(barkBandsArray) {
+    var N = barkBandsArray.length;
+    
     var rv, sl = 0.0, g = 0.0, temp = 0.0;
-    for (var n=0; n<magnitudeArray.length; n++) {
-        sl = Math.pow(magnitudeArray[n], 0.23);
+    for (var n=0; n<N; n++) {
+        sl = Math.pow(barkBandsArray[n], 0.23);
         g = (n < 15 ? 1.0 : 0.066 * Math.exp(0.171 * n));
         temp += n * g * sl;
     }
-    temp = 0.11 * temp / magnitudeArray.length;
+    temp = 0.11 * temp / N;
     return temp;
 }
 
-function xtract_spectral_slope(magnitudeArray,frequencyArray) {
+function xtract_spectral_slope(spectrum) {
     var F = 0.0, FA = 0.0, A =0.0, FXTRACT_SQ = 0.0;
-    var M = frequencyArray.length;
-    for (var n=0; n<frequencyArray.length; n++) {
-        var f = frequencyArray[n];
-        var a = magnitudeArray[n];
-        F += f;
-        A += a;
-        FA += f*a;
-        FXTRACT_SQ += f*f;
+    var N = spectrum.length;
+    var M = N >> 1;
+    var amps = spectrum.subarray(0,M);
+    var freqs = spectrum.subarray(M);
+    F = xtract_array_sum(freqs);
+    A = xtract_array_sum(amps);
+    for (var n=0; n<M; n++) {
+        FA += freqs[n]*amps[n];
+        FXTRACT_SQ += freqs[n]*freqs[n];
     }
     return (1.0 / A) * (M * FA - F * A) / (M * FXTRACT_SQ - F * F);
 }
@@ -523,35 +562,39 @@ function xtract_nonzero_count(data) {
     return count;
 }
 
-function xtract_hps(magnitudeArray,frequencyArray) {
+function xtract_hps(spectrum) {
     var peak_index=0, position1_lwr=0, largest1_lwr=0, tempProduct=0, peak=0, ratio1=0;
-    var M = Math.ceil(magnitudeArray.length / 3.0);
+    var N = spectrum.length;
+    var K = N >> 1;
+    var amps = spectrum.subarray(0,K);
+    var freqs = spectrum.subarray(K);
+    var M = Math.ceil(K / 3.0);
     if (M <= 1) {
         console.error("Input Data is too short for HPS");
         return null;
     }
 
     for (var i=0; i<M; ++i) {
-        tempProduct = magnitudeArray[i]*magnitudeArray[i*2]*magnitudeArray[i*3];
+        tempProduct = amps[i]*amps[i*2]*amps[i*3];
         if (tempProduct > peak) {
             peak = tempProduct;
             peak_index = i;
         }
     }
 
-    for (var i=0; i<magnitudeArray.length; i++) {
-        if (magnitudeArray[i] > largest1_lwr && i != peak_index) {
-            largest1_lwr = magnitudeArray[i];
+    for (var i=0; i<K; i++) {
+        if (amps[i] > largest1_lwr && i != peak_index) {
+            largest1_lwr = amps[i];
             position1_lwr = i;
         }
     }
 
-    ratio1 = data[position1_lwr] / data[peak_index];
+    ratio1 = amps[position1_lwr] / amps[peak_index];
 
     if(position1_lwr > peak_index * 0.4 && position1_lwr < peak_index * 0.6 && ratio1 > 0.1)
         peak_index = position1_lwr;
 
-    return frequencyArray[peak_index];
+    return freqs[peak_index];
 }
 
 function xtract_f0(timeArray,sampleRate) {
@@ -878,41 +921,47 @@ function xtract_midicent(f0) {
 
 /* Vector.c */
 
-function xtract_frequencyArray(N,sample_rate) {
-    var M = N/2+1;
-    var array = new Float32Array(M);
-    for (var i=0; i<M; i++) {
-        var f = (2*i/N)*(sample_rate/2);
-        array[i] = f;
+function xtract_spectrum(array,sample_rate,withDC,normalise,dft) {
+    if (typeof sample_rate != "number") {
+        console.error("Sample Rate must be defined");
+        return null;
     }
-    return array;
-}
-
-function xtract_spectrum(array,dft,withDC,normalise) {
+    if (withDC == undefined) {withDC = false;}
+    if (normalise == undefined) {normalise = false;}
     if (dft == undefined) {
         dft = xtract_init_dft(array.length);
     }
-    var result = new Float32Array(dft.N);
-    for (var k=0; k<dft.N; k++) {
+    var N = array.length;
+    var result, align = 0;
+    var amps;
+    var freqs;
+    if (withDC) {
+        result = new Float64Array(N+2);
+    } else {
+        align = 1;
+        result = new Float64Array(N);
+    }
+    amps = result.subarray(0,result.length/2);
+    freqs = result.subarray(result.length/2);
+    for (var k=align; k<dft.N; k++) {
         var imag = 0.0, real = 0.0;
         for (var n=0; n<array.length; n++) {
             real += array[n]*dft.real[k][n];
             imag += array[n]*dft.imag[k][n];
         }
-        result[k] = Math.sqrt((real*real)+(imag*imag))/array.length;
+        amps[k-align] = Math.sqrt((real*real)+(imag*imag))/array.length;
+        freqs[k-align] = (2*k/N)*(sample_rate/2);
     }
-    if (withDC) {
-        return result;
-    } else {
-        var drop1 = new Float32Array(dft.N-1);
-        for (var n=0; n<N-1; n++) {
-            drop1[n] = result[n+1];
+    if (normalise) {
+        var max = xtract_array_max(amps);
+        for (var n=0; n<amps.length; n++) {
+            amps[n] /= max;
         }
-        return drop1;
     }
+    return result;
 }
 
-function xtract_mfcc(magnitudeArray,mfcc) {
+function xtract_mfcc(spectrum,mfcc) {
     if (typeof mfcc != "object") {
         console.error("Invalid MFCC, must be MFCC object built using xtract_init_mfcc");
         return null;
@@ -921,16 +970,17 @@ function xtract_mfcc(magnitudeArray,mfcc) {
         console.error("Invalid MFCC, object must be built using xtract_init_mfcc");
         return null;
     }
-    if (mfcc.filters[0].length != magnitudeArray.length) {
+    var K = spectrum.length >> 1;
+    if (mfcc.filters[0].length != K) {
         console.error("Lengths do not match");
         return null;
     }
-    var result = Float32Array(mfcc.n_filters);
+    var result = new Float32Array(mfcc.n_filters);
     for (var f=0; f<mfcc.n_filters; f++) {
         result[f] = 0.0;
         var filter = mfcc.filters[f];
         for (var n=0; n<filter.length; n++) {
-            result[f] += magnitudeArray[n] * filter[n];
+            result[f] += spectrum[n] * filter[n];
         }
         if (result[f] < 2e-42) {
             result[f] = 2e-42;
@@ -943,7 +993,7 @@ function xtract_mfcc(magnitudeArray,mfcc) {
 function xtract_dct(array) {
     var N = array.length;
     var result = new Float32Array(N);
-    for (var n=0; n<N/2+1; n++) {
+    for (var n=0; n<N; n++) {
         for (var m=1; m<=N; ++m) {
             result[n] += array[m-1] * Math.cos(Math.PI * (n/N)*(m-0.5));
         }
@@ -965,8 +1015,8 @@ function xtract_autocorrelation(array) {
 }
 
 function xtract_amdf(array) {
-    var result = new Float32Array(n);
     var n = array.length;
+    var result = new Float32Array(n);
     while(n--) {
         var md = 0.0;
         for (var i=0; i<array.length-n; i++) {
@@ -978,8 +1028,8 @@ function xtract_amdf(array) {
 }
 
 function xtract_asdf(array) {
-    var result = new Float32Array(n);
     var n = array.length;
+    var result = new Float32Array(n);
     while(n--) {
         var sd = 0.0;
         for (var i=0; i<array.length-n; i++) {
@@ -990,59 +1040,70 @@ function xtract_asdf(array) {
     return result;
 }
 
-function xtract_bark_coefficients(magnitudeArray,bark_limits) {
+function xtract_bark_coefficients(spectrum,bark_limits) {
     if (bark_limits == undefined) {
         console.error("xtract_bark_coefficients requires compute limits from xtract_init_bark");
         return null;
     }
+    var N = spectrum.length >> 1;
     var bands = bark_limits.length;
     var results = new Float32Array(bands);
     for (var band=0; band<bands-1; band++) {
         results[band] = 0.0;
         for (var n = bark_limits[band]; n < bark_limits[band+1]; n++) {
-            results[band] += magnitudeArray[n];
+            results[band] += spectrum[n];
         }
     }
     return results;
 }
 
-function xtract_peak_spectrum(magnitudeArray,sampleRate,threshold,frequencyArrayReturn) {
-    var N = magnitudeArray.length;
+function xtract_peak_spectrum(spectrum,q,threshold) {
+    var N = spectrum.length;
+    var K = N >> 1;
     var max=0.0, y=0.0, y2=0.0, y3=0.0, p=0.0;
-    var q = sampleRate/N;
+    if (typeof q != "number") {
+        console.error("xtract_peak_spectrum requires second argument to be sample_rate/N");
+    }
     if (threshold < 0 || threshold > 100) {
         threshold = 0;
         console.log("peak_spectrum threshold must be between 0 and 100");
     }
-    threshold /= 100.0;
     var result = new Float32Array(N);
-    if (frequencyArrayReturn == undefined) {
-        frequencyArrayReturn = new Float32Array(N);
-    }
+    var ampsIn = spectrum.subarray(0,K);
+    var freqsIn = spectrum.subarray(K);
+    var ampsOut = result.subarray(0,K);
+    var freqsOut = result.subarray(K);
+    max = xtract_array_max(ampsIn);
+    threshold *= 0.01 * max;
     for (n=1; n<N-1; n++) {
-        if (magnitudeArray[n] >= threshold) {
-            if (magnitudeArray[n] > magnitudeArray[n-1] && magnitudeArray[n] > magnitudeArray[n+1]) {
-                y = magnitudeArray[n-1];
-                y2 = magnitudeArray[n];
-                y3 = magnitudeArray[n+1];
-                p = 0.5*(y-y3)/ (magnitudeArray[n-1]-2 * (y2 + magnitudeArray[n+1]));
-                frequencyArrayReturn[n] = q * (n + 1 + p);
-                result[n] = y2 - 0.25 * (y-y3) *p;
+        if (ampsIn[n] >= threshold) {
+            if (ampsIn[n] > ampsIn[n-1] && ampsIn[n] > ampsIn[n+1]) {
+                y = ampsIn[n-1];
+                y2 = ampsIn[n];
+                y3 = ampsIn[n+1];
+                p = 0.5*(y-y3)/ (ampsIn[n-1]-2 * (y2 + ampsIn[n+1]));
+                freqsOut[n] = q * (n + 1 + p);
+                ampsOut[n] = y2 - 0.25 * (y-y3) *p;
             } else {
-                result[n] = 0;
-                frequencyArrayReturn[n] = 0;
+                ampsOut[n] = 0;
+                freqsOut[n] = 0;
             }
         } else {
-            result[n] = 0;
-            frequencyArrayReturn[n] = 0;
+            ampsOut[n] = 0;
+            freqsOut[n] = 0;
         }
     }
     return result;
 }
 
-function xtract_harmonic_spectrum(peakArray, peakFrequencyArray, f0, threshold, frequencyArrayReturn) {
-    var N = peakArray.length;
+function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
+    var N = peakSpectrum.length;
+    var K = N >> 1;
     var result = new Float32Array(N);
+    var ampsIn = spectrum.subarray(0,K);
+    var freqsIn = spectrum.subarray(K);
+    var ampsOut = result.subarray(0,K);
+    var freqsOut = result.subarray(K);
     if (f0 == undefined || threshold == undefined) {
         console.error("harmonic_spectrum requires f0 and threshold to be numbers and defined");
         return null;
@@ -1052,20 +1113,20 @@ function xtract_harmonic_spectrum(peakArray, peakFrequencyArray, f0, threshold, 
         console.log("harmonic_spectrum assuming integer for threshold inserted, operating at t="+threshold);
     }
     while(n--) {
-        if (peakFrequencyArray[n] != 0.0) {
-            var ratio = peakFrequencyArray[n] / f0;
+        if (freqsIn[n] != 0.0) {
+            var ratio = freqsIn[n] / f0;
             var nearest = Math.round(ratio);
             var distance = Math.abs(nearest-ratio);
             if (distance > threshold) {
-                result[n] = 0.0;
-                frequencyArrayReturn[n] = 0.0;
+                ampsOut[n] = 0.0;
+                freqsOut[n] = 0.0;
             } else {
-                result[n] = peakArray[n];
-                frequencyArrayReturn[n] =  peakFrequencyArray[n];
+                ampsOut[n] = ampsIn[n];
+                freqsOut[n] =  freqsIn[n];
             }
         } else {
             result[n] = 0.0;
-            frequencyArrayReturn[n] = 0.0;
+            freqsOut[n] = 0.0;
         }
     }
     return result;
@@ -1109,14 +1170,14 @@ function xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands) {
     var height_norm = new Float32Array(freq_bands);
     mel_peak[0] = mel_freq_min;
     lin_peak[0] = freq_min;
-    fft_peak[0] = lin_peak[0] / nyquist * M;
+    fft_peak[0] = Math.floor(lin_peak[0] / nyquist * M);
 
     for (var n = 1; n < (freq_bands + 2); ++n)
     {
         //roll out peak locations - mel, linear and linear on fft window scale
         mel_peak[n] = mel_peak[n - 1] + freq_bw_mel;
         lin_peak[n] = 700 * (Math.exp(mel_peak[n] / 1127) -1);
-        fft_peak[n] = lin_peak[n] / nyquist * M;
+        fft_peak[n] = Math.floor(lin_peak[n] / nyquist * M);
     }
 
     for (var n = 0; n < freq_bands; n++)
@@ -1175,12 +1236,12 @@ function xtract_init_wavelet() {
     }
 }
 
-function xtract_init_bark(N, sampleRate, bands) {
+function xtract_init_bark(N, sampleRate) {
     var edges = [0, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500, 20500, 27000];
-    var bands = edges.length;
+    var bands = 26;
     var band_limits = new Int32Array(bands);
     while(bands--) {
-        band_limits[bands] = edges[bands] / (sampleRate*N);
+        band_limits[bands] = (edges[bands] / sampleRate)*N;
     }
     return band_limits;
 }
