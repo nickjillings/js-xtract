@@ -151,7 +151,8 @@ function xtract_kurtosis(array,mean,standard_deviation) {
 
 function xtract_spectral_centroid(magnitudeArray,frequencyArray) {
     var FA = 0, A = 0;
-    for (var n=0; n<magnitudeArray.length; n++) {
+    var n = magnitudeArray.length;
+    while(n--) {
         FA += magnitudeArray[n] * frequencyArray[n];
         A += magnitudeArray[n];
     }
@@ -337,7 +338,7 @@ function xtract_zcr(timeArray) {
     for (var n=1; n<timeArray.length; n++) {
         if (timeArray[n] * timeArray[n-1] < 0) {result++;}
     }
-    return result;
+    return result/timeArray.length;
 }
 
 function xtract_rolloff(magnitudeArray,sampleRate,threshold) {
@@ -499,7 +500,7 @@ function xtract_lowest_value(data, threshold) {
     }
     var result = +Infinity;
     for (var n=0; n<data.length; n++) {
-        if (value > threshold) {
+        if (data[n] > threshold) {
             result = Math.min(result,data[n]);
         }
     }
@@ -604,7 +605,11 @@ function xtract_failsafe_f0(timeArray,sampleRate) {
     return xtract_f0(timeArray,sampleRate);
 }
 
-function xtract_wavelet_f0(timeArray,sampleRate) {
+function xtract_wavelet_f0(timeArray,sampleRate,pitchtracker) {
+    if (pitchtracker == undefined) {
+        console.error("xtract_wavelet_f0 requires pitchtracker to be defined");
+        return null;
+    }
     if (xtract_array_sum(timeArray) == 0) {return;}
     var dywapitchtracker = {
         _prevPitch: -1,
@@ -759,104 +764,104 @@ function xtract_wavelet_f0(timeArray,sampleRate) {
 			}
 			
 			previousDV = dv;
-            
-            if (nbMins == 0 && nbMaxs == 0) {
-                cont=false;
-                break;
-            }
-            
-            var d;
-            //memset(distances, 0, samplecount*sizeof(int));
-            for (var i=0; i<samplecount; i++) {
-                distances[i] = 0.0;
-            }
-            for (var i = 0 ; i < nbMins ; i++) {
-                for (j = 1; j < differenceLevelsN; j++) {
-                    if (i+j < nbMins) {
-                        d = _iabs(mins[i] - mins[i+j]);
-                        distances[d] = distances[d] + 1;
-                    }
-                }
-            }
-            for (var i = 0 ; i < nbMaxs ; i++) {
-                for (var j = 1; j < differenceLevelsN; j++) {
-                    if (i+j < nbMaxs) {
-                        d = _iabs(maxs[i] - maxs[i+j]);
-                        //asLog("dywapitch i=%ld j=%ld d=%ld\n", i, j, d);
-                        distances[d] = distances[d] + 1;
-                    }
-                }
-            }
-            
-            var bestDistance = -1;
-            var bestValue = -1;
-            for (var i = 0; i< curSamNb; i++) {
-                var summed = 0;
-                for (var j = -delta ; j <= delta ; j++) {
-                    if (i+j >=0 && i+j < curSamNb)
-                        summed += distances[i+j];
-                }
-                //asLog("dywapitch i=%ld summed=%ld bestDistance=%ld\n", i, summed, bestDistance);
-                if (summed == bestValue) {
-                    if (i == 2*bestDistance)
-                        bestDistance = i;
-
-                } else if (summed > bestValue) {
-                    bestValue = summed;
-                    bestDistance = i;
-                }
-            }
-            
-            var distAvg = 0.0;
-            var nbDists = 0;
-            for (var j = -delta ; j <= delta ; j++) {
-                if (bestDistance+j >=0 && bestDistance+j < samplecount) {
-                    var nbDist = distances[bestDistance+j];
-                    if (nbDist > 0) {
-                        nbDists += nbDist;
-                        distAvg += (bestDistance+j)*nbDist;
-                    }
-                }
-            }
-            // this is our mode distance !
-            distAvg /= nbDists;
-            
-            // continue the levels ?
-            if (curModeDistance > -1.0) {
-                var similarity = Math.abs(distAvg*2 - curModeDistance);
-                if (similarity <= 2*delta) {
-                    //if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"ok"
-                    //asLog("dywapitch similarity=%f OK !\n", similarity);
-                    // two consecutive similar mode distances : ok !
-                    pitchF = 44100./(_2power(curLevel-1)*curModeDistance);
-                    cont=false;
-                    break;
-                }
-                //if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"not"
-            }
-            
-            // not similar, continue next level
-            curModeDistance = distAvg;
-
-            curLevel = curLevel + 1;
-            if (curLevel >= maxFLWTlevels) {
-                // put "max levels reached, exiting"
-                //asLog("dywapitch max levels reached, exiting\n");
-                cont=false;
-                break;
-            }
-
-            // downsample
-            if (curSamNb < 2) {
-                //asLog("dywapitch not enough samples, exiting\n");
-                cont=false;
-                break;
-            }
-            for (var i = 0; i < curSamNb/2; i++) {
-                sam[i] = (sam[2*i] + sam[2*i + 1])/2.0;
-            }
-            curSamNb /= 2;
         }
+
+        if (nbMins == 0 && nbMaxs == 0) {
+            cont=false;
+            break;
+        }
+
+        var d;
+        //memset(distances, 0, samplecount*sizeof(int));
+        for (var i=0; i<samplecount; i++) {
+            distances[i] = 0.0;
+        }
+        for (var i = 0 ; i < nbMins ; i++) {
+            for (j = 1; j < differenceLevelsN; j++) {
+                if (i+j < nbMins) {
+                    d = _iabs(mins[i] - mins[i+j]);
+                    distances[d] = distances[d] + 1;
+                }
+            }
+        }
+        for (var i = 0 ; i < nbMaxs ; i++) {
+            for (var j = 1; j < differenceLevelsN; j++) {
+                if (i+j < nbMaxs) {
+                    d = _iabs(maxs[i] - maxs[i+j]);
+                    //asLog("dywapitch i=%ld j=%ld d=%ld\n", i, j, d);
+                    distances[d] = distances[d] + 1;
+                }
+            }
+        }
+
+        var bestDistance = -1;
+        var bestValue = -1;
+        for (var i = 0; i< curSamNb; i++) {
+            var summed = 0;
+            for (var j = -delta ; j <= delta ; j++) {
+                if (i+j >=0 && i+j < curSamNb)
+                    summed += distances[i+j];
+            }
+            //asLog("dywapitch i=%ld summed=%ld bestDistance=%ld\n", i, summed, bestDistance);
+            if (summed == bestValue) {
+                if (i == 2*bestDistance)
+                    bestDistance = i;
+
+            } else if (summed > bestValue) {
+                bestValue = summed;
+                bestDistance = i;
+            }
+        }
+
+        var distAvg = 0.0;
+        var nbDists = 0;
+        for (var j = -delta ; j <= delta ; j++) {
+            if (bestDistance+j >=0 && bestDistance+j < samplecount) {
+                var nbDist = distances[bestDistance+j];
+                if (nbDist > 0) {
+                    nbDists += nbDist;
+                    distAvg += (bestDistance+j)*nbDist;
+                }
+            }
+        }
+        // this is our mode distance !
+        distAvg /= nbDists;
+
+        // continue the levels ?
+        if (curModeDistance > -1.0) {
+            var similarity = Math.abs(distAvg*2 - curModeDistance);
+            if (similarity <= 2*delta) {
+                //if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"ok"
+                //asLog("dywapitch similarity=%f OK !\n", similarity);
+                // two consecutive similar mode distances : ok !
+                pitchF = 44100./(_2power(curLevel-1)*curModeDistance);
+                cont=false;
+                break;
+            }
+            //if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"not"
+        }
+
+        // not similar, continue next level
+        curModeDistance = distAvg;
+
+        curLevel = curLevel + 1;
+        if (curLevel >= maxFLWTlevels) {
+            // put "max levels reached, exiting"
+            //asLog("dywapitch max levels reached, exiting\n");
+            cont=false;
+            break;
+        }
+
+        // downsample
+        if (curSamNb < 2) {
+            //asLog("dywapitch not enough samples, exiting\n");
+            cont=false;
+            break;
+        }
+        for (var i = 0; i < curSamNb/2; i++) {
+            sam[i] = (sam[2*i] + sam[2*i + 1])/2.0;
+        }
+        curSamNb /= 2;
     }
     
     //_dywapitch_dynamicprocess(pitchtracker, pitch) -> does nothing as we run once.
@@ -873,20 +878,38 @@ function xtract_midicent(f0) {
 
 /* Vector.c */
 
-function xtract_spectrum(array,dft) {
+function xtract_frequencyArray(N,sample_rate) {
+    var M = N/2+1;
+    var array = new Float32Array(M);
+    for (var i=0; i<M; i++) {
+        var f = (2*i/N)*(sample_rate/2);
+        array[i] = f;
+    }
+    return array;
+}
+
+function xtract_spectrum(array,dft,withDC,normalise) {
     if (dft == undefined) {
         dft = xtract_init_dft(array.length);
     }
     var result = new Float32Array(dft.N);
     for (var k=0; k<dft.N; k++) {
         var imag = 0.0, real = 0.0;
-        for (var n=0; n<dft.N; n++) {
+        for (var n=0; n<array.length; n++) {
             real += array[n]*dft.real[k][n];
             imag += array[n]*dft.imag[k][n];
         }
-        result[k] = Math.sqrt((real*real)+(imag*imag));
+        result[k] = Math.sqrt((real*real)+(imag*imag))/array.length;
     }
-    return result;
+    if (withDC) {
+        return result;
+    } else {
+        var drop1 = new Float32Array(dft.N-1);
+        for (var n=0; n<N-1; n++) {
+            drop1[n] = result[n+1];
+        }
+        return drop1;
+    }
 }
 
 function xtract_mfcc(magnitudeArray,mfcc) {
@@ -920,9 +943,9 @@ function xtract_mfcc(magnitudeArray,mfcc) {
 function xtract_dct(array) {
     var N = array.length;
     var result = new Float32Array(N);
-    for (var n=0; n<N; n++) {
+    for (var n=0; n<N/2+1; n++) {
         for (var m=1; m<=N; ++m) {
-            result[n] += data[m-1] * Math.cos(Math.PI * (n/N)*(m-0.5));
+            result[n] += array[m-1] * Math.cos(Math.PI * (n/N)*(m-0.5));
         }
     }
     return result;
@@ -936,7 +959,7 @@ function xtract_autocorrelation(array) {
         for (var i=0; i<array.length - n; i++) {
             corr += array[i] * array[i+n];
         }
-        result[n] = corr;
+        result[n] = corr/array.length;
     }
     return result;
 }
@@ -1050,12 +1073,12 @@ function xtract_harmonic_spectrum(peakArray, peakFrequencyArray, f0, threshold, 
 
 function xtract_init_dft(N) {
     var dft = {
-        N: N,
+        N: N/2+1,
         real: [],
         imag: []
     }
     var power_const = -2.0 * Math.PI / N;;
-    for (var k=0; k<N; k++) {
+    for (var k=0; k<dft.N; k++) {
         var power_k = power_const*k;
         dft.real[k] = new Float32Array(N);
         dft.imag[k] = new Float32Array(N);
@@ -1145,6 +1168,13 @@ function xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands) {
     return mfcc;
 }
 
+function xtract_init_wavelet() {
+    return {
+        _prevPitch: -1,
+        _pitchConfidence: -1
+    }
+}
+
 function xtract_init_bark(N, sampleRate, bands) {
     var edges = [0, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500, 20500, 27000];
     var bands = edges.length;
@@ -1156,6 +1186,7 @@ function xtract_init_bark(N, sampleRate, bands) {
 }
 
 var jsXtract = function() {
+    this.wavelet_f0_state = xtract_init_wavelet();
     this.helper = {
         "parent": this,
         "is_denormal": function(num) {return xtract_is_denormal(num);},
