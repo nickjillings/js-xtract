@@ -1487,11 +1487,11 @@ var jsXtractAnalyser = function(analyserNode) {
     
     this.processFeatures = function(callback) {
         if (typeof callback != "function") {
-            console.error("callback must be a function call of function(this,data) where data is an object passed by processFeatures with time & frequency domain data");
+            console.error("callback must be a function call of function(data) where data is an object passed by processFeatures with time & frequency domain data");
             return;
         }
         
-        return callback(this,this.getFrameData());
+        return callback(this.getFrameData());
     }
     
     this.getFrameData = function() {
