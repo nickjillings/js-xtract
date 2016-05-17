@@ -77,6 +77,26 @@ function xtract_mean(array) {
     return xtract_array_sum(array) / array.length;
 }
 
+function xtract_temporal_centroid(energyArray,sample_rate,window_ms) {
+    if (typeof sample_rate != "number") {
+        console.error("xtract_temporal_centroid requires sample_rate to be a number");
+        return;
+    }
+    if (typeof window_ms != "number") {
+        console.log("xtract_temporal_centroid assuming window_ms = 100ms");
+        window_ms = 100.0;
+    }
+    if (window_ms <= 0) {window_ms = 100.0;}
+    var ts = 1.0/sample_rate;
+    var L = sample_rate*(window_ms/1000.0);
+    var den = xtract_array_sum(energyArray);
+    var num = 0.0;
+    for (var n=0; n<energyArray.length; n++) {
+        num += energyArray[n]*(n*L*ts);
+    }
+    return num / den;
+}
+
 function xtract_variance(array,mean) {
     if (typeof mean != "number") {
         mean = xtract_mean(array);
@@ -131,34 +151,38 @@ function xtract_kurtosis(array,mean,standard_deviation) {
     for (var n=0; n<array.length; n++) {
         result += Math.pow((array[n] - mean) / standard_deviation,4);
     }
-    result /= array.length;
-    return result -= 3.0;
+    return result / array.length;
 }
 
 function xtract_spectral_centroid(spectrum) {
-    var FA = 0, A = 0;
     var N = spectrum.length;
     var n = N >> 1;
     var amps = spectrum.subarray(0,n);
     var freqs = spectrum.subarray(n);
-    A = amps.reduce(function(a,b){return a+b;});
+    var Amps = new Float32Array(n);
+    for (var i=0; i<n; i++) {
+        Amps[i] = amps[i];
+    }
+    amps = xtract_array_normalise(Amps);
+    var A_d = xtract_array_sum(amps) / n;
+    var sum = 0.0;
     while(n--) {
-        FA += amps[n] * freqs[n];
+        sum += freqs[n]*(amps[n]/A_d);
     }
-    if (A == 0.0) {
-        return 0.0;
-    } else {
-        return FA / A;
-    }
+    return sum/(N>>1);
 }
 
-function xtract_spectral_mean(magnitudeArray,frequencyArray) {
-    return xtract_spectral_centroid(magnitudeArray,frequencyArray);
+function xtract_spectral_mean(spectrum) {
+    var N = spectrum.length;
+    var n = N >> 1;
+    var amps = spectrum.subarray(0,n);
+    var sum = xtract_array_sum(amps);
+    return sum / n;
 }
 
 function xtract_spectral_variance(spectrum,spectral_mean) {
     if(typeof spectral_mean != "number") {
-        spectral_mean = xtract_spectral_mean(spectrum);
+        spectral_mean = xtract_spectral_centroid(spectrum);
     }
     var A = 0, result = 0;
     var N = spectrum.length;
@@ -170,6 +194,13 @@ function xtract_spectral_variance(spectrum,spectral_mean) {
         result += Math.pow(freqs[n] - spectral_mean,2)*amps[n];
     }
     return result /= A;
+}
+
+function xtract_spectral_spread(spectrum, spectral_centroid) {
+    if(typeof spectral_centroid != "number") {
+        spectral_centroid = xtract_spectral_centroid(spectrum);
+    }
+    return xtract_spectral_variance(spectrum, spectral_centroid);
 }
 
 function xtract_spectral_standard_deviation(spectrum,spectral_variance) {
@@ -212,8 +243,7 @@ function xtract_spectral_kurtosis(spectrum,spectral_mean,spectral_standard_devia
     for (var n=0; n<K; n++) {
         result += Math.pow(freqs[n] - spectral_mean,4)*amps[n];
     }
-    result /= Math.pow(spectral_standard_deviation,4);
-    return result -= 3.0;
+    return result / Math.pow(spectral_standard_deviation,4);
 }
 
 function xtract_irregularity_k(spectrum) {
@@ -920,6 +950,29 @@ function xtract_midicent(f0) {
 }
 
 /* Vector.c */
+
+function xtract_energy(array, sample_rate, window_ms) {
+    if (typeof sample_rate != "number") {
+        console.error("xtract_energy requires sample_rate to be defined");
+        return;
+    }
+    if (typeof window_ms != "number") {
+        window_ms = 100;
+    }
+    if (window_ms <= 0) {
+        window_ms = 100;
+    }
+    var N = array.length;
+    var L = Math.floor(sample_rate*(window_ms/1000.0));
+    var K = Math.ceil(N/L);
+    var result = new Float32Array(K);
+    for (var k=0; k<K; k++) {
+        var frame = array.subarray(k*L, k*L+L);
+        var rms = xtract_rms_amplitude(frame);
+        result[k] = rms;
+    }
+    return result;
+}
 
 function xtract_spectrum(array,sample_rate,withDC,normalise,dft) {
     if (typeof sample_rate != "number") {
