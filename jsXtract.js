@@ -32,20 +32,16 @@ function xtract_is_denormal(num) {
 }
 
 function xtract_array_sum(data) {
-    if (data.reduce != undefined) {
-        return data.reduce(function(a,b){return a+b;});
-    } else {
-        var sum = 0;
-        for (var n=0; n<data.length; n++) {
-            sum += data[n];
-        }
-        return sum;
+    var sum = 0;
+    for (var n=0; n<data.length; n++) {
+        sum += data[n];
     }
+    return sum;
 }
 
 function xtract_array_min(data) {
-    var min = data[0];
-    for (var n=1; n<data.length; n++) {
+    var min = Infinity;
+    for (var n=0; n<data.length; n++) {
         if (data[n] < min) {
             min = data[n];
         }

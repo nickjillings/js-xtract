@@ -2,7 +2,7 @@
     <head>
         <script src="../jsXtract.js"></script>
         <script>
-            var N = 1024;
+            var N = 4096;
             var wave = new Float32Array(N);
             var wave_f0 = 1000.0;
             var sample_rate = 44100.0;
@@ -66,6 +66,18 @@
         </script>
     </head>
     <body>
+        <div>
+            <button iter="50000" funcName="xtract_array_sum(wave)" onclick="button_onclick">Sum</button>
+        </div>
+        <div>
+            <button iter="50000" funcName="xtract_array_min(wave)" onclick="button_onclick">Min</button>
+        </div>
+        <div>
+            <button iter="50000" funcName="xtract_array_max(wave)" onclick="button_onclick">Max</button>
+        </div>
+        <div>
+            <button iter="50000" funcName="xtract_array_normalise(wave)" onclick="button_onclick">Normalise</button>
+        </div>
         <div>
             <button iter="50000" funcName="xtract_mean(wave)" onclick="button_onclick">Mean</button>
         </div>
