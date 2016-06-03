@@ -54,6 +54,25 @@ AnalyserNode.prototype.getXtractData = function() {
     return data;
 }
 
+AnalyserNode.prototype.frameCallback = function(func,arg_this) {
+    // Perform a callback on each frame
+    if (this.callbackObject == undefined) {
+        this.callbackObject = this.context.createScriptProcessor(this.fftSize,1,0);
+        this.connect(this.callbackObject);
+    }
+    var _func = func;
+    var _arg_this = arg_this;
+    var self = this;
+    this.callbackObject.onaudioprocess = function(e) {
+        _func.call(_arg_this,self.getXtractData());
+    }
+}
+
+AnalyserNode.prototype.clearCallback = function() {
+    this.disconnect(this.callbackObject);
+    this.callbackObject = undefined;
+}
+
 AudioBuffer.prototype.getFramedData = function(frame_size) {
     if (typeof frame_size != "number") {
         console.error("getFramedData requires frame_size to be a number");
