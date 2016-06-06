@@ -29,11 +29,10 @@ AnalyserNode.prototype.getXtractData = function() {
         "window_size": N,
         "sample_rate": this.context.sampleRate,
         "TimeData": new Float32Array(N),
-        "SpectrumLogData": new Float32Array(N),
-        "SpectrumData": new Float32Array(N),
-        "Frequencies": new Float32Array(N)
+        "SpectrumData": new Float32Array(2*N+2)
     };
-    this.getFloatFrequencyData(data.SpectrumLogData);
+    var SpectrumLogData = new Float32Array(N+1);
+    this.getFloatFrequencyData(SpectrumLogData);
     if (this.getFloatTimeDomainData == undefined) {
         var TempTime = new Uint8Array(data.window_size);
         this.getByteTimeDomainData(TempTime);
@@ -49,7 +48,7 @@ AnalyserNode.prototype.getXtractData = function() {
     }
     for (var N=data.Frequencies.length, i=0; i<N; i++) {
         data.Frequencies[i] = i*((data.sample_rate/2)/N);
-        data.SpectrumData[i] = Math.pow(10,data.SpectrumLogData[i]/20);
+        data.SpectrumData[i] = Math.pow(10,SpectrumLogData[i]/20);
     }
     return data;
 }
@@ -71,6 +70,11 @@ AnalyserNode.prototype.frameCallback = function(func,arg_this) {
 AnalyserNode.prototype.clearCallback = function() {
     this.disconnect(this.callbackObject);
     this.callbackObject = undefined;
+}
+
+AnalyserNode.prototype.xtractFrame = function(func,arg_this) {
+    // Collect the current frame of data and perform the callback function
+    func.call(arg_this,this.getXtractData());
 }
 
 AudioBuffer.prototype.getFramedData = function(frame_size) {
@@ -100,4 +104,41 @@ AudioBuffer.prototype.getFramedData = function(frame_size) {
         }
     }
     return frames;
+}
+
+AudioBuffer.prototype.processFrameData = function(func,frame_size,arg_this) {
+    // Process each data point and return a JSON of each frame result from func
+    // Func must return something for this to be a useful feature
+    // func has three arguments (currentFrame, previousFrame, previousResult);
+    var frames = this.getFramedData(frame_size);
+    var result = {
+        num_channels: frames.length,
+        channel_results: []
+    };
+    var K = frame_size>>1;
+    var frame_time = 0;
+    for(var channel of frames) {
+        var channel_result = [];
+        var prev_data = undefined;
+        var prev_result = undefined;
+        for (var frame of channel) {
+            var data = {
+                window_size: frame_size,
+                sample_rate: this.sampleRate,
+                TimeData: frame,
+                SpectrumData: xtract_spectrum(frame,this.sampleRate,true,false)
+            };
+            
+            prev_result = func.call(arg_this||this,data,prev_data,prev_result);
+            var frame_result = {
+                time_start: frame_time,
+                result: prev_result
+            };
+            channel_result.push(frame_result);
+            frame_time += frame_size/this.sampleRate;
+            prev_data = data;
+        }
+        result.channel_results.push(channel_result);
+    }
+    return result;
 }
