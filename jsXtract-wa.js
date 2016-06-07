@@ -104,35 +104,20 @@ AudioBuffer.prototype.xtract_process_frame_data = function(func,frame_size,hop_s
     // Process each data point and return a JSON of each frame result from func
     // Func must return something for this to be a useful feature
     // func has three arguments (currentFrame, previousFrame, previousResult);
-    var frames = this.getFramedData(frame_size,hop_size);
     var result = {
-        num_channels: frames.length,
+        num_channels: this.numberOfChannels,
         channel_results: []
     };
     var K = frame_size>>1;
     var frame_time = 0;
-    for(var channel of frames) {
-        var channel_result = [];
-        var prev_data = undefined;
-        var prev_result = undefined;
-        for (var frame of channel) {
-            var data = {
-                window_size: frame_size,
-                sample_rate: this.sampleRate,
-                TimeData: frame,
-                SpectrumData: xtract_spectrum(frame,this.sampleRate,true,false)
-            };
-            
-            prev_result = func.call(arg_this||this,data,prev_data,prev_result);
-            var frame_result = {
-                time_start: frame_time,
-                result: prev_result
-            };
-            channel_result.push(frame_result);
-            frame_time += frame_size/this.sampleRate;
-            prev_data = data;
+    for (var c=0; c<this.numberOfChannels; c++) {
+        var channel_vector = this.getChannelData(c);
+        var channel_result = {
+            num_frames: channel_vector.length,
+            results: []
         }
-        result.channel_results.push(channel_result);
+        result.channel_results.push(channel_vector.xtract_process_frame_data(func,this.sampleRate,frame_size,hop_size,arg_this));
+        
     }
     return result;
 }
