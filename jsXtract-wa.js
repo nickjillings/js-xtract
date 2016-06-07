@@ -77,40 +77,34 @@ AnalyserNode.prototype.xtractFrame = function(func,arg_this) {
     func.call(arg_this,this.getXtractData());
 }
 
-AudioBuffer.prototype.getFramedData = function(frame_size) {
+AudioBuffer.prototype.xtract_get_data_frames = function(frame_size,hop_size) {
     if (typeof frame_size != "number") {
-        console.error("getFramedData requires frame_size to be a number");
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
-    if (frame_size <= 0) {
-        console.error("getFramedData requires frame_size to be a positive number");
+    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
     }
-    if (frame_size != Math.floor(frame_size)) {
-        console.log("getFramedData requires frame_size to be integer");
-        frame_size = Math.floor(frame_size);
+    if (hop_size == undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
     var frames = [this.numberOfChannels];
     var N = this.length;
     var K = Math.ceil(N/frame_size);
     for (var c=0; c<this.numberOfChannels; c++) {
-        frames[c] = [];
-        var m = 0;
         var data = this.getChannelData(c);
-        for (var k=0; k<K; k++) {
-            frames[c][k] = new Float32Array(frame_size);
-            for (var n=0; n<frame_size; n++) {
-                frames[c][k][n] = data[m];
-                m++;
-            }
-        }
+        frames[c] = data.xtract_get_data_frames(frame_size,hop_size,true);
     }
     return frames;
 }
 
-AudioBuffer.prototype.processFrameData = function(func,frame_size,arg_this) {
+AudioBuffer.prototype.xtract_process_frame_data = function(func,frame_size,hop_size,arg_this) {
     // Process each data point and return a JSON of each frame result from func
     // Func must return something for this to be a useful feature
     // func has three arguments (currentFrame, previousFrame, previousResult);
-    var frames = this.getFramedData(frame_size);
+    var frames = this.getFramedData(frame_size,hop_size);
     var result = {
         num_channels: frames.length,
         channel_results: []

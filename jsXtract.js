@@ -1519,27 +1519,185 @@ var jsXtract = function() {
     }
 }
 
-var jsXtractAnalyser = function(analyserNode) {
-    this.analyserNode = analyserNode;
-    
-    this.processFeatures = function(callback) {
-        if (typeof callback != "function") {
-            console.error("callback must be a function call of function(data) where data is an object passed by processFeatures with time & frequency domain data");
-            return;
+Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
+    if (typeof frame_size != "number") {
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+    }
+    if (hop_size == undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+    }
+    var frames = [];
+    var N = this.length;
+    var K = Math.ceil(N/hop_size);
+    var sub_frame;
+    for (var k=0; k<K; k++) {
+        var offset = k*hop_size;
+        if (copy) {
+            sub_frame = new Float32Array(frame_size);
+            for (var n=0; n<frame_size && n+offset<this.length ; n++) {
+                sub_frame[n] = this[n+offset];
+            }
+        } else {
+            sub_frame = this.subarray(offset,offset+frame_size);
+            if (sub_frame.length < frame_size) {
+                // Must zero-pad up to the length
+                var c_frame = new Float32Array(frame_size);
+                for (var i=0; i<sub_frame.length; i++) {
+                    c_frame[i] = sub_frame[i];
+                }
+                sub_frame = c_frame;
+            }
         }
-        
-        return callback(this.getFrameData());
+        frames.push(sub_frame);
     }
-    
-    this.getFrameData = function() {
-        return this.analyserNode.getXtractData();
-    }
+    return frames;
 }
-jsXtractAnalyser.prototype = new jsXtract();
-jsXtractAnalyser.prototype.constructor = jsXtractAnalyser;
 
+Float64Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
+    if (typeof frame_size != "number") {
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+    }
+    if (hop_size == undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+    }
+    var frames = [];
+    var N = this.length;
+    var K = Math.ceil(N/hop_size);
+    var sub_frame;
+    for (var k=0; k<K; k++) {
+        var offset = k*hop_size;
+        if (copy) {
+            sub_frame = new Float64Array(frame_size);
+            for (var n=0; n<frame_size && n+offset<this.length ; n++) {
+                sub_frame[n] = this[n+offset];
+            }
+        } else {
+            sub_frame = this.subarray(offset,offset+frame_size);
+            if (sub_frame.length < frame_size) {
+                // Must zero-pad up to the length
+                var c_frame = new Float64Array(frame_size);
+                for (var i=0; i<sub_frame.length; i++) {
+                    c_frame[i] = sub_frame[i];
+                }
+                sub_frame = c_frame;
+            }
+        }
+        frames.push(sub_frame);
+    }
+    return frames;
+}
 
+Float32Array.prototype.xtract_process_frame_data = function(func,sample_rate,frame_size,hop_size,arg_this) {
+    if (typeof func != "function") {
+        throw("xtract_process_frame_data requires func to be a defined function");
+    }
+    if (typeof sample_rate != "number") {
+        throw("xtract_get_data_frames requires sample_rate to be defined");
+    }
+    if (typeof frame_size != "number") {
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+    }
+    if (hop_size == undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+    }
+    var frames = this.xtract_get_data_frames(frame_size,hop_size);
+    var result = {
+        num_frames: frames.length,
+        results: []
+    };
+    var fft_size = frame_size>>1;
+    var frame_time = 0;
+    var data = {
+        frame_size: frame_size,
+        hop_size: hop_size,
+        sample_rate: sample_rate,
+        TimeData: undefined,
+        SpectrumData: undefined
+    };
+    var prev_data = undefined;
+    var prev_result = undefined;
+    for (var frame of frames) {
+        data.TimeData = frame;
+        data.SpectrumData = xtract_spectrum(frame,sample_rate,true,false);
+        prev_result = func.call(arg_this||this,data,prev_data,prev_result);
+        var frame_result = {
+            time_start: frame_time,
+            result: prev_result
+        };
+        frame_time += frame_size/sample_rate;
+        prev_data = data;
+        result.results.push(frame_result);
+    }
+    return result;
+}
 
+Float64Array.prototype.xtract_process_frame_data = function(func,sample_rate,frame_size,hop_size,arg_this) {
+    if (typeof func != "function") {
+        throw("xtract_process_frame_data requires func to be a defined function");
+    }
+    if (typeof sample_rate != "number") {
+        throw("xtract_get_data_frames requires sample_rate to be defined");
+    }
+    if (typeof frame_size != "number") {
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+    }
+    if (hop_size == undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+    }
+    var frames = this.xtract_get_data_frames(frame_size,hop_size);
+    var result = {
+        num_frames: frames.length,
+        results: []
+    };
+    var fft_size = frame_size>>1;
+    var frame_time = 0;
+    var data = {
+        frame_size: frame_size,
+        hop_size: hop_size,
+        sample_rate: sample_rate,
+        TimeData: undefined,
+        SpectrumData: undefined
+    };
+    var prev_data = undefined;
+    var prev_result = undefined;
+    for (var frame of frames) {
+        data.TimeData = frame;
+        data.SpectrumData = xtract_spectrum(frame,sample_rate,true,false);
+        prev_result = func.call(arg_this||this,data,prev_data,prev_result);
+        var frame_result = {
+            time_start: frame_time,
+            result: prev_result
+        };
+        frame_time += frame_size/sample_rate;
+        prev_data = data;
+        result.results.push(frame_result);
+    }
+    return result;
+}
 
 /* 
  * Free FFT and convolution (JavaScript)
