@@ -2,7 +2,7 @@
     <head>
         <script src="../jsXtract.js"></script>
         <script>
-            var N = 4096;
+            var N = 1024;
             var wave = new Float32Array(N);
             var wave_f0 = 1000.0;
             var sample_rate = 44100.0;
@@ -202,7 +202,7 @@
             <button iter="5000" funcName="xtract_mfcc(spectrum,mfcc)" onclick="button_onclick">MFCC (26 band)</button>
         </div>
         <div>
-            <button iter="50" funcName="xtract_dct(wave)" onclick="button_onclick">DCT</button>
+            <button iter="5" funcName="xtract_dct(wave)" onclick="button_onclick">DCT</button>
         </div>
         <div>
             <button iter="50" funcName="xtract_autocorrelation(wave)" onclick="button_onclick">Autocorrelation</button>
