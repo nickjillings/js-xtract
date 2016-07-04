@@ -1274,6 +1274,25 @@ function xtract_pcp(spectrum, M, fs) {
     return PCP;
 }
 
+function xtract_yin(time) {
+    // Uses the YIN process
+    var T = time.length;
+    var d = new Float64Array(time.length);
+    var r = new time.constructor(time.length);
+    
+    var d_sigma = 0;
+    for (var tau=1; tau<T; tau++) {
+        var sigma = 0;
+        for (var t=1; t<T-tau; t++) {
+            sigma += Math.pow(time[t]-time[t+tau],2);
+        }
+        d[tau] = sigma;
+        d_sigma += sigma;
+        r[tau] = d[tau] / ((1/tau) * d_sigma);
+    }
+    return r;
+}
+
 function xtract_init_dft(N) {
     var dft = {
         N: N/2+1,
