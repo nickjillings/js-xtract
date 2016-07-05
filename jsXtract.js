@@ -85,6 +85,46 @@ function xtract_array_bound(data,min,max) {
     return result;
 }
 
+function xtract_array_interlace(data) {
+    var length = data.length;
+    for (var argument of arguments) {
+        if (argument.length != length) {
+            console.error("All argument lengths must be the same");
+        }
+    }
+    var num_args = arguments.length;
+    var result = new data.constructor(num_args*length);
+    for (var k = 0; k < length; k++) {
+        for (var j = 0; j < num_args; j++) {
+            result[k*num_args+j] = arguments[j][k];
+        }
+    }
+    return result;
+}
+
+function xtract_array_deinterlace(data,num_arrays) {
+    if (typeof num_arrays != "number" || num_arrays <= 0) {
+        console.error("num_arrays must be a positive integer");
+    }
+    if (num_arrays == 1) {
+        return data;
+    }
+    var result = [];
+    var N = data.length / num_arrays;
+    if (N != Math.round(N)) {
+        console.error("Cannot safely divide data into "+num_arrays+" sub arrays");
+    }
+    for (var n=0; n<num_arrays; n++) {
+        result[n] = new data.constructor(N);
+    }
+    for (var k=0; k<N; k++) {
+        for (var j=0; j<num_arrays; j++) {
+            result[j][k] = data[k*num_arrays+j];
+        }
+    }
+    return result;
+}
+
 /* Scalar.c */
 
 function xtract_mean(array) {
@@ -1291,6 +1331,78 @@ function xtract_yin(time) {
         r[tau] = d[tau] / ((1/tau) * d_sigma);
     }
     return r;
+}
+
+function xtract_onset(timeData, frameSize) {
+    if (timeData == undefined || frameSize == undefined) {
+        console.error("All arguments for xtract_onset must be defined: xtract_onset(timeData, frameSize)");
+    }
+    
+    var frames = timeData.xtract_get_data_frames(frameSize, frameSize, false);
+    var N = frames.length;
+    var X = [];
+    var real = new Float64Array(frameSize);
+    var imag = new Float64Array(frameSize);
+    var K = frameSize/2+1;
+    for (var i=0; i<N; i++) {
+        for (var n=0; n<frameSize; n++) {
+            real[n] = frames[i][n];
+            imag[n] = 0.0;
+        }
+        transform(real,imag);
+        X[i]=xtract_array_interlace(real.subarray(0,K),imag.subarray(0,K));
+    }
+    
+    function angle(real,imag) {
+        if (imag == undefined && real.length == 2) {
+            return Math.atan2(real[1],real[0]);
+        }
+        return Math.atan2(imag,real);
+    }
+    
+    function abs(real,imag) {
+        if (imag == undefined && real.length == 2) {
+            return Math.sqrt(Math.pow(real[0],2)+Math.pow(real[1],2));
+        }
+        return Math.sqrt(Math.pow(real,2)+Math.pow(imag,2));
+    }
+    
+    function princarg(phaseIn) {
+        //phase=mod(phasein+pi,-2*pi)+pi;
+        return (phaseIn+Math.PI) % (-2*Math.PI) + Math.PI;
+    }
+    
+    function complex_mul(cplx_pair_A, cplx_pair_B) {
+        if (cplx_pair_A.length != 2 || cplx_pair_B.length != 2) {
+            console.error("Both arguments must be numeral arrays of length 2");
+        }
+        var result = new cplx_pair_A.constructor(2);
+        result[0] = cplx_pair_A[0] * cplx_pair_B[0] - cplx_pair_A[1] * cplx_pair_B[1];
+        result[1] = cplx_pair_A[0] * cplx_pair_B[1] + cplx_pair_A[1] * cplx_pair_B[0];
+        return result;
+    }
+    
+    var E = new timeData.constructor(N);
+    for (var k=0; k<K; k++) {
+        var phase_prev = angle(X[0].subarray(2*k,2*k+2));
+        var phase_delta = angle(X[0].subarray(2*k,2*k+2));
+        for (var n=1; n<N; n++) {
+            var phi = princarg(phase_prev+phase_delta);
+            var exp = [Math.cos(phi),Math.sin(phi)];
+            var XT = complex_mul(X[n].subarray(2*k,2*k+2),exp);
+            XT[0] = X[n][2*k] - XT[0];
+            XT[1] = X[n][2*k+1] - XT[1];
+            E[n] += abs(XT);
+            var phase_now = angle(X[n].subarray(2*k,2*k+2));
+            phase_delta = phase_now - phase_prev;
+            phase_prev = phase_now;
+        }
+    }
+    
+    for (var n=0; n<N; n++) {
+        E[n] /= frameSize;
+    }
+    return E;
 }
 
 function xtract_init_dft(N) {
