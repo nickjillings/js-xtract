@@ -1912,6 +1912,13 @@ Float64Array.prototype.xtract_process_frame_data = function(func,sample_rate,fra
         };
         frame_time += frame_size/sample_rate;
         prev_data = data;
+        data = {
+            frame_size: frame_size,
+            hop_size: hop_size,
+            sample_rate: sample_rate,
+            TimeData: undefined,
+            SpectrumData: undefined
+        };
         result.results.push(frame_result);
     }
     return result;
