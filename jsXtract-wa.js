@@ -70,7 +70,7 @@ AnalyserNode.prototype.frameCallback = function (func, arg_this) {
             result = 0.0;
         }
         output.fill(result);
-        e.outputData.copyToChannel(output,0,0);
+        e.outputBuffer.copyToChannel(output,0,0);
     }
 }
 
