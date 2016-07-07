@@ -56,14 +56,21 @@ AnalyserNode.prototype.getXtractData = function () {
 AnalyserNode.prototype.frameCallback = function (func, arg_this) {
     // Perform a callback on each frame
     if (this.callbackObject == undefined) {
-        this.callbackObject = this.context.createScriptProcessor(this.fftSize, 1, 0);
+        this.callbackObject = this.context.createScriptProcessor(this.fftSize, 1, 1);
         this.connect(this.callbackObject);
     }
     var _func = func;
     var _arg_this = arg_this;
     var self = this;
     this.callbackObject.onaudioprocess = function (e) {
-        _func.call(_arg_this, self.getXtractData());
+        var result = _func.call(_arg_this, self.getXtractData());
+        var N = e.outputData.length;
+        var output = new Float32Array(N);
+        if (typeof result != "number") {
+            result = 0.0;
+        }
+        output.fill(result);
+        e.outputData.copyToChannel(output,0,0);
     }
 }
 
