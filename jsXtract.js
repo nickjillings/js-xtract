@@ -995,7 +995,7 @@ function xtract_wavelet_f0(timeArray,sampleRate,pitchtracker) {
     
     //_dywapitch_dynamicprocess(pitchtracker, pitch)
     pitchF = function(pitchtracker,pitchF){
-        if (pitch == 0.0) {return = -1.0;}
+        if (pitch == 0.0) {return -1.0;}
         
         var estimatedPitch = -1, acceptedError = 0.2, maxConfidence = 5;
         if (pitch != -1) {
