@@ -1658,6 +1658,7 @@ var jsXtract = function() {
             // Run the eval:
             eval("_result."+obj.name+"="+fstr);
         }
+        return _result;
     }
     
     this.init_dft = function(N) {
