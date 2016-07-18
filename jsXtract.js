@@ -1616,6 +1616,49 @@ function xtract_init_bark(N, sampleRate) {
 
 var jsXtract = function() {
     var _dft, _mfcc, _bark, _wavelet;
+    var _functionList = [];
+    
+    var _result = {};
+    
+    this.addFeature = function(obj) {
+        if (typeof obj.name == "string") {
+            if (eval("typeof "+obj.function+" == function")) {
+                // Is a valid object, search to see if it is already in here
+                var orig = _functionList.find(function(elem,index,array){
+                    if (elem.function == obj.function) {
+                        return true;
+                    }
+                    return false;
+                },obj);
+                if (orig != undefined) {
+                    console.log("Feature already added!");
+                    console.log(elem);
+                } else {
+                    _functionList.push(obj);
+                }
+            }
+        }
+    }
+    
+    this.process = function(data) {
+        // Clear the previous store
+        _result = {};
+        var i,j;
+        for (i=0; i<_functionList.length; i++) {
+            var obj = _functionList[i];
+            // Create function call string
+            var fstr = obj.function+"(";
+            for (j=0; j<obj.function.arguments.length; j++) {
+                if (j > 0) {
+                    fstr += ", ";
+                }
+                fstr += obj.function.arguments[j];
+            }
+            fstr += ")";
+            // Run the eval:
+            eval("_result."+obj.name+"="+fstr);
+        }
+    }
     
     this.init_dft = function(N) {
         _dft = xtract_init_dft(N);
@@ -1634,6 +1677,25 @@ var jsXtract = function() {
         return _wavelet;
     }
 }
+
+// Example Feature Object
+/*
+[{
+    "name": "mean",
+    "function": "xtract_mean",
+    "arguments": ["data"]
+},{
+    "name": "variance",
+    "function": "xtract_variance",
+    "arguments": ["data","result.mean"]
+}]
+
+Result node:
+{
+    mean: 0.431...
+    variance: 13.0342...
+}
+*/
 
 Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
     if (typeof frame_size != "number") {
