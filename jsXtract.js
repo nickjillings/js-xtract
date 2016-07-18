@@ -1642,7 +1642,7 @@ var jsXtract = function() {
     
     this.process = function(data) {
         // Clear the previous store
-        _result = {};
+        var result = {};
         var i,j;
         for (i=0; i<_functionList.length; i++) {
             var obj = _functionList[i];
@@ -1658,6 +1658,7 @@ var jsXtract = function() {
             // Run the eval:
             eval("_result."+obj.name+"="+fstr);
         }
+        _result = result;
         return _result;
     }
     
