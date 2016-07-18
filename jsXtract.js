@@ -1648,11 +1648,11 @@ var jsXtract = function() {
             var obj = _functionList[i];
             // Create function call string
             var fstr = obj.function+"(";
-            for (j=0; j<obj.function.arguments.length; j++) {
+            for (j=0; j<obj.arguments.length; j++) {
                 if (j > 0) {
                     fstr += ", ";
                 }
-                fstr += obj.function.arguments[j];
+                fstr += obj.arguments[j];
             }
             fstr += ")";
             // Run the eval:
