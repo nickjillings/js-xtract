@@ -1622,7 +1622,7 @@ var jsXtract = function() {
     
     this.addFeature = function(obj) {
         if (typeof obj.name == "string") {
-            if (eval("typeof "+obj.function+" == function")) {
+            if (eval("typeof "+obj.function+" == 'function'")) {
                 // Is a valid object, search to see if it is already in here
                 var orig = _functionList.find(function(elem,index,array){
                     if (elem.function == obj.function) {
