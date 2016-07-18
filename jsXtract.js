@@ -744,10 +744,6 @@ function xtract_wavelet_f0(timeArray,sampleRate,pitchtracker) {
         return null;
     }
     if (xtract_array_sum(timeArray) == 0) {return;}
-    var dywapitchtracker = {
-        _prevPitch: -1,
-        _pitchConfidence: 0
-    }
     
     function _power2p(value) {
         if (value == 0) {return 1;}
@@ -997,7 +993,67 @@ function xtract_wavelet_f0(timeArray,sampleRate,pitchtracker) {
         curSamNb /= 2;
     }
     
-    //_dywapitch_dynamicprocess(pitchtracker, pitch) -> does nothing as we run once.
+    //_dywapitch_dynamicprocess(pitchtracker, pitch)
+    pitchF = function(pitchtracker,pitchF){
+        if (pitch == 0.0) {return = -1.0;}
+        
+        var estimatedPitch = -1, acceptedError = 0.2, maxConfidence = 5;
+        if (pitch != -1) {
+            // I have a pitch here
+            
+            if (pitchtracker._prevPitch == -1) {
+                // no Previous
+                estimatedPitch = pitch;
+                pitchtracker._prevPitch = pitch;
+                pitchtracker._pitchConfidence = 1;
+            } else if (Math.abs(pitchtracker._prevPitch - pitch)/pitch < acceptedError) {
+                // similar: remember and increment
+                pitchtracker._prevPitch = pitch;
+                estimatedPitch = pitch;
+                pitchtracker._pitchConfidence = Math.min(maxConfidence, pitchtracker._pitchConfidence+1);
+            } else if ((pitchtracker._pitchConfidence >= maxConfidence-2) && Math.abs(pitchtracker._pitchConfidence - 2*pitch)/(2*pitch) < acceptedError) {
+                // close to half the last pitch, which is trusted
+                estimatedPitch = 2*pitch;
+                pitchtracker._prevPitch = estimatedPitch;
+            } else if ((pitchtracker._pitchConfidence >= maxConfidence-2) && Math.abs(pitchtracker._pitchConfidence - 0.5*pitch)/(0.5*pitch) < acceptedError) {
+                estimatedPitch = 0.5*pitch;
+                pitchtracker._prevPitch = estimatedPitch;
+            } else {
+                // Very different value
+                if (pitchtracker._pitchConfidence >= 1) {
+                    // previous trusted
+                    estimatedPitch = pitchtracker._prevPitch;
+                    pitchtracker._pitchConfidence = Math.max(0,pitchtracker._pitchConfidence-1);
+                } else {
+                    estimatedPitch = pitch;
+                    pitchtracker._prevPitch = pitch;
+                    pitchtracker._pitchConfidence = 1;
+                }
+            }
+        } else {
+            // No pitch
+            if (pitchtracker._prevPitch != -1) {
+                // was a pitch before
+                if (pitchtracker._pitchConfidence >= 1) {
+                    // previous trusted
+                    estimatedPitch = pitchtracker._prevPitch;
+                    pitchtracker._pitchConfidence = Math.max(0,pitchtracker._pitchConfidence-1);
+                } else {
+                    pitchtracker._prevPitch = -1;
+                    estimatedPitch = -1;
+                    pitchtracker._pitchConfidence = 0;
+                }
+            }
+        }
+        
+        if (pitchtracker._pitchConfidence >= 1) {
+            pitch = estimatedPitch;
+        } else {
+            pitch = -1;
+        }
+        if (pitch == -1) {pitch = 0.0;}
+        return pitch;
+    }
     return pitchF;
 }
 
@@ -1559,181 +1615,23 @@ function xtract_init_bark(N, sampleRate) {
 }
 
 var jsXtract = function() {
-    this.wavelet_f0_state = xtract_init_wavelet();
-    this.helper = {
-        "parent": this,
-        "is_denormal": function(num) {return xtract_is_denormal(num);},
-        "array_sum": function(data) {
-            return xtract_array_sum(data);
-        },
-        "array_min": function(data) {
-            return xtract_array_min(data);
-        },
-        "array_max": function(data) {
-            return xtract_array_max(data);
-        },
-        "array_normalise": function(data) {
-            xtract_array_normalise(data);
-        }
-    }
-    this.features = {
-        "parent": this,
-        "mean": function(inputArray,N,offset) {
-            return xtract_mean(inputArray);
-        },
-        "variance": function(inputArray,mean) {
-            return xtract_variance(inputArray,mean);
-        },
-        "standard_deviation": function(inputArray,variance) {
-            return xtract_standard_deviation(inputArray,variance);
-        },
-        "average_deviation": function(inputArray,mean) {
-            return xtract_average_deviation(inputArray,mean);
-        },
-        "skewness": function(inputArray,mean,standard_deviation) {
-            return xtract_skewness(inputArray,mean,standard_deviation);
-        },
-        "kurtosis": function(inputArray,mean,standard_deviation) {
-            return xtract_kurtosis(inputArray,mean,standard_deviation);
-        },
-        "spectral_centroid": function(magnitudeArray,frequencyArray) {
-            return xtract_spectral_centroid(magnitudeArray,frequencyArray)
-        },
-        "spectral_mean": function(magnitudeArray,frequencyArray) {
-            return xtract_spectral_mean(magnitudeArray,frequencyArray,N,offset);
-        },
-        "spectral_variance": function(magnitudeArray,frequencyArray,spectral_mean) {
-            return xtract_spectral_variance(magnitudeArray,frequencyArray,spectral_mean);
-        },
-        "spectral_standard_deviation": function(magnitudeArray,frequencyArray,spectral_variance) {
-            return xtract_spectral_standard_deviation(magnitudeArray,frequencyArray,spectral_variance);
-        },
-        "spectral_skewness": function(magnitudeArray,frequencyArray,spectral_mean,spectral_standard_deviation) {
-            return xtract_spectral_skewness(magnitudeArray,frequencyArray,spectral_mean,spectral_standard_deviation);
-        },
-        "spectral_kurtosis": function(magnitudeArray,frequencyArray,spectral_mean,spectral_standard_deviation) {
-            return xtract_spectral_kurtosis(magnitudeArray,frequencyArray,spectral_mean,spectral_standard_deviation);
-        },
-        "irregularity_k": function(magnitudeArray) {
-            return xtract_irregularity_k(magnitudeArray);
-        },
-        "irregularity_j": function(magnitudeArray) {
-            return xtract_irregularity_j(magnitudeArray);
-        },
-        "tristimulus_1": function(magnitudeArray, frequencyArray,f0) {
-            return xtract_tristimulus_1(magnitudeArray,frequencyArray,f0);
-        },
-        "tristimulus_2": function(magnitudeArray, frequencyArray,f0) {
-            return xtract_tristimulus_2(magnitudeArray,frequencyArray,f0);
-        },
-        "tristimulus_3": function(magnitudeArray, frequencyArray,f0) {
-            return xtract_tristimulus_3(magnitudeArray,frequencyArray,f0);
-        },
-        "smoothness": function(magnitudeArray) {
-            return xtract_smoothness(magnitudeArray);
-        },
-        "zcr": function(timeArray) {
-            return xtract_zcr(timeArray);
-        },
-        "rolloff": function(magnitudeArray,sampleRate,threshold) {
-            return xtract_rolloff(magnitudeArray,sampleRate,threshold);
-        },
-        "loudness": function(barkBandsArray) {
-            return xtract_loudness(barkBandsArray);
-        },
-        "flatness": function(magnitudeArray,N,offset) {
-            return xtract_flatness(magnitudeArray);
-        },
-        "flatness_db": function(magnitudeArray,flatness) {
-            return xtract_flatness_db(magnitudeArray,flatness);
-        },
-        "tonality": function(magnitudeArray,flatness_db) {
-            return xtract_tonality(magnitudeArray,flatness_db);
-        },
-        "crest": function(data,max,mean) {
-            return xtract_crest(data,max,mean);
-        },
-        "noisiness": function(h,p) {
-            return xtract_noisiness(h,p);
-        },
-        "rms_amplitude": function(timeArray) {
-            return xtract_rms_amplitude(timeArray);
-        },
-        "spectral_inharmonicity": function(peakArray,frequencyArray,f0) {
-            return xtract_spectral_inharmonicity(peakArray,frequencyArray,f0);
-        },
-        "power": function(magnitudeArray) {
-            return xtract_power(magnitudeArray);
-        },
-        "odd_even_ratio": function(harmonicArray, frequencyArray, f0) {
-            return xtract_odd_even_ratio(harmonicArray, frequencyArray, f0);
-        },
-        "sharpness": function(magnitudeArray) {
-            return xtract_sharpness(magnitudeArray);
-        },
-        "spectral_slope": function(magnitudeArray,frequencyArray) {
-            return xtract_spectral_slope(magnitudeArray,frequencyArray);
-        },
-        "lowest_value": function(data, threshold) {
-            return xtract_lowest_value(data, threshold);
-        },
-        "highest_value": function(data) {
-            return xtract_highest_value(data);
-        },
-        "sum": function(data) {
-            return xtract_sum(data);
-        },
-        "nonzero_count": function(data) {
-            return xtract_nonzero_count(data);
-        },
-        "hps": function(magnitudeArray,frequencyArray) {
-            return xtract_hps(magnitudeArray,frequencyArray);
-        },
-        "f0": function(timeArray,sampleRate) {
-            return xtract_f0(timeArray,sampleRate);
-        },
-        "failsafe_f0": function(timeArray,sampleRate) {
-            return xtract_failsafe_f0(timeArray,sampleRate);
-        },
-        "wavelet_f0": function(timeArray,sampleRate) {
-            return xtract_wavelet_f0(timeArray,sampleRate);
-        },
-        "spectrum": function(array) {
-            return xtract_spectrum(array);
-        },
-        "mfcc": function(magnitudeArray,mfcc) {
-            return xtract_mfcc(magnitudeArray,mfcc);
-        },
-        "dct": function(array) {
-            return xtract_dct(array);
-        },
-        "autocorrelation": function(array) {
-            return xtract_autocorrelation(array);
-        },
-        "amdf": function(array) {
-            return xtract_amdf(array);
-        },
-        "asdf": function(array) {
-            return xtract_asdf(array);
-        },
-        "bark_coefficients": function(magnitudeArray,bark_limits) {
-            return xtract_bark_coefficients(magnitudeArray,bark_limits);
-        },
-        "peak_spectrum": function(magnitudeArray, sampleRate, threshold, frequencyArrayReturn) {
-            return xtract_peak_spectrum(magnitudeArray,sampleRate,threshold,frequencyArrayReturn);
-        },
-        "harmonic_spectrum": function(peakArray, peakFrequencyArray, f0, threshold, frequencyArrayReturn) {
-            return xtract_harmonic_spectrum(peakArray, peakFrequencyArray, f0, threshold, frequencyArrayReturn);
-        }
-    }
+    var _dft, _mfcc, _bark, _wavelet;
+    
     this.init_dft = function(N) {
-        return xtract_init_dft(N);
+        _dft = xtract_init_dft(N);
+        return _dft;
     }
     this.init_mfcc = function(N, nyquist, style, freq_min, freq_max, freq_bands) {
-        return xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands);
+        _mfcc = xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands);
+        return _mfcc;
     }
     this.init_bark = function(N, sampleRate, bands) {
-        return xtract_init_bark(N, sampleRate, bands);
+        _bark = xtract_init_bark(N, sampleRate, bands);
+        return _bark;
+    }
+    this.init_wavelet = function(){
+        _wavelet = xtract_init_wavelet();
+        return _wavelet;
     }
 }
 
