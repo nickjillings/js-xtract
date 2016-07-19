@@ -213,7 +213,7 @@ function xtract_spectral_centroid(spectrum) {
     var n = N >> 1;
     var amps = spectrum.subarray(0,n);
     var freqs = spectrum.subarray(n);
-    var Amps = new Float32Array(n);
+    var Amps = new Float64Array(n);
     for (var i=0; i<n; i++) {
         Amps[i] = amps[i];
     }
@@ -691,7 +691,7 @@ function xtract_f0(timeArray,sampleRate) {
     if (typeof sampleRate != "number") {
         sampleRate = 44100.0;
     }
-    var sub_arr = new Float32Array(timeArray.length);
+    var sub_arr = new Float64Array(timeArray.length);
     var N = sub_arr.length;
     var M = N/2;
     for (var n=0; n<N; n++) {
@@ -1081,7 +1081,7 @@ function xtract_energy(array, sample_rate, window_ms) {
     var N = array.length;
     var L = Math.floor(sample_rate*(window_ms/1000.0));
     var K = Math.ceil(N/L);
-    var result = new Float32Array(K);
+    var result = new Float64Array(K);
     for (var k=0; k<K; k++) {
         var frame = array.subarray(k*L, k*L+L);
         var rms = xtract_rms_amplitude(frame);
@@ -1172,7 +1172,7 @@ function xtract_mfcc(spectrum,mfcc) {
         console.error("Lengths do not match");
         return null;
     }
-    var result = new Float32Array(mfcc.n_filters);
+    var result = new Float64Array(mfcc.n_filters);
     for (var f=0; f<mfcc.n_filters; f++) {
         result[f] = 0.0;
         var filter = mfcc.filters[f];
@@ -1189,7 +1189,7 @@ function xtract_mfcc(spectrum,mfcc) {
 
 function xtract_dct(array) {
     var N = array.length;
-    var result = new Float32Array(N);
+    var result = new Float64Array(N);
     for (var n=0; n<N; n++) {
         var nN = n/N;
         if (array.reduce) {
@@ -1210,7 +1210,7 @@ function xtract_dct_2(array,dct) {
     if (dct == undefined) {
         dct = xtract_init_dct(N);
     }
-    var result = new Float32Array(N);
+    var result = new Float64Array(N);
     result[0] = xtract_array_sum(array);
     for (var k=1; k<N; k++) {
         for (var n=0; n<N; n++) {
@@ -1222,7 +1222,7 @@ function xtract_dct_2(array,dct) {
 
 function xtract_autocorrelation(array) {
     var n = array.length;
-    var result = new Float32Array(n);
+    var result = new Float64Array(n);
     while(n--) {
         var corr = 0;
         for (var i=0; i<array.length - n; i++) {
@@ -1235,7 +1235,7 @@ function xtract_autocorrelation(array) {
 
 function xtract_amdf(array) {
     var n = array.length;
-    var result = new Float32Array(n);
+    var result = new Float64Array(n);
     while(n--) {
         var md = 0.0;
         for (var i=0; i<array.length-n; i++) {
@@ -1248,7 +1248,7 @@ function xtract_amdf(array) {
 
 function xtract_asdf(array) {
     var n = array.length;
-    var result = new Float32Array(n);
+    var result = new Float64Array(n);
     while(n--) {
         var sd = 0.0;
         for (var i=0; i<array.length-n; i++) {
@@ -1266,7 +1266,7 @@ function xtract_bark_coefficients(spectrum,bark_limits) {
     }
     var N = spectrum.length >> 1;
     var bands = bark_limits.length;
-    var results = new Float32Array(bands);
+    var results = new Float64Array(bands);
     for (var band=0; band<bands-1; band++) {
         results[band] = 0.0;
         for (var n = bark_limits[band]; n < bark_limits[band+1]; n++) {
@@ -1287,7 +1287,7 @@ function xtract_peak_spectrum(spectrum,q,threshold) {
         threshold = 0;
         console.log("peak_spectrum threshold must be between 0 and 100");
     }
-    var result = new Float32Array(N);
+    var result = new Float64Array(N);
     var ampsIn = spectrum.subarray(0,K);
     var freqsIn = spectrum.subarray(K);
     var ampsOut = result.subarray(0,K);
@@ -1318,7 +1318,7 @@ function xtract_peak_spectrum(spectrum,q,threshold) {
 function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
     var N = peakSpectrum.length;
     var K = N >> 1;
-    var result = new Float32Array(N);
+    var result = new Float64Array(N);
     var ampsIn = peakSpectrum.subarray(0,K);
     var freqsIn = peakSpectrum.subarray(K);
     var ampsOut = result.subarray(0,K);
@@ -1356,8 +1356,8 @@ function xtract_lpc(autocorr) {
     var i, j, r, ref, error=autocorr[0];
     var N = autocorr.length;
     var L = N-1;
-    var lpc = new Float32Array(L);
-    var ref = new Float32Array(L);
+    var lpc = new Float64Array(L);
+    var ref = new Float64Array(L);
     if (error == 0.0) {
         return lpc;
     }
@@ -1392,7 +1392,7 @@ function xtract_lpcc(lpc,Q) {
     }
     cep_length = Q;
     
-    var result = new Float32Array(cep_length);
+    var result = new Float64Array(cep_length);
     for (n=1; n<Q && n<cep_length; n++) {
         sum = 0;
         for (k=1; k < n; k++) {
@@ -1421,7 +1421,7 @@ function xtract_pcp(spectrum, M, fs) {
         M = xtract_init_pcp(N,fs);
     }
     var amps = spectrum.subarray(1,N);
-    var PCP = new Float32Array(12);
+    var PCP = new Float64Array(12);
     for (var l=0; l<amps.length; l++) {
         var p = M[l];
         PCP[l] += Math.pow(Math.abs(amps[l]),2);
@@ -1529,8 +1529,8 @@ function xtract_init_dft(N) {
     var power_const = -2.0 * Math.PI / N;;
     for (var k=0; k<dft.N; k++) {
         var power_k = power_const*k;
-        dft.real[k] = new Float32Array(N);
-        dft.imag[k] = new Float32Array(N);
+        dft.real[k] = new Float64Array(N);
+        dft.imag[k] = new Float64Array(N);
         for (var n=0; n<N; n++) {
             var power = power_k*n;
             dft.real[k][n] = Math.cos(power);
@@ -1546,7 +1546,7 @@ function xtract_init_dct(N) {
         wt: []
     }
     for (var k=0; k<N; k++) {
-        dct.wt[k] = new Float32Array(N);
+        dct.wt[k] = new Float64Array(N);
         for (var n=0; n<N; n++) {
             dct.wt[k][n] = Math.cos(Math.PI*k*(n+0.5)/N);
         }
@@ -1566,10 +1566,10 @@ function xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands) {
     var mel_freq_min = 1127 * Math.log(1+freq_min/700);
     var freq_bw_mel = (mel_freq_max - mel_freq_min) / freq_bands;
 
-    var mel_peak = new Float32Array(freq_bands+2);
-    var lin_peak = new Float32Array(freq_bands+2);
-    var fft_peak = new Float32Array(freq_bands+2);
-    var height_norm = new Float32Array(freq_bands);
+    var mel_peak = new Float64Array(freq_bands+2);
+    var lin_peak = new Float64Array(freq_bands+2);
+    var fft_peak = new Float64Array(freq_bands+2);
+    var height_norm = new Float64Array(freq_bands);
     mel_peak[0] = mel_freq_min;
     lin_peak[0] = freq_min;
     fft_peak[0] = Math.floor(lin_peak[0] / nyquist * M);
@@ -1609,7 +1609,7 @@ function xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands) {
         }
         var val = 0;
         // Create array
-        mfcc.filters[n] = new Float32Array(N);
+        mfcc.filters[n] = new Float64Array(N);
         // fill in the rise
         for(; i <= fft_peak[n]; i++)
         {
@@ -1654,7 +1654,7 @@ function xtract_init_pcp(N, fs, f_ref) {
         f_ref = 48.9994294977;
     }
     
-    var M = new Float32Array(N-1);
+    var M = new Float64Array(N-1);
     var fs2 = fs / 2;
     for (var l=1; l<N; l++) {
         var f = (2*l/N)*fs2;
@@ -1782,7 +1782,7 @@ Result node:
 }
 */
 
-Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
+Float64Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
     if (typeof frame_size != "number") {
         throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
@@ -1802,7 +1802,7 @@ Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, c
     for (var k=0; k<K; k++) {
         var offset = k*hop_size;
         if (copy) {
-            sub_frame = new Float32Array(frame_size);
+            sub_frame = new Float64Array(frame_size);
             for (var n=0; n<frame_size && n+offset<this.length ; n++) {
                 sub_frame[n] = this[n+offset];
             }
@@ -1810,7 +1810,7 @@ Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, c
             sub_frame = this.subarray(offset,offset+frame_size);
             if (sub_frame.length < frame_size) {
                 // Must zero-pad up to the length
-                var c_frame = new Float32Array(frame_size);
+                var c_frame = new Float64Array(frame_size);
                 for (var i=0; i<sub_frame.length; i++) {
                     c_frame[i] = sub_frame[i];
                 }
@@ -1862,7 +1862,7 @@ Float64Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, c
     return frames;
 }
 
-Float32Array.prototype.xtract_process_frame_data = function(func,sample_rate,frame_size,hop_size,arg_this) {
+Float64Array.prototype.xtract_process_frame_data = function(func,sample_rate,frame_size,hop_size,arg_this) {
     if (typeof func != "function") {
         throw("xtract_process_frame_data requires func to be a defined function");
     }
