@@ -1615,10 +1615,7 @@ function xtract_init_bark(N, sampleRate) {
 }
 
 var jsXtract = function() {
-    var _dft, _mfcc, _bark, _wavelet;
-    var _functionList = [];
-    
-    var _result = {};
+    var _dft, _mfcc, _bark, _wavelet, _functionList = [], _result = {};
     
     this.addFeature = function(obj) {
         if (typeof obj.name == "string") {
@@ -1678,6 +1675,33 @@ var jsXtract = function() {
         _wavelet = xtract_init_wavelet();
         return _wavelet;
     }
+    
+    this.getFeatureList = function() {
+        return _functionList;
+    };
+    this.clearFeatureList = function() {
+        _functionList = [];
+    };
+    this.getResult = function() {
+        return _result;
+    }
+    
+    Object.defineProperty(this,"dft",{
+        'get': function(){return _dft;},
+        'set': function(){}
+    });
+    Object.defineProperty(this,"mfcc",{
+        'get': function(){return _mfcc;},
+        'set': function(){}
+    });
+    Object.defineProperty(this,"bark",{
+        'get': function(){return _bark;},
+        'set': function(){}
+    });
+    Object.defineProperty(this,"wavelet",{
+        'get': function(){return _wavelet;},
+        'set': function(){}
+    });
 }
 
 // Example Feature Object
