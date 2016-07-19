@@ -1352,6 +1352,65 @@ function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
     return result;
 }
 
+function xtract_lpc(autocorr) {
+    var i, j, r, ref, error=autocorr[0];
+    var N = autocorr.length;
+    var L = N-1;
+    var lpc = new Float32Array(L);
+    var ref = new Float32Array(L);
+    if (error == 0.0) {
+        return lpc;
+    }
+    
+    for(i=0;i<L;i++) {
+        r = -autocorr[i+1];
+        for (j=0; j<i; j++) {
+            r -= lpc[j]*autocorr[i-j];
+        }
+        r /= error;
+        ref[i] = r;
+        
+        lpc[i] = r;
+        for (j=0; j<(i>>1); j++) {
+            var tmp = lpc[j];
+            lpc[j] += r*lpc[i-1-j];
+            lpc[i-1-j] += r*tmp;
+        }
+        if (i%2) {
+            lpc[j] += lpc[j]*r;
+        }
+        error *= 1.0-r*r;
+    }
+    return lpc;
+}
+
+function xtract_lpcc(lpc,Q) {
+    var N = lpc.length;
+    var n, k, sum, order=N-1, cep_length;
+    if (typeof Q != "number") {
+        Q = N-1;
+    }
+    cep_length = Q;
+    
+    var result = new Float32Array(cep_length);
+    for (n=1; n<Q && n<cep_length; n++) {
+        sum = 0;
+        for (k=1; k < n; k++) {
+            sum+= k * result[k-1] * lpc[n-k];
+        }
+        result[n-1] = lpc[n] + sum / n;
+    }
+    
+    for (n=order+1; n<=cep_length; n++) {
+        sum = 0.0;
+        for (k = n-(order-1); k < n; k++) {
+            sum += k * result[k-1] * lpc[n-k];
+        }
+        result[n-1] = sum / n;
+    }
+    return result;
+}
+
 function xtract_pcp(spectrum, M, fs) {
     var N = spectrum.length >> 1;
     if (typeof M != "object") {
