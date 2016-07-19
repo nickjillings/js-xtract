@@ -1520,6 +1520,140 @@ function xtract_onset(timeData, frameSize) {
     return E;
 }
 
+function xtract_resample(data,p,q,n) {
+    // Same function call as matlab:
+    // data is the array
+    // p is the target sample rate
+    // q is the source sample rate
+    // n is the desired filter order, n==1024 if undefined
+    
+    function filter(N,c) {
+        var c_b, Re, Im, b;
+        c_b = Math.floor(c*N);
+        Re = new Float64Array(N);
+        Im = new Float64Array(N);
+        var i,j;
+        for (i=0; i<c_b; i++) {
+            Re[i] = 1;
+        }
+        for (i=N-c_b+1; i<N; i++) {
+            Re[i] = 1;
+        }
+        inverseTransform(Re,Im);
+        // Scale and shift into Im
+        for (i=0; i<N; i++) {
+            j = (i+(N>>1))%N;
+            Im[i] = Re[j]/N;
+            // Apply compute blackman-harris to Im
+            var rad = (Math.PI*i)/(N);
+            Im[i] *= 0.35875 - 0.48829*Math.cos(2*rad) + 0.14128*Math.cos(4*rad) - 0.01168*Math.cos(6*rad);
+        }
+        return Im;
+    }
+
+    function polyn(data, K) {
+        var N = data.length;
+        var x = [0,data[0],data[1]];
+        var dst = new Float64Array(K);
+        var ratio = K/N;
+        var tinc = 1/ratio;
+        var n=0, t=0,k;
+        for (k=0; k<K; k++) {
+            if (t==n) {
+                // Points lie on same time
+                dst[k] = data[n];
+            } else {
+                var y = (t-n-1)*(t-n)*x[0] - 2*(t-n-1)*(t-n+1)*x[1] + (t-n)*(t-n+1)*x[2];
+                dst[k] = y/2;
+            }
+            t += tinc;
+            if (t >= n+1) {
+                n = Math.floor(t);
+                x[0] = data[n-1]; 
+                x[1] = data[n];
+                if (n+1 < N) {
+                    x[2] = data[n+1];
+                } else {
+                    x[2] = 0.0;
+                }
+            }
+        }
+        return dst;
+    }
+    
+    function zp(a) {
+        var b = new Float64Array(a.length*2);
+        for (var n=0; n<a.length; n++) {
+            b[n] = a[n];
+        }
+        return b;
+    }
+    
+    // Determine which way to go
+    var b, N = data.length;
+    if (typeof n != "number" || n <= 0) {
+        n = N;
+    }
+    if (p == q) {return data;}
+    var ratio = (p/q);
+    var K = Math.floor(N*ratio);
+    var dst;
+    if (p > q) {
+        // Upsampling
+        // 1. Expand Data range
+        dst = polyn(data,K);
+        // 2. Filter out spurious energy above q
+        var b = filter(K,1/ratio);
+        convolveReal(b,dst,dst);
+    } else {
+        // Downsampling
+        // 1. Filter out energy above p
+        var b = filter(N,ratio);
+        dst = new Float64Array(N);
+        var ds1 = new Float64Array(N);
+        convolveReal(b,data,ds1);
+        // 2. Decrease data range
+        dst = polyn(ds1,K);
+    }
+    return dst;
+}
+
+function xtract_pitch_FB(data,winLen,fs,midiRange) {
+    if (typeof midiRange != "object" || midiRange.length != 2) {
+        midiRange = [21, 108];
+    }
+    if (typeof fs != "number" || fs <= 0) {
+        console.error("xtract_pitch_FB: sample rate 'fs' must be defined and positive");
+        return;
+    }
+    if (typeof winLen != "number" || winLen <= 0) {
+        winLen = 4410;
+    }
+    var i, pcm_ds, fs_pitch, fs_index, winOvSTMSP, featureRate;
+    
+    fs_pitch = new Float64Array(128);
+    fs_index = new Int32Array(128);
+    for (i=20; i< 59; i++) {
+        fs_pitch[i] = 882;
+        fs_index[i] = 3;
+    }
+    for (i=59; i<95; i++) {
+        fs_pitch[i] = 4410;
+        fs_index[i] = 2;
+    }
+    for (i=95; i<120; i++) {
+        fs_pitch[i] = 22050;
+        fs_index[i] = 1;
+    }
+    pcm_ds = [];
+    pcm_ds[0] = data.xtract_get_data_frames(data.length,undefined,true)[0];
+    pcm_ds[1] = xtract_resample(pcm_ds[0],1,5);
+    pcm_ds[2] = xtract_resample(pcm_ds[1],1,5);
+    
+    winOvSTMSP = round(winLen/2);
+    featureRate = fs/(winLen-winOvSTMSP);
+}
+
 function xtract_init_dft(N) {
     var dft = {
         N: N/2+1,
@@ -1782,7 +1916,7 @@ Result node:
 }
 */
 
-Float64Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
+Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
     if (typeof frame_size != "number") {
         throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
@@ -1822,7 +1956,7 @@ Float64Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, c
     return frames;
 }
 
-Float64Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
+Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
     if (typeof frame_size != "number") {
         throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
