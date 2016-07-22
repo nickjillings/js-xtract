@@ -1589,10 +1589,65 @@ function xtract_resample(data,p,q,n) {
         return b;
     }
     
+    function overlap(X,b) {
+        var i,f;
+        var Y = new Float64Array(X.length);
+        var N = b.length;
+        var N2 = 2*N;
+        var B = {
+            real: zp(b),
+            imag: new Float64Array(N*2)
+        }
+        transform(B.real,B.imag);
+        var Xi = X.xtract_get_data_frames(N,N,false);
+        var Yi = Y.xtract_get_data_frames(N,N,false);
+        var x_last = new Float64Array(N);
+        var y_last = new Float64Array(N);
+        var w = new Float64Array(N2);
+        for (i=0; i<N2; i++) {
+            var rad = (Math.PI*i)/(N2);
+            w[i] = 0.35875 - 0.48829*Math.cos(2*rad) + 0.14128*Math.cos(4*rad) - 0.01168*Math.cos(6*rad);
+        }
+        var xF = {
+            real: new Float64Array(N2),
+            imag: new Float64Array(N2)
+        }
+        var yF = {
+            real: new Float64Array(N2),
+            imag: new Float64Array(N2)
+        }
+        for (f=0; f<Xi.length; f++) {
+            for (i=0; i<N; i++) {
+                xF.real[i] = x_last[i]*w[i];
+                xF.real[i+N] = Xi[f][i]*w[i+N];
+                x_last[i] = Xi[f][i];
+                xF.imag[i] = 0;
+                xF.imag[i+N] = 0;
+            }
+            transform(xF.real,xF.imag);
+            for (i = 0; i < N2; i++) {
+                yF.real[i] = xF.real[i] * B.real[i] - xF.imag[i] * B.imag[i];
+                yF.imag[i] = xF.imag[i] * B.real[i] + xF.real[i] * B.imag[i];
+            }
+            transform(yF.imag,yF.real);
+            // Perform fft_shift and scale
+            for (i=0; i<N; i++) {
+                var h = yF.real[i+N]/N;
+                yF.real[i+N] = yF.real[i]/N;
+                yF.real[i] = h;
+            }
+            for (i=0; i<N; i++) {
+                Yi[f][i] = (yF.real[i]+y_last[i]);
+                y_last[i] = yF.real[i+N];
+            }
+        }
+        return Y;
+    }
+    
     // Determine which way to go
     var b, N = data.length;
     if (typeof n != "number" || n <= 0) {
-        n = N;
+        n = 512;
     }
     if (p == q) {return data;}
     var ratio = (p/q);
@@ -1603,22 +1658,20 @@ function xtract_resample(data,p,q,n) {
         // 1. Expand Data range
         dst = polyn(data,K);
         // 2. Filter out spurious energy above q
-        var b = filter(K,1/ratio);
-        convolveReal(b,dst,dst);
+        var b = filter(n,1/ratio);
+        overlap(data,b);
     } else {
         // Downsampling
         // 1. Filter out energy above p
-        var b = filter(N,ratio);
-        dst = new Float64Array(N);
-        var ds1 = new Float64Array(N);
-        convolveReal(b,data,ds1);
+        var b = filter(n,ratio/2);
+        var ds1 = overlap(data,b);
         // 2. Decrease data range
         dst = polyn(ds1,K);
     }
     return dst;
 }
 
-function xtract_pitch_FB(data,winLen,fs,midiRange) {
+function xtract_pitch_FB(data,fs,winLen,midiRange,shiftFB) {
     if (typeof midiRange != "object" || midiRange.length != 2) {
         midiRange = [21, 108];
     }
@@ -1627,10 +1680,85 @@ function xtract_pitch_FB(data,winLen,fs,midiRange) {
         return;
     }
     if (typeof winLen != "number" || winLen <= 0) {
-        winLen = 4410;
+        winLen = data.length;
     }
-    var i, pcm_ds, fs_pitch, fs_index, winOvSTMSP, featureRate;
+    if (typeof shiftFB != "number" || shiftFB < 0 || shiftFB > 5) {
+        shiftFB = 0;
+    }
     
+    function filter(b,a,x,s) {
+        // Apply the difference equation as given by coefficients a and b on x
+        // Can pass a JSON in s for the initial states: {state_a: [], state_b: []}
+        // s.sate_x will hold returned states!
+        var y = new Float64Array(x.length);
+        var n, i, state_a, state_b;
+        if (typeof s == 'object') {
+            if (s.state_a.length == a.length) {
+                state_a = s.state_a;
+            }
+            if (s.state_b.length == b.length) {
+                state_b = s.state_b;
+            }
+        }
+        if (state_a == undefined) {
+            state_a = new Float64Array(a.length);
+        }
+        if (state_b == undefined) {
+            state_b = new Float64Array(b.length);
+        }
+        var state_y = 0;
+        for (n=0; n<x.length; n++) {
+            // Shuffle States
+            for (i=state_a.length-1; i>=0; i--) {
+                state_a[i+1] = state_a[i];
+            }
+            for (i=state_b.length-1; i>=0; i--) {
+                state_b[i+1] = state_b[i];
+            }
+            state_a[0] = state_y;
+            state_b[0] = x[n];
+
+            // Perform difference
+            state_y = 0;
+            for (i=0; i<state_b.length; i++) {
+                state_y += b[i]*state_b[i];
+            }
+            for (i=1; i<state_a.length; i++) {
+                state_y -= a[i]*state_a[i-1];
+            }
+            state_y /= a[0];
+            y[n] = state_y;
+        }
+        return y;
+    }
+
+    function forwardreversefilter(b,a,x) {
+        // Perform forward-reverse filtering
+        // First pad signal to mitigate transients
+        var factor = Math.max(1,3*(Math.max(b.length, a.length)-1));
+        var i,j;
+        if (x.length < factor) {
+            console.error("input vector too short. Must be at least 3x filter length");
+            return;
+        }
+
+        var y = new Float64Array(factor*2+x.length);
+        for (i=0; i<x.length; i++) {
+            y[i+factor] = x[i];
+        }
+
+        // Perform filtering
+        var s = {
+            'state_a': new Float64Array(a.length),
+            'state_b': new Float64Array(b.length)
+        };
+        var y1 = filter(b,a,y,s);
+        var y2 = filter(b,a,y1.reverse(),s);
+        return y2.subarray(factor,factor+x.length).reverse();
+    }
+    
+    var i, p, pcm_ds, fs_pitch, fs_index, winOvSTMSP, featureRate, h, wav_size;
+    var f_pitch_energy, seg_pcm_start, seg_pcm_stop, seg_pcm_num;
     fs_pitch = new Float64Array(128);
     fs_index = new Int32Array(128);
     for (i=20; i< 59; i++) {
@@ -1646,12 +1774,64 @@ function xtract_pitch_FB(data,winLen,fs,midiRange) {
         fs_index[i] = 1;
     }
     pcm_ds = [];
-    pcm_ds[0] = data.xtract_get_data_frames(data.length,undefined,true)[0];
+    pcm_ds[0] = xtract_resample(data,22050,fs);
     pcm_ds[1] = xtract_resample(pcm_ds[0],1,5);
     pcm_ds[2] = xtract_resample(pcm_ds[1],1,5);
     
-    winOvSTMSP = round(winLen/2);
+    fs = 22050;
+    
+    switch(shiftFB) {
+        case 1:
+            h = xtract_chroma_FB.minusQuarter;
+            break;
+        case 2:
+            h = xtract_chroma_FB.minusThird;
+            break;
+        case 3:
+            h = xtract_chroma_FB.minusHalf;
+            break;
+        case 4:
+            h = xtract_chroma_FB.minusTwoThird;
+            break;
+        case 5:
+            h = xtract_chroma_FB.minusThreeQuarters;
+            break;
+        default:
+            h = xtract_chroma_FB.normal;
+    }
+    
+    winOvSTMSP = Math.round(winLen/2);
     featureRate = fs/(winLen-winOvSTMSP);
+    wav_size = data.length;
+    
+    // We only work with one window here
+    {
+        var step_size = winLen-winOvSTMSP;
+        var group_delay = Math.round(winLen/2);
+        seg_pcm_start = 1;
+        seg_pcm_stop = Math.min(group_delay,wav_size);
+        seg_pcm_num = seg_pcm_start.length;
+        f_pitch_energy = new Float64Array(120);
+    }
+    
+    for (p=midiRange[0]; p<=midiRange[1]; p++) {
+        var index = fs_index[p-1];
+        var f_filtfilt = forwardreversefilter(h.data[p-1].b,h.data[p-1].a, pcm_ds[index-1]);
+        var f_square = new Float64Array(f_filtfilt.length);
+        var i;
+        for (i=0; i<f_filtfilt.length; i++) {
+            f_square[i] = Math.pow(f_filtfilt[i],2);
+        }
+        
+        // f_pitch_energy
+        {
+            var factor = (fs/fs_pitch[p-1]);
+            var start = Math.ceil((seg_pcm_start/fs)*fs_pitch[p-1]);
+            var stop = Math.floor((seg_pcm_stop/fs)*fs_pitch[p-1]);
+            f_pitch_energy[p-1] = xtract_array_sum(f_square.subarray(start,stop))*factor;
+        }
+    }
+    return f_pitch_energy;
 }
 
 function xtract_init_dft(N) {
@@ -1916,44 +2096,65 @@ Result node:
 }
 */
 
-Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
-    if (typeof frame_size != "number") {
-        throw ("xtract_get_data_frames requires the frame_size to be defined");
-    }
-    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
-        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
-    }
-    if (hop_size == undefined) {
-        hop_size = frame_size;
-    }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
-        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
-    }
-    var frames = [];
-    var N = this.length;
-    var K = Math.ceil(N/hop_size);
-    var sub_frame;
-    for (var k=0; k<K; k++) {
-        var offset = k*hop_size;
-        if (copy) {
-            sub_frame = new Float64Array(frame_size);
-            for (var n=0; n<frame_size && n+offset<this.length ; n++) {
-                sub_frame[n] = this[n+offset];
-            }
-        } else {
-            sub_frame = this.subarray(offset,offset+frame_size);
-            if (sub_frame.length < frame_size) {
-                // Must zero-pad up to the length
-                var c_frame = new Float64Array(frame_size);
-                for (var i=0; i<sub_frame.length; i++) {
-                    c_frame[i] = sub_frame[i];
-                }
-                sub_frame = c_frame;
-            }
+var xtract_chroma_FB = {
+    'normal': undefined,
+    'minusHalf': undefined,
+    'minusQuarter': undefined,
+    'minusThird': undefined,
+    'minusThreeQuarters': undefined,
+    'minusTwoThird': undefined
+}
+
+{
+    // Get the prototype objects without polluting main namespace
+    var xhr1 = new XMLHttpRequest();
+    xhr1.open('GET','./chroma/MIDI_FB_ellip_pitch_60_96_22050_Q25.json',true);
+    xhr1.onload = function() {
+        if (this.status == 200) {
+            xtract_chroma_FB.normal = JSON.parse(this.response);
         }
-        frames.push(sub_frame);
-    }
-    return frames;
+    };
+    xhr1.send();
+    var xhr2 = new XMLHttpRequest();
+    xhr2.open('GET','./chroma/MIDI_FB_ellip_pitch_60_96_22050_Q25_minusHalf.json',true);
+    xhr2.onload = function() {
+        if (this.status == 200) {
+            xtract_chroma_FB.minusHalf = JSON.parse(this.response);
+        }
+    };
+    xhr2.send();
+    var xhr3 = new XMLHttpRequest();
+    xhr3.open('GET','./chroma/MIDI_FB_ellip_pitch_60_96_22050_Q25_minusQuarter.json',true);
+    xhr3.onload = function() {
+        if (this.status == 200) {
+            xtract_chroma_FB.minusQuarter = JSON.parse(this.response);
+        }
+    };
+    xhr3.send();
+    var xhr4 = new XMLHttpRequest();
+    xhr4.open('GET','./chroma/MIDI_FB_ellip_pitch_60_96_22050_Q25_minusThird.json',true);
+    xhr4.onload = function() {
+        if (this.status == 200) {
+            xtract_chroma_FB.minusthird = JSON.parse(this.response);
+        }
+    };
+    xhr4.send();
+    var xhr5 = new XMLHttpRequest();
+    xhr5.open('GET','./chroma/MIDI_FB_ellip_pitch_60_96_22050_Q25_minusThreeQuarters.json',true);
+    xhr5.onload = function() {
+        if (this.status == 200) {
+            xtract_chroma_FB.minusThreeQuarters = JSON.parse(this.response);
+        }
+    };
+    xhr5.send();
+    var xhr6 = new XMLHttpRequest();
+    xhr6.open('GET','./chroma/MIDI_FB_ellip_pitch_60_96_22050_Q25_minusTwoThird.json',true);
+    xhr6.onload = function() {
+        if (this.status == 200) {
+            xtract_chroma_FB.minusTwoThird = JSON.parse(this.response);
+        }
+    };
+    xhr6.send();
 }
 
 Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
@@ -1996,7 +2197,47 @@ Float32Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, c
     return frames;
 }
 
-Float64Array.prototype.xtract_process_frame_data = function(func,sample_rate,frame_size,hop_size,arg_this) {
+Float64Array.prototype.xtract_get_data_frames = function(frame_size, hop_size, copy) {
+    if (typeof frame_size != "number") {
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+    }
+    if (hop_size == undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+    }
+    var frames = [];
+    var N = this.length;
+    var K = Math.ceil(N/hop_size);
+    var sub_frame;
+    for (var k=0; k<K; k++) {
+        var offset = k*hop_size;
+        if (copy) {
+            sub_frame = new Float64Array(frame_size);
+            for (var n=0; n<frame_size && n+offset<this.length ; n++) {
+                sub_frame[n] = this[n+offset];
+            }
+        } else {
+            sub_frame = this.subarray(offset,offset+frame_size);
+            if (sub_frame.length < frame_size) {
+                // Must zero-pad up to the length
+                var c_frame = new Float64Array(frame_size);
+                for (var i=0; i<sub_frame.length; i++) {
+                    c_frame[i] = sub_frame[i];
+                }
+                sub_frame = c_frame;
+            }
+        }
+        frames.push(sub_frame);
+    }
+    return frames;
+}
+
+Float32Array.prototype.xtract_process_frame_data = function(func,sample_rate,frame_size,hop_size,arg_this) {
     if (typeof func != "function") {
         throw("xtract_process_frame_data requires func to be a defined function");
     }
