@@ -2026,10 +2026,9 @@ var jsXtract = function() {
             }
             fstr += ")";
             // Run the eval:
-            eval("_result."+obj.name+"="+fstr);
+            eval("this.result."+obj.name+"="+fstr);
         }
-        _result = result;
-        return _result;
+        return this.result;
     }
     
     this.init_dft = function(N) {
@@ -2055,8 +2054,8 @@ var jsXtract = function() {
     this.clearFeatureList = function() {
         _functionList = [];
     };
-    this.getResult = function() {
-        return _result;
+    this.clearResult = function() {
+        _result = {};
     }
     
     Object.defineProperty(this,"dft",{
@@ -2073,6 +2072,10 @@ var jsXtract = function() {
     });
     Object.defineProperty(this,"wavelet",{
         'get': function(){return _wavelet;},
+        'set': function(){}
+    });
+    Object.defineProperty(this,"result",{
+        'get': function(){return _result;},
         'set': function(){}
     });
 }
@@ -2095,6 +2098,115 @@ Result node:
     variance: 13.0342...
 }
 */
+
+
+// Prototype for Time Domain based data
+var TimeDomain = function(N,sampleRate) {
+    if (N == undefined || N <= 0) {
+        console.error("Constructor for TimeDomain requires the number of samples be specified");
+    }
+    if (sampleRate <= 0) {
+        sampleRate = undefined;
+        console.log("Invalid parameter for 'sampleRate' for TimeDomain");
+    }
+    this.__proto__ = new jsXtract();
+    this.__proto__.constructor = TimeDomain;
+    
+    var _data = new Float64Array(N);
+    var _length = N;
+    var _dft = xtract_init_dft(N);
+    var _Fs = sampleRate
+    
+    this.zeroData = function() {
+        if (_data.fill) {
+            _data.fill(0);
+        } else {
+            for (var n=0; n<_data.length; n++) {
+                _data[n] = 0;
+            }
+        }
+        this.clearResult();
+    }
+    
+    this.copyDataFrom = function(src, N, offset) {
+        if (typeof src != "object" || src.length == undefined) {
+            console.error("copyDataFrom requires src to be an Array or TypedArray");
+        }
+        if (offset == undefined) {
+            offset = 0;
+        }
+        if (N == undefined) {
+            N = Math.min(src.length, _data.length);
+        }
+        N = Math.min(N+offset,_data.length);
+        for (var n=0; n<N; n++) {
+            _data[n+offset] = src[n];
+        }
+        this.clearResult();
+    }
+    
+    this.duplicate = function() {
+        var copy = this.prototype.constructor(_data.length);
+        copy.copyDataFrom(_data);
+    }
+    
+    Object.defineProperty(this,"sampleRate",{
+        'get': function() {return _Fs},
+        'set': function(sampleRate) {
+            if (_Fs == undefined) {
+                _Fs = sampleRate;
+            } else {
+                console.error("Cannot set one-time variable");
+            }
+        }
+    });
+    Object.defineProperty(this,"length",{
+        'value': _length,
+        'writable': false,
+        'enumerable': true
+    });
+    
+    // Features
+    
+    Object.defineProperty(this,"mean",{
+        'get': function() {
+            if (this.result.mean == undefined) {
+                this.result.mean = xtract_mean(_data);
+            }
+            return this.result.mean;
+        },
+        'set': function() {}
+    });
+    
+    Object.defineProperty(this,"variance",{
+        'get': function() {
+            if (this.result.variance == undefined) {
+                this.result.variance = xtract_variance(_data,this.result.mean);
+            }
+            return this.result.variance;
+        },
+        'set': function() {}
+    });
+    Object.defineProperty(this,"standard_deviation",{
+        'get': function() {
+            if (this.result.standard_deviation == undefined) {
+                this.result.standard_deviation = xtract_standard_deviation(_data,this.result.variance);
+            }
+            return this.result.standard_deviation;
+        },
+        'set': function() {}
+    });
+    Object.defineProperty(this,"average_deviation",{
+        'get': function() {
+            if (this.result.average_deviation == undefined) {
+                this.result.average_deviation = xtract_average_deviation(_data,this.result.mean);
+            }
+            return this.result.average_deviation;
+        },
+        'set': function() {}
+    });
+}
+
 
 var xtract_chroma_FB = {
     'normal': undefined,
