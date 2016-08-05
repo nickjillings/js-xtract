@@ -2373,6 +2373,14 @@ var TimeDomain = function (N, sampleRate) {
             return this.result.zcr;
         }
     });
+    Object.defineProperty(this, "crest_factor",{
+        'value': function() {
+            if (this.result.crest_factor == undefined) {
+                this.result.crest_factor = xtract_crest(_amps,this.result.maximum, this.result.mean);
+            }
+            return this.result.crest_factor;
+        }
+    });
     Object.defineProperty(this, "rms_amplitude", {
         'value': function () {
             if (this.result.rms_amplitude == undefined) {
@@ -2761,6 +2769,15 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.tonality;
         }
     });
+    
+    Object.defineProperty(this, "spectral_crest_factor",{
+        'value': function() {
+            if (this.result.spectral_crest_factor == undefined) {
+                this.result.spectral_crest_factor = xtract_crest(_amps,this.result.maximum, this.result.mean);
+            }
+            return this.result.spectral_crest_factor;
+        }
+    })
     
     Object.defineProperty(this, "spectral_slope", {
         'value': function () {
