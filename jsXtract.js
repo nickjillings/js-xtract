@@ -189,7 +189,7 @@ function xtract_skewness(array, mean, standard_deviation) {
         mean = xtract_mean(array);
     }
     if (typeof standard_deviation != "number") {
-        standard_deviation = xtract_average_deviation(array, mean);
+        standard_deviation = xtract_standard_deviation(array, xtract_variance(data, mean));
     }
     var result = 0.0;
     for (var n = 0; n < array.length; n++) {
@@ -203,7 +203,7 @@ function xtract_kurtosis(array, mean, standard_deviation) {
         mean = xtract_mean(array);
     }
     if (typeof standard_deviation != "number") {
-        standard_deviation = xtract_average_deviation(array, mean);
+        standard_deviation = xtract_standard_deviation(array, xtract_variance(data, mean));
     }
     var result = 0.0;
     for (var n = 0; n < array.length; n++) {
@@ -675,8 +675,17 @@ function xtract_lowest_value(data, threshold) {
     return result;
 }
 
-function xtract_highest_value(data) {
-    return xtract_array_max(data);
+function xtract_highest_value(data, threshold) {
+    if (typeof threshold != "number") {
+        threshold = +Infinity;
+    }
+    var result = +Infinity;
+    for (var n = 0; n < data.length; n++) {
+        if (data[n] >= threshold) {
+            result = Math.max(result, data[n]);
+        }
+    }
+    return result;
 }
 
 function xtract_sum(data) {
@@ -1530,17 +1539,17 @@ function xtract_pcp(spectrum, M, fs) {
     return PCP;
 }
 
-function xtract_yin(time) {
+function xtract_yin(array) {
     // Uses the YIN process
-    var T = time.length;
-    var d = new Float64Array(time.length);
-    var r = new time.constructor(time.length);
+    var T = array.length;
+    var d = new Float64Array(array.length);
+    var r = new time.constructor(array.length);
 
     var d_sigma = 0;
     for (var tau = 1; tau < T; tau++) {
         var sigma = 0;
         for (var t = 1; t < T - tau; t++) {
-            sigma += Math.pow(time[t] - time[t + tau], 2);
+            sigma += Math.pow(array[t] - array[t + tau], 2);
         }
         d[tau] = sigma;
         d_sigma += sigma;
@@ -2215,23 +2224,23 @@ Result node:
 
 
 // Prototype for Time Domain based data
-var TimeDomain = function (N, sampleRate) {
+var TimeData = function (N, sampleRate) {
     if (N == undefined || N <= 0) {
-        console.error("Constructor for TimeDomain requires the number of samples be specified");
+        console.error("Constructor for TimeData requires the number of samples be specified");
     }
     if (sampleRate <= 0) {
         sampleRate = undefined;
-        console.log("Invalid parameter for 'sampleRate' for TimeDomain");
+        console.log("Invalid parameter for 'sampleRate' for TimeData");
     }
     this.__proto__ = new jsXtract();
-    this.__proto__.constructor = TimeDomain;
+    this.__proto__.constructor = TimeData;
 
     var _data = new Float64Array(N);
     var _length = N;
     var _dft = xtract_init_dft(N);
     var _Fs = sampleRate;
     var _dct = xtract_init_dct(N);
-    
+
 
     this.getData = function () {
         return _data;
@@ -2373,10 +2382,10 @@ var TimeDomain = function (N, sampleRate) {
             return this.result.zcr;
         }
     });
-    Object.defineProperty(this, "crest_factor",{
-        'value': function() {
+    Object.defineProperty(this, "crest_factor", {
+        'value': function () {
             if (this.result.crest_factor == undefined) {
-                this.result.crest_factor = xtract_crest(_amps,this.result.maximum, this.result.mean);
+                this.result.crest_factor = xtract_crest(_amps, this.result.maximum, this.result.mean);
             }
             return this.result.crest_factor;
         }
@@ -2426,16 +2435,16 @@ var TimeDomain = function (N, sampleRate) {
             }
         }
     });
-    
+
     Object.defineProperty(this, "dct", {
         'value': function () {
             if (this.result.dct == undefined) {
-                this.result.dct = xtract_dct_2(_data,_dct);
+                this.result.dct = xtract_dct_2(_data, _dct);
             }
             return this.result.dct;
         }
     });
-    
+
     Object.defineProperty(this, "autocorrelation", {
         'value': function () {
             if (this.result.autocorrelation == undefined) {
@@ -2444,7 +2453,7 @@ var TimeDomain = function (N, sampleRate) {
             return this.result.autocorrelation;
         }
     });
-    
+
     Object.defineProperty(this, "amdf", {
         'value': function () {
             if (this.result.amdf == undefined) {
@@ -2453,7 +2462,7 @@ var TimeDomain = function (N, sampleRate) {
             return this.result.amdf;
         }
     });
-    
+
     Object.defineProperty(this, "asdf", {
         'value': function () {
             if (this.result.asdf == undefined) {
@@ -2476,7 +2485,7 @@ var SpectrumData = function (N, sampleRate) {
         sampleRate = Math.PI;
     }
     this.__proto__ = new jsXtract();
-    this.__proto__.constructor = TimeDomain;
+    this.__proto__.constructor = TimeData;
     var _data = new Float64Array(2 * N);
     var _amps = _data.subarray(0, N);
     var _freqs = _data.subarray(N, 2 * N);
@@ -2730,7 +2739,7 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.loudness;
         }
     });
-    
+
     Object.defineProperty(this, "sharpness", {
         'value': function () {
             if (this.result.sharpness = undefined) {
@@ -2742,7 +2751,7 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.sharpness;
         }
     });
-    
+
     Object.defineProperty(this, "flatness", {
         'value': function () {
             if (this.result.flatness == undefined) {
@@ -2751,34 +2760,34 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.flatness;
         }
     });
-    
+
     Object.defineProperty(this, "flatness_db", {
         'value': function () {
             if (this.result.flatness_db == undefined) {
-                this.result.flatness_db = xtract_flatness_db(_data,this.result.flatness);
+                this.result.flatness_db = xtract_flatness_db(_data, this.result.flatness);
             }
             return this.result.flatness_db;
         }
     });
-    
+
     Object.defineProperty(this, "tonality", {
         'value': function () {
             if (this.result.tonality == undefined) {
-                this.result.tonality = xtract_tonality(_data,this.result.flatness_db);
+                this.result.tonality = xtract_tonality(_data, this.result.flatness_db);
             }
             return this.result.tonality;
         }
     });
-    
-    Object.defineProperty(this, "spectral_crest_factor",{
-        'value': function() {
+
+    Object.defineProperty(this, "spectral_crest_factor", {
+        'value': function () {
             if (this.result.spectral_crest_factor == undefined) {
-                this.result.spectral_crest_factor = xtract_crest(_amps,this.result.maximum, this.result.mean);
+                this.result.spectral_crest_factor = xtract_crest(_amps, this.result.maximum, this.result.mean);
             }
             return this.result.spectral_crest_factor;
         }
     })
-    
+
     Object.defineProperty(this, "spectral_slope", {
         'value': function () {
             if (this.result.spectral_slope == undefined) {
@@ -2787,7 +2796,7 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.spectral_slope;
         }
     });
-    
+
     Object.defineProperty(this, "nonzero_count", {
         'value': function () {
             if (this.result.nonzero_count == undefined) {
@@ -2796,7 +2805,7 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.nonzero_count;
         }
     });
-    
+
     Object.defineProperty(this, "hps", {
         'value': function () {
             if (this.result.hps == undefined) {
@@ -2805,9 +2814,9 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.hps;
         }
     });
-    
-    Object.defineProperty(this, "init_mfcc",{
-        'value': function(freq_bands, freq_min, freq_max, style) {
+
+    Object.defineProperty(this, "init_mfcc", {
+        'value': function (freq_bands, freq_min, freq_max, style) {
             if (style == undefined) {
                 style = "";
             }
@@ -2820,11 +2829,11 @@ var SpectrumData = function (N, sampleRate) {
             if (freq_bands == undefined) {
                 freq_bands = 26;
             }
-            _mfcc = xtract_init_mfcc(_length,sampleRate/2,style,freq_min,freq_max,freq_bands);
+            _mfcc = xtract_init_mfcc(_length, sampleRate / 2, style, freq_min, freq_max, freq_bands);
         }
     });
-    
-    Object.defineProperty(this, "mfcc",{
+
+    Object.defineProperty(this, "mfcc", {
         'value': function () {
             if (_mfcc = undefined) {
                 console.error("Run init_mfcc(freq_bands, freq_min, freq_max, style) first");
@@ -2836,8 +2845,8 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.mfcc;
         }
     });
-    
-    Object.defineProperty(this, "dct",{
+
+    Object.defineProperty(this, "dct", {
         'value': function () {
             if (this.result.dct == undefined) {
                 this.result.dct = xtract_dct_2(_amps, _dct);
@@ -2845,21 +2854,21 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.dct;
         }
     });
-    
-    Object.defineProperty(this, "peak_spectrum",{
-        'value': function(threshold) {
+
+    Object.defineProperty(this, "peak_spectrum", {
+        'value': function (threshold) {
             if (this.result.peak_spectrum == undefined) {
-                this.result.peak_spectrum = new PeakSpectrumData(_length,_Fs);
-                var ps = xtract_peak_spectrum(_data,_Fs/_length, threshold);
-                this.result.peak_spectrum.copyDataFrom(ps.subarray(0,_length));
+                this.result.peak_spectrum = new PeakSpectrumData(_length, _Fs);
+                var ps = xtract_peak_spectrum(_data, _Fs / _length, threshold);
+                this.result.peak_spectrum.copyDataFrom(ps.subarray(0, _length));
             }
             return this.result.peak_spectrum;
         }
     });
-    
+
 }
 
-var PeakSpectrumData = function(N,sampleRate) {
+var PeakSpectrumData = function (N, sampleRate) {
     if (N == undefined || N <= 0) {
         console.error("SpectrumData constructor requires N to be a defined, whole number");
         return;
@@ -2869,30 +2878,30 @@ var PeakSpectrumData = function(N,sampleRate) {
     }
     this.__proto__ = new SpectrumData(N);
     this.__proto__.constructor = PeakSpectrumData;
-    
+
     // Peak Specturm features
     Object.defineProperty(this, "spectral_inharmonicity", {
-        'value': function() {
+        'value': function () {
             if (this.result.spectral_inharmonicity == undefined) {
-                this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(_data,_f0);
+                this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(_data, _f0);
             }
             return this.result.spectral_inharmonicity;
         }
     });
-    
-    Object.defineProperty(this, "harmonic_spectrum",{
-        'value': function(f0, threshold) {
+
+    Object.defineProperty(this, "harmonic_spectrum", {
+        'value': function (f0, threshold) {
             if (this.result.harmonic_spectrum == undefined) {
-                this.result.harmonic_spectrum = new HarmonicSpectrumData(_length,_Fs);
+                this.result.harmonic_spectrum = new HarmonicSpectrumData(_length, _Fs);
                 var hs = xtract_harmonic_spectrum(_data, f0, threshold);
-                this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0,_length));
+                this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0, _length));
             }
             return this.result.harmonic_spectrum;
         }
     });
 }
 
-var HarmonicSpectrumData = function(N, sampleRate) {
+var HarmonicSpectrumData = function (N, sampleRate) {
     if (N == undefined || N <= 0) {
         console.error("SpectrumData constructor requires N to be a defined, whole number");
         return;
@@ -2902,12 +2911,12 @@ var HarmonicSpectrumData = function(N, sampleRate) {
     }
     this.__proto__ = new PeakSpectrumData(N);
     this.__proto__.constructor = HarmonicSpectrumData;
-    
+
     // Harmonic Spectrum features
     Object.defineProperty(this, "odd_even_ratio", {
-        'value': function() {
+        'value': function () {
             if (this.result.odd_even_ratio == undefined) {
-                this.result.odd_even_ratio = xtract_odd_even_ratio(_data,_f0);
+                this.result.odd_even_ratio = xtract_odd_even_ratio(_data, _f0);
             }
             return this.result.odd_even_ratio;
         }
