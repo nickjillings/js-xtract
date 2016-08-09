@@ -42,7 +42,6 @@ AnalyserNode.prototype.getXtractData = function () {
             num -= 1.0;
             data.TimeData[n] = num;
         }
-        delete TempTime;
     } else {
         this.getFloatTimeDomainData(data.TimeData);
     }
