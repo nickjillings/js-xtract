@@ -26,6 +26,19 @@
 // This work is based upon LibXtract developed by Jamie Bullock
 //https://github.com/jamiebullock/LibXtract
 
+// A Few Polyfills:
+if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function (searchString, position) {
+        var subjectString = this.toString();
+        if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+            position = subjectString.length;
+        }
+        position -= searchString.length;
+        var lastIndex = subjectString.indexOf(searchString, position);
+        return lastIndex !== -1 && lastIndex === position;
+    };
+}
+
 function xtract_is_denormal(num) {
     if (Math.abs(num) <= 2.2250738585072014e-308) {
         return true;
@@ -1937,6 +1950,7 @@ function xtract_init_bark(N, sampleRate) {
 }
 
 var jsXtract = function () {
+    var resultObject = function () {}
     var _dft, _mfcc, _bark, _wavelet, _functionList = [],
         _result = {};
 
@@ -1956,9 +1970,36 @@ var jsXtract = function () {
         _wavelet = xtract_init_wavelet();
         return _wavelet;
     }
-    
+
     this.clearResult = function () {
         _result = {};
+    }
+
+    this.toJSON = function () {
+        var json = '{';
+        for (var property in _result) {
+            if (!json.endsWith('{') && !json.endsWith(',')) {
+                json = json + ', ';
+            }
+            if (typeof _result[property] == "number") {
+                json = json + '"' + property + '": ' + _result[property];
+            } else if (typeof _result[property] == "object") {
+                switch (_result[property].constructor) {
+                    case Array:
+                    case Float32Array:
+                    case Float64Array:
+                    case TimeData:
+                    case SpectrumData:
+                    case PeakSpectrumData:
+                    case HarmonicSpectrumData:
+                        // Array
+                        json = json + '"' + property + '": ' + _result[property].toJSON();
+                    default:
+                        break;
+                }
+            }
+        }
+        return json + '}';
     }
 
     Object.defineProperty(this, "dft", {
@@ -2015,21 +2056,46 @@ Result node:
 
 // Prototype for Time Domain based data
 var TimeData = function (N, sampleRate) {
-    if (N == undefined || N <= 0) {
-        console.error("Constructor for TimeData requires the number of samples be specified");
-    }
     if (sampleRate <= 0) {
         sampleRate = undefined;
         console.log("Invalid parameter for 'sampleRate' for TimeData");
     }
+
+    var _data, _length, _dft, _Fs, _dct;
+
+    if (typeof N == "object") {
+        var src, src_data;
+        if (N.constructor == TimeData) {
+            src = N;
+            src_data = src.getData();
+        } else if (N.constructor == Float32Array || N.constructor == Float64Array) {
+            src = N;
+            src_data = N;
+        } else {
+            console.error("TimeData: Invalid object passed as first argument.");
+        }
+        _length = src.length;
+        _data = new Float64Array(_length);
+        for (var n = 0; n < _length; n++) {
+            _data[n] = src_data[n];
+        }
+    } else if (typeof N == "number") {
+        if (N <= 0 || N != Math.floor(N)) {
+            console.error("TimeData: Invalid number passed as first argument.");
+        } else {
+            _length = N;
+            _data = new Float64Array(_length);
+        }
+    } else {
+        console.error("TimeData: Constructor has invalid operators!");
+    }
     this.__proto__ = new jsXtract();
     this.__proto__.constructor = TimeData;
 
-    var _data = new Float64Array(N);
-    var _length = N;
-    var _dft = xtract_init_dft(N);
-    var _Fs = sampleRate;
-    var _dct = xtract_init_dct(N);
+
+    _dft = xtract_init_dft(_length);
+    _Fs = sampleRate;
+    _dct = xtract_init_dct(_length);
 
 
     this.getData = function () {
@@ -2113,6 +2179,25 @@ var TimeData = function (N, sampleRate) {
         }
     });
 
+    Object.defineProperty(this, "getFrames", {
+        'value': function (frameSize, hopSize) {
+            if (typeof frameSize != "number" || frameSize <= 0 || frameSize != Math.floor(frameSize)) {
+                console.error("frameSize must be a defined, positive integer");
+            }
+            if (typeof hopSize != "number") {
+                hopSize = frameSize;
+            }
+            var num_frames = Math.ceil(_length / frameSize);
+            var result_frames = [];
+            for (var i = 0; i < num_frames; i++) {
+                var frame = new TimeData(hopSize, _Fs);
+                frame.copyDataFrom(_data.subarray(frameSize * i, frameSize * i + hopSize));
+                result_frames.push(frame);
+            }
+            return result_frames;
+        }
+    })
+
     // Features
 
     Object.defineProperty(this, "mean", {
@@ -2123,9 +2208,9 @@ var TimeData = function (N, sampleRate) {
             return this.result.mean;
         }
     });
-    
+
     Object.defineProperty(this, "temporal_centroid", {
-        'value': function(window_ms) {
+        'value': function (window_ms) {
             if (this.result.temporal_centroid == undefined) {
                 this.energy(window_ms);
                 this.result.temporal_centroid = xtract_temporal_centroid(this.result.energy.data, _Fs, window_ms);
@@ -2199,7 +2284,7 @@ var TimeData = function (N, sampleRate) {
         }
     });
     Object.defineProperty(this, "lowest_value", {
-        'value': function(threshold) {
+        'value': function (threshold) {
             if (this.result.lowest_value == undefined) {
                 this.result.lowest_value = xtract_lowest_value(_data, threshold);
             }
@@ -2207,7 +2292,7 @@ var TimeData = function (N, sampleRate) {
         }
     });
     Object.defineProperty(this, "highest_value", {
-        'value': function(threshold) {
+        'value': function (threshold) {
             if (this.result.highest_value == undefined) {
                 this.result.highest_value = xtract_highest_value(_data, threshold);
             }
@@ -2247,9 +2332,9 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "spectrum", {
         'value': function () {
             if (this.result.spectrum == undefined) {
-                this.result.spectrum = new SpectrumData(N / 2 + 1, _Fs);
                 var _spec = xtract_spectrum(_data, _Fs, true, false);
-                this.result.spectrum.copyDataFrom(_spec, N / 2 + 1);
+                this.result.spectrum = new SpectrumData(_spec.length/2, _Fs);
+                this.result.spectrum.copyDataFrom(_spec);
                 return this.result.spectrum;
             }
         }
@@ -2290,18 +2375,18 @@ var TimeData = function (N, sampleRate) {
             return this.result.asdf;
         }
     });
-    
+
     Object.defineProperty(this, "yin", {
-        'value': function() {
+        'value': function () {
             if (this.result.yin == undefined) {
                 this.result.yin = xtract_yin(_data);
             }
             return this.result.yin;
         }
     });
-    
+
     Object.defineProperty(this, "onset", {
-        'value': function(frameSize) {
+        'value': function (frameSize) {
             if (this.result.onset == undefined || this.result.onset.frameSize != frameSize) {
                 this.result.onset = {
                     'data': xtract_onset(_data, frameSize),
@@ -2311,9 +2396,9 @@ var TimeData = function (N, sampleRate) {
             return this.result.onset;
         }
     });
-    
+
     Object.defineProperty(this, "resample", {
-        'value': function(targetSampleRate) {
+        'value': function (targetSampleRate) {
             if (_Fs == undefined) {
                 console.error("Source sampleRate must be defined");
             }
@@ -2327,9 +2412,9 @@ var TimeData = function (N, sampleRate) {
             return reply;
         }
     });
-    
-    Object.defineProerty(this, "pitch", {
-        'value': function() {
+
+    Object.defineProperty(this, "pitch", {
+        'value': function () {
             if (_Fs == undefined) {
                 console.error("Sample rate must be defined");
             }
@@ -2977,6 +3062,32 @@ Float64Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
         result.results.push(frame_result);
     }
     return result;
+}
+
+Float32Array.prototype.toJSON = function() {
+    var json = '[';
+    var n = 0;
+    while(n < this.length) {
+        json = json + this[n];
+        if (this[n+1] != undefined) {
+            json = json +',';
+        }
+        n++;
+    }
+    return json + ']';
+}
+
+Float64Array.prototype.toJSON = function() {
+    var json = '[';
+    var n = 0;
+    while(n < this.length) {
+        json = json + this[n];
+        if (this[n+1] != undefined) {
+            json = json +',';
+        }
+        n++;
+    }
+    return json + ']';
 }
 
 /* 
