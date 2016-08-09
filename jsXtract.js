@@ -2485,7 +2485,7 @@ var SpectrumData = function (N, sampleRate) {
         sampleRate = Math.PI;
     }
     this.__proto__ = new jsXtract();
-    this.__proto__.constructor = TimeData;
+    this.__proto__.constructor = SpectrumData;
     var _data = new Float64Array(2 * N);
     var _amps = _data.subarray(0, N);
     var _freqs = _data.subarray(N, 2 * N);
