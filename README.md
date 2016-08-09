@@ -1,11 +1,42 @@
-# js-xtract
-JavaScript Feature Extraction Library
+# JS-Xtract
 
-## About
-This project provides a low-level feature extraction library for the JavaScript language. This provides several functions, based mostly from LibXtract, providing feature analysis for audio inside every browser. You can use the functions literally, within an object or even through the powerful Web Audio API.
+JS-Xtract is a feature extraction library built in JavaScript. The library is based upon a previous library, LibXtract[1], which defined several functions for the C langauge.
 
-## Use
-Simply include the jsXtract.js file in your HTML or dynamically load for access to all the functions. The jsXtract-wa.js provides the web audio integration, this is not required for non-Web Audio powered pages.
+## How to use it
+
+JS-Xtract is self contained inside one file called jsXtract.min.js. Simply add this file your document header function, as shown below, to load the entire feature extraction library.
+
+```html
+<script src="jsXtract.min.js"></script>
+```
+
+Whilst the library has not been tested inside Node.js, it is built using ECMA Script version 5 and should be interpreted correctly, however your mileage will vary.
+
+## Components
+
+The following components have their own documentation points:
+
+- Guides
+  - [Using the procedural calls](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/procedural.md)
+  - [Using the Object Oriented calls](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/object-oriented.md)
+  - Using the prototype modifiers
+  - Tying into a Web Audio API chain
+- Features
+  - [Time Domain](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/temporal-features.md)
+  - Spectral Domain
+- Objects
+  - [TimeData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/TimeData.md)
+  - [SpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/SpectrumData.md)
+  - [PeakSpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/PeakSpectrumData.md)
+  - [HarmonicSpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/HarmonicSpectrumData.md)
+- Typed Arrays
+- Web Audio Prototypes
 
 ## Development
-This work is still in active development so please submit any issue reports for bugs and improvements. This is part of a set of projects for the DMT Lab at Birmingham City University.
+
+This work is still in very active development and is updated regularly. However if you do find bugs, issues, prangs and scratches please let us know through the Issues above.
+
+## References
+
+[1]: Bullock, J. and Conservatoire, U.C.E.B., 2007. Libxtract: A lightweight library for audio feature extraction. In Proceedings of the International Computer Music Conference (Vol. 43). [pdf](http://www.academia.edu/download/30764212/LibXtract-_a_lightweight_feature_extraction_library.pdf)
+[2]: Muller, M. and Ewert, S., 2011. Chrome Toolbox: MATLAB implementations for extracting variants of chroma-based audio features. In Processdings of ISMIR 2011. [pdf](http://www.ismir2011.ismir.net/papers/PS2-8.pdf)
