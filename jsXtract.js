@@ -2337,7 +2337,7 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "variance", {
         'value': function () {
             if (this.result.variance == undefined) {
-                this.result.variance = xtract_variance(_data, this.result.mean);
+                this.result.variance = xtract_variance(_data, this.mean());
             }
             return this.result.variance;
         }
@@ -2345,7 +2345,7 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "standard_deviation", {
         'value': function () {
             if (this.result.standard_deviation == undefined) {
-                this.result.standard_deviation = xtract_standard_deviation(_data, this.result.variance);
+                this.result.standard_deviation = xtract_standard_deviation(_data, this.variance());
             }
             return this.result.standard_deviation;
         }
@@ -2353,7 +2353,7 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "average_deviation", {
         'value': function () {
             if (this.result.average_deviation == undefined) {
-                this.result.average_deviation = xtract_average_deviation(_data, this.result.mean);
+                this.result.average_deviation = xtract_average_deviation(_data, this.mean());
             }
             return this.result.average_deviation;
         }
@@ -2361,7 +2361,7 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "skewness", {
         'value': function () {
             if (this.result.skewness == undefined) {
-                this.result.skewness = xtract_skewness(_data, this.result.mean, this.result.standard_deviation);
+                this.result.skewness = xtract_skewness(_data, this.mean(), this.standard_deviation());
             }
             return this.result.skewness;
         }
@@ -2369,7 +2369,7 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "kurtosis", {
         'value': function () {
             if (this.result.kurtosis == undefined) {
-                this.result.kurtosis = xtract_kurtosis(_data, this.result.mean, this.result.standard_deviation);
+                this.result.kurtosis = xtract_kurtosis(_data, this.mean(), this.standard_deviation());
             }
             return this.result.kurtosis;
         }
@@ -2385,7 +2385,7 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "crest_factor", {
         'value': function () {
             if (this.result.crest_factor == undefined) {
-                this.result.crest_factor = xtract_crest(_amps, this.result.maximum, this.result.mean);
+                this.result.crest_factor = xtract_crest(_amps, this.maximum(), this.mean());
             }
             return this.result.crest_factor;
         }
@@ -2409,7 +2409,7 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "f0", {
         'value': function () {
             if (this.result.f0 == undefined) {
-                this.result.f0 = xtract_f0(_data, sampleRate);
+                this.result.f0 = xtract_f0(_data, _Fs);
             }
             return this.result.f0;
         }
@@ -2417,9 +2417,12 @@ var TimeData = function (N, sampleRate) {
 
     // Vector features
     Object.defineProperty(this, "energy", {
-        'value': function () {
-            if (this.result.energy == undefined) {
-                this.result.energy = xtract_f0(_data, sampleRate);
+        'value': function (window_ms) {
+            if (this.result.energy == undefined || this.result.energy.window_ms != window_ms) {
+                this.result.energy = {
+                    'data': xtract_energy(_data, _Fs, window_ms),
+                    'window_ms': window_ms
+                };
             }
             return this.result.energy;
         }
@@ -2428,8 +2431,8 @@ var TimeData = function (N, sampleRate) {
     Object.defineProperty(this, "spectrum", {
         'value': function () {
             if (this.result.spectrum == undefined) {
-                this.result.spectrum = new SpectrumData(N / 2 + 1, sampleRate);
-                var _spec = xtract_spectrum(_data, sampleRate, true, false);
+                this.result.spectrum = new SpectrumData(N / 2 + 1, _Fs);
+                var _spec = xtract_spectrum(_data, _Fs, true, false);
                 this.result.spectrum.copyDataFrom(_spec, N / 2 + 1);
                 return this.result.spectrum;
             }
@@ -2623,7 +2626,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "spectral_variance", {
         'value': function () {
             if (this.result.spectral_variance == undefined) {
-                this.result.spectral_variance = xtract_spectral_variance(_data, this.result.spectral_mean);
+                this.result.spectral_variance = xtract_spectral_variance(_data, this.spectral_mean());
             }
             return this.result.spectral_variance;
         }
@@ -2632,7 +2635,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "spectral_spread", {
         'value': function () {
             if (this.result.spectral_spread == undefined) {
-                this.result.spectral_spread = xtract_spectral_spread(_data, this.result.spectral_centroid);
+                this.result.spectral_spread = xtract_spectral_spread(_data, this.spectral_centroid());
             }
             return this.result.spectral_spread;
         }
@@ -2641,7 +2644,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "spectral_standard_deviation", {
         'value': function () {
             if (this.result.spectral_standard_deviation == undefined) {
-                this.result.spectral_standard_deviation = xtract_spectral_standard_deviation(_data, this.result.spectral_variance);
+                this.result.spectral_standard_deviation = xtract_spectral_standard_deviation(_data, this.spectral_variance());
             }
             return this.result.spectral_standard_deviation;
         }
@@ -2650,7 +2653,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "spectral_skewness", {
         'value': function () {
             if (this.result.spectral_skewness == undefined) {
-                this.result.spectral_skewness = xtract_spectral_skewness(_data, this.result.spectral_mean);
+                this.result.spectral_skewness = xtract_spectral_skewness(_data, this.spectral_mean(), this.spectral_standard_deviation());
             }
             return this.result.spectral_skewness;
         }
@@ -2659,7 +2662,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "spectral_kurtosis", {
         'value': function () {
             if (this.result.spectral_kurtosis == undefined) {
-                this.result.spectral_kurtosis = xtract_spectral_kurtosis(_data, this.result.spectral_mean);
+                this.result.spectral_kurtosis = xtract_spectral_kurtosis(_data, this.spectral_mean(), this.spectral_standard_deviation());
             }
             return this.result.spectral_kurtosis;
         }
@@ -2731,10 +2734,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "loudness", {
         'value': function () {
             if (this.result.loudness = undefined) {
-                if (this.result.barkBands == undefined) {
-                    this.bark_coefficients();
-                }
-                this.result.loudness = xtract_loudness(this.result.barkBands);
+                this.result.loudness = xtract_loudness(this.bark_coefficients());
             }
             return this.result.loudness;
         }
@@ -2743,10 +2743,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "sharpness", {
         'value': function () {
             if (this.result.sharpness = undefined) {
-                if (this.result.barkBands == undefined) {
-                    this.bark_coefficients();
-                }
-                this.result.sharpness = xtract_sharpness(this.result.barkBands);
+                this.result.sharpness = xtract_sharpness(this.bark_coefficients());
             }
             return this.result.sharpness;
         }
@@ -2764,7 +2761,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "flatness_db", {
         'value': function () {
             if (this.result.flatness_db == undefined) {
-                this.result.flatness_db = xtract_flatness_db(_data, this.result.flatness);
+                this.result.flatness_db = xtract_flatness_db(_data, this.flatness());
             }
             return this.result.flatness_db;
         }
@@ -2773,7 +2770,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "tonality", {
         'value': function () {
             if (this.result.tonality == undefined) {
-                this.result.tonality = xtract_tonality(_data, this.result.flatness_db);
+                this.result.tonality = xtract_tonality(_data, this.flatness_db());
             }
             return this.result.tonality;
         }
@@ -2782,7 +2779,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "spectral_crest_factor", {
         'value': function () {
             if (this.result.spectral_crest_factor == undefined) {
-                this.result.spectral_crest_factor = xtract_crest(_amps, this.result.maximum, this.result.mean);
+                this.result.spectral_crest_factor = xtract_crest(_amps, this.maximum(), this.spectral_mean());
             }
             return this.result.spectral_crest_factor;
         }
