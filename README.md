@@ -20,7 +20,7 @@ The following components have their own documentation points:
   - [Using the procedural calls](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/procedural.md)
   - [Using the Object Oriented calls](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/object-oriented.md)
   - Using the prototype modifiers
-  - Tying into a Web Audio API chain
+  - [Tying into a Web Audio API chain](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/WebAudio.md)
 - Features
   - [Time Domain](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/temporal-features.md)
   - Spectral Domain
