@@ -25,27 +25,33 @@
 
 if (AnalyserNode) {
 
+    AnalyserNode.prototype.timeData = undefined;
+    AnalyserNode.prototype.spectrumData = undefined;
     AnalyserNode.prototype.getXtractData = function () {
+        if (this.timeData == undefined || this.scpectrumData == undefined) {
+            this.timeData = new TimeData(this.fftSize, this.context.sampleRate);
+            this.spectrumData = new SpectrumData(this.frequencyBinCount, this.context.sampleRate);
+        }
         var dst = new Float32Array(this.fftSize);
-        if (this.getFloatFrequencyData) {
-            this.getFloatFrequencyData(dst);
+        if (this.getFloatTimeData) {
+            this.getFloatTimeData(dst);
         } else {
             var view = new UInt8Array(this.fftSize);
-            this.getByteFrequencyData(view);
+            this.getByteTimeData(view);
             for (var i=0; i<this.fftSize; i++) {
                 dst[i] = view[i];
                 dst[i] = (dst[i]/127.5)-1;
             }
         }
-        var data = new TimeData(dst,this.context.sampleRate);
-        data.result.spectrum = new SpectrumData(this.frequencyBinCount, this.context.sampleRate);
+        this.timeData.copyDataFrom(dst);
+        this.timeData.result.spectrum = this.spectrumData;
         var LogStore = new Float32Array(this.frequencyBinCount);
         this.getFloatFrequencyData(LogStore);
         for (var i=0; i<this.frequencyBinCount; i++) {
             LogStore[i] = Math.pow(10.0, LogStore[i]/20);
         }
-        data.result.spectrum.copyDataFrom(LogStore);
-        return data;
+        this.spectrumData.copyDataFrom(LogStore);
+        return this.timeData;
     }
     AnalyserNode.prototype.previousFrame = undefined;
     AnalyserNode.prototype.previousResult = undefined;

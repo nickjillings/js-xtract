@@ -1951,13 +1951,8 @@ function xtract_init_bark(N, sampleRate) {
 
 var jsXtract = function () {
     var resultObject = function () {}
-    var _dft, _mfcc, _bark, _wavelet, _functionList = [],
-        _result = {};
+    var _mfcc, _bark, _wavelet, _result = {};
 
-    this.init_dft = function (N) {
-        _dft = xtract_init_dft(N);
-        return _dft;
-    }
     this.init_mfcc = function (N, nyquist, style, freq_min, freq_max, freq_bands) {
         _mfcc = xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands);
         return _mfcc;
@@ -2001,13 +1996,7 @@ var jsXtract = function () {
         }
         return json + '}';
     }
-
-    Object.defineProperty(this, "dft", {
-        'get': function () {
-            return _dft;
-        },
-        'set': function () {}
-    });
+    
     Object.defineProperty(this, "mfcc", {
         'get': function () {
             return _mfcc;
@@ -2033,25 +2022,6 @@ var jsXtract = function () {
         'set': function () {}
     });
 }
-
-// Example Feature Object
-/*
-[{
-    "name": "mean",
-    "function": "xtract_mean",
-    "arguments": ["data"]
-},{
-    "name": "variance",
-    "function": "xtract_variance",
-    "arguments": ["data","result.mean"]
-}]
-
-Result node:
-{
-    mean: 0.431...
-    variance: 13.0342...
-}
-*/
 
 
 // Prototype for Time Domain based data
