@@ -1962,8 +1962,8 @@ var jsXtract = function () {
         _mfcc = xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands);
         return _mfcc;
     }
-    this.init_bark = function (N, sampleRate, bands) {
-        _bark = xtract_init_bark(N, sampleRate, bands);
+    this.init_bark = function (N, sampleRate) {
+        _bark = xtract_init_bark(N, sampleRate);
         return _bark;
     }
     this.init_wavelet = function () {
@@ -2061,7 +2061,7 @@ var TimeData = function (N, sampleRate) {
         console.log("Invalid parameter for 'sampleRate' for TimeData");
     }
 
-    var _data, _length, _dft, _Fs, _dct;
+    var _data, _length, _Fs;
 
     if (typeof N == "object") {
         var src, src_data;
@@ -2092,11 +2092,7 @@ var TimeData = function (N, sampleRate) {
     this.__proto__ = new jsXtract();
     this.__proto__.constructor = TimeData;
 
-
-    _dft = xtract_init_dft(_length);
     _Fs = sampleRate;
-    _dct = xtract_init_dct(_length);
-
 
     this.getData = function () {
         return _data;
@@ -2445,9 +2441,6 @@ var SpectrumData = function (N, sampleRate) {
     var _length = N;
     var _Fs = sampleRate;
     var _f0 = undefined;
-    var _barkBands = xtract_init_bark(N, _Fs);
-    var _mfcc;
-    var _dct = xtract_init_dct(N);
 
     function computeFrequencies() {
         for (var i = 0; i < N; i++) {
@@ -2762,24 +2755,6 @@ var SpectrumData = function (N, sampleRate) {
         }
     });
 
-    Object.defineProperty(this, "init_mfcc", {
-        'value': function (freq_bands, freq_min, freq_max, style) {
-            if (style == undefined) {
-                style = "";
-            }
-            if (freq_max == undefined) {
-                freq_max = 22000;
-            }
-            if (freq_min == undefined) {
-                freq_min = 20;
-            }
-            if (freq_bands == undefined) {
-                freq_bands = 26;
-            }
-            _mfcc = xtract_init_mfcc(_length, sampleRate / 2, style, freq_min, freq_max, freq_bands);
-        }
-    });
-
     Object.defineProperty(this, "mfcc", {
         'value': function () {
             if (_mfcc = undefined) {
@@ -2801,6 +2776,17 @@ var SpectrumData = function (N, sampleRate) {
             return this.result.dct;
         }
     });
+    
+    Object.defineProperty(this, "bark_coefficients", {
+        'value': function() {
+            if (this.result.bark_coefficients == undefined) {
+                if (this.bark == undefined) {
+                    this.init_bark(_length,_Fs);
+                }
+                this.result.bark_coefficients = xtract_bark_coefficients(_data, this.bark);
+            }
+        }
+    })
 
     Object.defineProperty(this, "peak_spectrum", {
         'value': function (threshold) {
