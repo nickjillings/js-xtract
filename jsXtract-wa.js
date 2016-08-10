@@ -69,7 +69,7 @@ if (AnalyserNode) {
             if (typeof this.previousResult != "number") {
                 this.previousResult = 0.0;
             }
-            output.fill(result);
+            output.fill(this.previousResult);
             e.outputBuffer.copyToChannel(output, 0, 0);
         }
     }
