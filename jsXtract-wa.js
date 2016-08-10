@@ -33,11 +33,11 @@ if (AnalyserNode) {
             this.spectrumData = new SpectrumData(this.frequencyBinCount, this.context.sampleRate);
         }
         var dst = new Float32Array(this.fftSize);
-        if (this.getFloatTimeData) {
+        if (this.getFloatTimeDomainData) {
             this.getFloatTimeData(dst);
         } else {
             var view = new UInt8Array(this.fftSize);
-            this.getByteTimeData(view);
+            this.getByteTimeDomainData(view);
             for (var i=0; i<this.fftSize; i++) {
                 dst[i] = view[i];
                 dst[i] = (dst[i]/127.5)-1;
