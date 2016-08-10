@@ -71,10 +71,13 @@ if (AnalyserNode) {
             this.previousFrame = current_frame;
             var N = e.outputBuffer.length;
             var output = new Float32Array(N);
+            var result = this.previousResult;
             if (typeof this.previousResult != "number") {
-                this.previousResult = 0.0;
+                result = 0.0;
             }
-            output.fill(this.previousResult);
+            for (var i=0; i<N; i++) {
+                output[i] = result;
+            }
             e.outputBuffer.copyToChannel(output, 0, 0);
         }
     }
