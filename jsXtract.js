@@ -2451,7 +2451,7 @@ var SpectrumData = function (N, sampleRate) {
 
     function computeFrequencies() {
         for (var i = 0; i < N; i++) {
-            _freqs[n] = (2 * i / N) * (_Fs / 2);
+            _freqs[i] = (i / N) * (_Fs / 2);
         }
     }
 
