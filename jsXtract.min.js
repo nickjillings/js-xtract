@@ -2676,7 +2676,7 @@ var SpectrumData = function (N, sampleRate) {
 
     Object.defineProperty(this, "loudness", {
         'value': function () {
-            if (this.result.loudness = undefined) {
+            if (this.result.loudness == undefined) {
                 this.result.loudness = xtract_loudness(this.bark_coefficients());
             }
             return this.result.loudness;
@@ -2685,7 +2685,7 @@ var SpectrumData = function (N, sampleRate) {
 
     Object.defineProperty(this, "sharpness", {
         'value': function () {
-            if (this.result.sharpness = undefined) {
+            if (this.result.sharpness == undefined) {
                 this.result.sharpness = xtract_sharpness(this.bark_coefficients());
             }
             return this.result.sharpness;
