@@ -34,7 +34,7 @@ if (AnalyserNode) {
         }
         var dst = new Float32Array(this.fftSize);
         if (this.getFloatTimeDomainData) {
-            this.getFloatTimeData(dst);
+            this.getFloatTimeDomainData(dst);
         } else {
             var view = new UInt8Array(this.fftSize);
             this.getByteTimeDomainData(view);
