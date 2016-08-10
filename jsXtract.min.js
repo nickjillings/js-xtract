@@ -2785,6 +2785,7 @@ var SpectrumData = function (N, sampleRate) {
                 }
                 this.result.bark_coefficients = xtract_bark_coefficients(_data, this.bark);
             }
+            return this.result.bark_coefficients;
         }
     })
 
