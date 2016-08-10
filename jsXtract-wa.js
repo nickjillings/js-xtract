@@ -33,8 +33,8 @@ if (AnalyserNode) {
             var view = new UInt8Array(this.fftSize);
             this.getByteFrequencyData(view);
             for (var i=0; i<this.fftSize; i++) {
-                dst[n] = view[n];
-                dst[n] = (dst[n]/127.5)-1;
+                dst[i] = view[i];
+                dst[i] = (dst[i]/127.5)-1;
             }
         }
         var data = new TimeData(dst,this.context.sampleRate);
