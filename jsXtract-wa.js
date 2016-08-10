@@ -41,11 +41,10 @@ if (AnalyserNode) {
         data.result.spectrum = new SpectrumData(this.frequencyBinCount, this.context.sampleRate);
         var LogStore = new Float32Array(this.frequencyBinCount);
         this.getFloatFrequencyData(LogStore);
-        var spectrum = data.getData();
         for (var i=0; i<this.frequencyBinCount; i++) {
-            spectrum[i] = Math.pow(10.0, LogStore[i]/20);
+            LogStore[i] = Math.pow(10.0, LogStore[i]/20);
         }
-        
+        data.result.spectrum.copyDataFrom(LogStore);
         return data;
     }
     AnalyserNode.prototype.previousFrame = undefined;
