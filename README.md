@@ -48,4 +48,4 @@ N. Jillings, J. Bullock and R. Stables “JS-Xtract: A Realtime Audio Feature Ex
 
 [1]: Bullock, J. and Conservatoire, U.C.E.B., 2007. Libxtract: A lightweight library for audio feature extraction. In Proceedings of the International Computer Music Conference (Vol. 43). [pdf](http://www.academia.edu/download/30764212/LibXtract-_a_lightweight_feature_extraction_library.pdf)
 
-[2]: Muller, M. and Ewert, S., 2011. Chrome Toolbox: MATLAB implementations for extracting variants of chroma-based audio features. In Proceedings of International Society for Music Information Retrieval Conference (ISMIR 2011). [pdf](http://www.ismir2011.ismir.net/papers/PS2-8.pdf)
+[2]: Muller, M. and Ewert, S., 2011. Chroma Toolbox: MATLAB implementations for extracting variants of chroma-based audio features. In Proceedings of International Society for Music Information Retrieval Conference (ISMIR 2011). [pdf](http://www.ismir2011.ismir.net/papers/PS2-8.pdf)
