@@ -1976,7 +1976,7 @@ var jsXtract = function () {
             if (!json.endsWith('{') && !json.endsWith(',')) {
                 json = json + ', ';
             }
-            if (typeof _result[property] == "number") {
+            if (typeof _result[property] == "number" && isFinite(_result[property])) {
                 json = json + '"' + property + '": ' + _result[property];
             } else if (typeof _result[property] == "object") {
                 switch (_result[property].constructor) {
@@ -1992,6 +1992,8 @@ var jsXtract = function () {
                     default:
                         break;
                 }
+            } else {
+                json = json + '"' + property + '": "' + _result[property].toString()+'"';
             }
         }
         return json + '}';
