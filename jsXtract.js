@@ -2027,7 +2027,7 @@ var jsXtract = function () {
 
 
 // Prototype for Time Domain based data
-var TimeData = function (N, sampleRate) {
+var TimeData = function (N, sampleRate, parent) {
     if (sampleRate <= 0) {
         sampleRate = undefined;
         console.log("Invalid parameter for 'sampleRate' for TimeData");
@@ -2395,7 +2395,7 @@ var TimeData = function (N, sampleRate) {
 }
 
 // Prototpye for the Spectrum data type
-var SpectrumData = function (N, sampleRate) {
+var SpectrumData = function (N, sampleRate, parent) {
     // N specifies the number of elements to create. Actually creates 2N to hold amplitudes and frequencies.
     // If sampleRate is null, calculate using radians per second [0, pi/2]
     if (N == undefined || N <= 0) {
@@ -2764,7 +2764,7 @@ var SpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "peak_spectrum", {
         'value': function (threshold) {
             if (this.result.peak_spectrum == undefined) {
-                this.result.peak_spectrum = new PeakSpectrumData(_length, _Fs);
+                this.result.peak_spectrum = new PeakSpectrumData(_length, _Fs, this);
                 var ps = xtract_peak_spectrum(_data, _Fs / _length, threshold);
                 this.result.peak_spectrum.copyDataFrom(ps.subarray(0, _length));
             }
@@ -2774,7 +2774,7 @@ var SpectrumData = function (N, sampleRate) {
 
 }
 
-var PeakSpectrumData = function (N, sampleRate) {
+var PeakSpectrumData = function (N, sampleRate, parent) {
     if (N == undefined || N <= 0) {
         console.error("SpectrumData constructor requires N to be a defined, whole number");
         return;
@@ -2798,7 +2798,7 @@ var PeakSpectrumData = function (N, sampleRate) {
     Object.defineProperty(this, "harmonic_spectrum", {
         'value': function (f0, threshold) {
             if (this.result.harmonic_spectrum == undefined) {
-                this.result.harmonic_spectrum = new HarmonicSpectrumData(_length, _Fs);
+                this.result.harmonic_spectrum = new HarmonicSpectrumData(_length, _Fs, this);
                 var hs = xtract_harmonic_spectrum(_data, f0, threshold);
                 this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0, _length));
             }
@@ -2807,7 +2807,7 @@ var PeakSpectrumData = function (N, sampleRate) {
     });
 }
 
-var HarmonicSpectrumData = function (N, sampleRate) {
+var HarmonicSpectrumData = function (N, sampleRate, parent) {
     if (N == undefined || N <= 0) {
         console.error("SpectrumData constructor requires N to be a defined, whole number");
         return;

@@ -1,7 +1,8 @@
 concatOnSave = true;
 output = jsXtract.min.js;
-minify = true;
+minify = false;
 
 -jsXtract.js;
+-features.js;
 -jsXtract-wa.js;
 -chroma/FB.js;
