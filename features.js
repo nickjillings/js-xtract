@@ -1,28 +1,28 @@
-TimeData.prototype.Features = [{
+TimeData.prototype.feature = [{
     name: "Minimum",
     function: "minimum",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+    }, {
     name: "Maximum",
     function: "maximum",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+    }, {
     name: "Sum",
     function: "sum",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+    }, {
     name: "Mean",
     function: "mean",
     sub_features: [],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Temporal Centroid",
     function: "temporal_centroid",
     sub_features: ["energy"],
@@ -32,57 +32,57 @@ TimeData.prototype.Features = [{
         type: "number",
         minimum: 1,
         maximum: undefined
-    }],
+        }],
     returns: "number"
-},{
+    }, {
     name: "Variance",
     function: "variance",
     sub_features: ["mean"],
     parameters: [],
     returns: "number"
-},{
+    }, {
     name: "Standard Deviation",
     function: "standard_deviation",
     sub_features: ["variance"],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Average Deviation",
     function: "average_deviation",
     sub_features: ["mean"],
     parameters: [],
     returns: "number"
-},{
+    }, {
     name: "Skewness",
     function: "skewness",
     sub_features: ["mean", "standard_deviation"],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Kurtosis",
     function: "kurtosis",
     sub_features: ["mean", "standard_deviation"],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Zero Crossing Rate",
     function: "zcr",
     sub_features: [],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Crest Factor",
     function: "crest_factor",
     sub_features: ["maximum", "mean"],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "RMS Amplitude",
     function: "rms_amplitude",
     sub_features: [],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Lowest Value",
     function: "lowest_value",
     sub_features: [],
@@ -92,9 +92,9 @@ TimeData.prototype.Features = [{
         type: "number",
         minimum: undefined,
         maximum: undefined
-    }],
+        }],
     returns: "number"
-}, {
+    }, {
     name: "Highest Value",
     function: "highest_value",
     sub_features: [],
@@ -104,21 +104,21 @@ TimeData.prototype.Features = [{
         type: "number",
         minimum: undefined,
         maximum: undefined
-    }],
+        }],
     returns: "number"
-}, {
+    }, {
     name: "Non-Zero Count",
     function: "nonzero_count",
     sub_features: [],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Fundamental Frequency",
     function: "f0",
     sub_features: [],
     parameters: [],
     returns: "number"
-}, {
+    }, {
     name: "Energy",
     function: "energy",
     sub_features: [],
@@ -128,51 +128,51 @@ TimeData.prototype.Features = [{
         type: "number",
         minimum: 1,
         maximum: undefined
-    }],
+        }],
     returns: "object"
-}, {
+    }, {
     name: "Spectrum",
     function: "spectrum",
     sub_features: [],
     parameters: [],
     returns: "SpectrumData"
-}, {
+    }, {
     name: "DCT",
     function: "dct",
     sub_features: [],
     parameters: [],
     returns: "array"
-}, {
+    }, {
     name: "Autocorrelation",
     function: "autocorrelation",
     sub_features: [],
     parameters: [],
     returns: "array"
-}, {
+    }, {
     name: "AMDF",
     function: "amdf",
     sub_features: [],
     parameters: [],
     returns: "array"
-}, {
+    }, {
     name: "ASDF",
     function: "asdf",
     sub_features: [],
     parameters: [],
     returns: "array"
-}, {
+    }, {
     name: "YIN Pitch",
     function: "yin",
     sub_features: [],
     parameters: [],
     returns: "array"
-}, {
+    }, {
     name: "Onset Detection",
     function: "onset",
     sub_features: [],
     parameters: [],
     returns: "array"
-}, {
+    }, {
     name: "Resample",
     function: "resample",
     sub_features: [],
@@ -182,41 +182,41 @@ TimeData.prototype.Features = [{
         type: "number",
         minimum: 0,
         maximum: undefined
-    }],
+        }],
     returns: "TimeData"
-}];
+    }];
 
-SpectrumData.prototype = [{
+SpectrumData.prototype.Features = [{
     name: "Minimum",
     function: "minimum",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+}, {
     name: "Maximum",
     function: "maximum",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+}, {
     name: "Sum",
     function: "sum",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+}, {
     name: "Spectral Centroid",
     function: "spectral_centroid",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+}, {
     name: "Spectral Mean",
     function: "spectral_mean",
     sub_features: [],
     parameters: [],
     returns: "number"
-},{
+}, {
     name: "Spectral Variance",
     function: "spectral_variance",
     sub_features: ["spectral_mean"],
@@ -419,7 +419,7 @@ PeakSpectrumData.prototype.Features = [{
         default: undefined
     }],
     returns: "HarmonicSpectrumData"
-}]
+}];
 
 HarmonicSpectrumData.prototype.Features = [{
     name: "Odd Even Ration",
@@ -427,4 +427,4 @@ HarmonicSpectrumData.prototype.Features = [{
     sub_features: [],
     parameters: [],
     returns: "number"
-}]
+}];

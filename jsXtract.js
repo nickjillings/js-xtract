@@ -1949,25 +1949,59 @@ function xtract_init_bark(N, sampleRate) {
     return band_limits;
 }
 
-var jsXtract = function () {
-    var resultObject = function () {}
-    var _mfcc, _bark, _wavelet, _result = {};
+var jsXtract = new function () {
+    var Proto = function (parent) {
+        var _result = {};
+        this.clearResult = function () {
+            _result = {};
+        }
 
-    this.init_mfcc = function (N, nyquist, style, freq_min, freq_max, freq_bands) {
-        _mfcc = xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands);
-        return _mfcc;
-    }
-    this.init_bark = function (N, sampleRate) {
-        _bark = xtract_init_bark(N, sampleRate);
-        return _bark;
-    }
-    this.init_wavelet = function () {
-        _wavelet = xtract_init_wavelet();
-        return _wavelet;
+        Object.defineProperty(this, "result", {
+            'get': function () {
+                return _result;
+            },
+            'set': function () {}
+        });
+    };
+    Proto.prototype = this;
+    Proto.prototype.constructor = Proto;
+
+    var TimeProto = function (parent) {
+        this.__proto__ = new Proto(this);
+        Object.defineProperty(this, "wavelet", {
+            "value": undefined,
+            "writable": true
+        });
+        Object.defineProperty(this, "init_wavelet", {
+            "value": function () {
+                this.wavelet = xtract_init_wavelet();
+                return this.wavelet;
+            }
+        });
     }
 
-    this.clearResult = function () {
-        _result = {};
+    var SpectrumProto = function (parent) {
+        this.__proto__ = new Proto(this);
+        Object.defineProperty(this, "mfcc", {
+            "value": undefined,
+            "writable": true
+        });
+        Object.defineProperty(this, "bark", {
+            "value": undefined,
+            "writable": true
+        });
+        Object.defineProperty(this, "init_mfcc", {
+            "value": function (N, nyquist, style, freq_min, freq_max, freq_bands) {
+                this.mfcc = xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands);
+                return this.mfcc;
+            }
+        });
+        Object.defineProperty(this, "init_bark", {
+            "value": function (N, sampleRate) {
+                this.bark = xtract_init_bark(N, sampleRate)
+                return this.bark;
+            }
+        });
     }
 
     this.toJSON = function () {
@@ -1993,36 +2027,46 @@ var jsXtract = function () {
                         break;
                 }
             } else {
-                json = json + '"' + property + '": "' + _result[property].toString()+'"';
+                json = json + '"' + property + '": "' + _result[property].toString() + '"';
             }
         }
         return json + '}';
     }
-    
-    Object.defineProperty(this, "mfcc", {
-        'get': function () {
-            return _mfcc;
-        },
-        'set': function () {}
-    });
-    Object.defineProperty(this, "bark", {
-        'get': function () {
-            return _bark;
-        },
-        'set': function () {}
-    });
-    Object.defineProperty(this, "wavelet", {
-        'get': function () {
-            return _wavelet;
-        },
-        'set': function () {}
-    });
-    Object.defineProperty(this, "result", {
-        'get': function () {
-            return _result;
-        },
-        'set': function () {}
-    });
+
+    var dct_map = {
+        parent: this,
+        store: [],
+        createCoefficients: function (N) {
+            var match = this.store.find(function (element) {
+                if (element.N == this) {
+                    return true;
+                }
+                return false;
+            }, N);
+            if (!match) {
+                match = {
+                    N: N,
+                    data: xtract_init_dct(N)
+                }
+                this.store.push(match);
+            }
+            return match.data;
+        }
+    }
+
+    this.createDctCoefficients = function (N) {
+        return dct_map.createCoefficients(N);
+    }
+
+    this.createTimeDataProto = function () {
+        var node = new TimeProto(this);
+        return node;
+    }
+
+    this.createSpectrumDataProto = function () {
+        var node = new SpectrumProto(this);
+        return node;
+    }
 }
 
 
@@ -2033,7 +2077,7 @@ var TimeData = function (N, sampleRate, parent) {
         console.log("Invalid parameter for 'sampleRate' for TimeData");
     }
 
-    var _data, _length, _Fs;
+    var _data, _length, _Fs, _dct;
 
     if (typeof N == "object") {
         var src, src_data;
@@ -2061,10 +2105,11 @@ var TimeData = function (N, sampleRate, parent) {
     } else {
         console.error("TimeData: Constructor has invalid operators!");
     }
-    this.__proto__ = new jsXtract();
+    this.__proto__ = jsXtract.createTimeDataProto();
     this.__proto__.constructor = TimeData;
 
     _Fs = sampleRate;
+    _dct = this.createDctCoefficients(_length);
 
     this.getData = function () {
         return _data;
@@ -2301,7 +2346,7 @@ var TimeData = function (N, sampleRate, parent) {
         'value': function () {
             if (this.result.spectrum == undefined) {
                 var _spec = xtract_spectrum(_data, _Fs, true, false);
-                this.result.spectrum = new SpectrumData(_spec.length/2, _Fs);
+                this.result.spectrum = new SpectrumData(_spec.length / 2, _Fs);
                 this.result.spectrum.copyDataFrom(_spec);
                 return this.result.spectrum;
             }
@@ -2405,7 +2450,7 @@ var SpectrumData = function (N, sampleRate, parent) {
     if (sampleRate == undefined) {
         sampleRate = Math.PI;
     }
-    this.__proto__ = new jsXtract();
+    this.__proto__ = jsXtract.createSpectrumDataProto();
     this.__proto__.constructor = SpectrumData;
     var _data = new Float64Array(2 * N);
     var _amps = _data.subarray(0, N);
@@ -2748,12 +2793,12 @@ var SpectrumData = function (N, sampleRate, parent) {
             return this.result.dct;
         }
     });
-    
+
     Object.defineProperty(this, "bark_coefficients", {
-        'value': function() {
+        'value': function () {
             if (this.result.bark_coefficients == undefined) {
                 if (this.bark == undefined) {
-                    this.init_bark(_length,_Fs);
+                    this.init_bark(_length, _Fs);
                 }
                 this.result.bark_coefficients = xtract_bark_coefficients(_data, this.bark);
             }
@@ -3023,26 +3068,26 @@ Float64Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
     return result;
 }
 
-Float32Array.prototype.toJSON = function() {
+Float32Array.prototype.toJSON = function () {
     var json = '[';
     var n = 0;
-    while(n < this.length) {
+    while (n < this.length) {
         json = json + this[n];
-        if (this[n+1] != undefined) {
-            json = json +',';
+        if (this[n + 1] != undefined) {
+            json = json + ',';
         }
         n++;
     }
     return json + ']';
 }
 
-Float64Array.prototype.toJSON = function() {
+Float64Array.prototype.toJSON = function () {
     var json = '[';
     var n = 0;
-    while(n < this.length) {
+    while (n < this.length) {
         json = json + this[n];
-        if (this[n+1] != undefined) {
-            json = json +',';
+        if (this[n + 1] != undefined) {
+            json = json + ',';
         }
         n++;
     }
