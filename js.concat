@@ -3,6 +3,11 @@ output = jsXtract.min.js;
 minify = false;
 
 -jsXtract.js;
--features.js;
+-modules/freeFFT.js;
+-modules/DataPrototype.js;
+-modules/TimeData.js;
+-modules/SpectrumData.js;
+-modules/PeakSpectrumData.js;
+-modules/HarmonicSpectrumData.js;
 -jsXtract-wa.js;
 -chroma/FB.js;
