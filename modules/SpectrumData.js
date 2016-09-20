@@ -64,6 +64,13 @@ var SpectrumData = function (N, sampleRate, parent) {
         copy.copyDataFrom(_amps);
     }
 
+    Object.defineProperty(this, "features", {
+        'get': function () {
+            return this.__proto__.getFeatures(this);
+        },
+        'set': function () {}
+    });
+
     Object.defineProperty(this, "sampleRate", {
         'get': function () {
             return _Fs

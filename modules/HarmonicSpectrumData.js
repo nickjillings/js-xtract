@@ -9,6 +9,13 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
     this.__proto__ = new PeakSpectrumData(N);
     this.__proto__.constructor = HarmonicSpectrumData;
 
+    Object.defineProperty(this, "features", {
+        'get': function () {
+            return this.__proto__.__proto__.__proto__.getFeatures(this);
+        },
+        'set': function () {}
+    });
+
     // Harmonic Spectrum features
     Object.defineProperty(this, "odd_even_ratio", {
         'value': function () {

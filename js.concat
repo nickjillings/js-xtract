@@ -4,10 +4,10 @@ minify = false;
 
 -jsXtract.js;
 -modules/freeFFT.js;
--modules/DataPrototype.js;
 -modules/TimeData.js;
 -modules/SpectrumData.js;
 -modules/PeakSpectrumData.js;
 -modules/HarmonicSpectrumData.js;
+-modules/DataPrototype.js;
 -jsXtract-wa.js;
 -chroma/FB.js;

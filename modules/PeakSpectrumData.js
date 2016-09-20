@@ -9,6 +9,13 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
     this.__proto__ = new SpectrumData(N);
     this.__proto__.constructor = PeakSpectrumData;
 
+    Object.defineProperty(this, "features", {
+        'get': function () {
+            return this.__proto__.__proto__.getFeatures(this);
+        },
+        'set': function () {}
+    });
+
     // Peak Specturm features
     Object.defineProperty(this, "spectral_inharmonicity", {
         'value': function () {

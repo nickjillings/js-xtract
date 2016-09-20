@@ -73,9 +73,16 @@ var TimeData = function (N, sampleRate, parent) {
     }
 
     this.duplicate = function () {
-        var copy = this.prototype.constructor(_data.length);
+        var copy = this.prototype.constructor(_data.length, _Fs);
         copy.copyDataFrom(_data);
     }
+
+    Object.defineProperty(this, "features", {
+        'get': function () {
+            return this.__proto__.getFeatures(this);
+        },
+        'set': function () {}
+    });
 
     Object.defineProperty(this, "sampleRate", {
         'get': function () {
@@ -367,3 +374,6 @@ var TimeData = function (N, sampleRate, parent) {
         }
     });
 }
+
+TimeData.prototype.func = "hello";
+TimeData.prototype.constructor = TimeData;
