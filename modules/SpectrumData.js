@@ -66,7 +66,7 @@ var SpectrumData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "features", {
         'get': function () {
-            return this.__proto__.getFeatures(this);
+            return this.constructor.prototype.features;
         },
         'set': function () {}
     });

@@ -79,7 +79,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "features", {
         'get': function () {
-            return this.__proto__.getFeatures(this);
+            return this.constructor.prototype.features;
         },
         'set': function () {}
     });
@@ -374,6 +374,3 @@ var TimeData = function (N, sampleRate, parent) {
         }
     });
 }
-
-TimeData.prototype.func = "hello";
-TimeData.prototype.constructor = TimeData;

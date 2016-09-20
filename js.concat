@@ -9,5 +9,6 @@ minify = false;
 -modules/PeakSpectrumData.js;
 -modules/HarmonicSpectrumData.js;
 -modules/DataPrototype.js;
+-features.js;
 -jsXtract-wa.js;
 -chroma/FB.js;
