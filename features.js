@@ -32,7 +32,8 @@ TimeData.prototype.features = [
             unit: "ms",
             type: "number",
             minimum: 1,
-            maximum: undefined
+            maximum: undefined,
+            default: 100
         }],
         returns: "number"
     }, {
@@ -92,7 +93,8 @@ TimeData.prototype.features = [
             unit: "",
             type: "number",
             minimum: undefined,
-            maximum: undefined
+            maximum: undefined,
+            default: undefined
         }],
         returns: "number"
     }, {
@@ -104,7 +106,8 @@ TimeData.prototype.features = [
             unit: "",
             type: "number",
             minimum: undefined,
-            maximum: undefined
+            maximum: undefined,
+            default: undefined
         }],
         returns: "number"
     }, {
@@ -128,7 +131,8 @@ TimeData.prototype.features = [
             unit: "ms",
             type: "number",
             minimum: 1,
-            maximum: undefined
+            maximum: undefined,
+            default: 100
         }],
         returns: "object"
     }, {
@@ -182,7 +186,8 @@ TimeData.prototype.features = [
             unit: "Hz",
             type: "number",
             minimum: 0,
-            maximum: undefined
+            maximum: undefined,
+            default: 8000
         }],
         returns: "TimeData"
     }];
@@ -246,7 +251,7 @@ SpectrumData.prototype.features = [
 }, {
         name: "Spectral Kurtosis",
         function: "spectral_kurtosis",
-        sub_features: ["spectral_mean", "speactral_standard_deviation"],
+        sub_features: ["spectral_mean", "spectral_standard_deviation"],
         parameters: [],
         returns: "number"
 }, {
@@ -264,19 +269,19 @@ SpectrumData.prototype.features = [
 }, {
         name: "Tristimulus 1",
         function: "tristimulus_1",
-        sub_features: ["f0"],
+        sub_features: [],
         parameters: [],
         returns: "number"
 }, {
         name: "Tristimulus 2",
         function: "tristimulus_2",
-        sub_features: ["f0"],
+        sub_features: [],
         parameters: [],
         returns: "number"
 }, {
         name: "Tristimulus 3",
         function: "tristimulus_3",
-        sub_features: ["f0"],
+        sub_features: [],
         parameters: [],
         returns: "number"
 }, {
@@ -291,10 +296,11 @@ SpectrumData.prototype.features = [
         sub_features: [],
         parameters: [{
             name: "Threshold",
-            unit: "",
+            unit: "%",
             type: "number",
             minimum: 0,
-            maximum: 100
+            maximum: 100,
+            default: 90
     }],
         returns: "number"
 }, {
@@ -361,7 +367,7 @@ SpectrumData.prototype.features = [
             type: "number",
             minimum: 0,
             maximum: undefined,
-            default: 26
+            default: 26,
     }, {
             name: "Minimum Frequency",
             unit: "Hz",
@@ -398,7 +404,8 @@ SpectrumData.prototype.features = [
             unit: "",
             type: "number",
             minimum: 0,
-            maximum: 100
+            maximum: 100,
+            default: 30
     }],
         returns: "PeakSpectrumData"
 }];
@@ -420,7 +427,7 @@ PeakSpectrumData.prototype.features = SpectrumData.prototype.features.concat([
             type: "number",
             minimum: 0,
             maximum: 100,
-            default: undefined
+            default: 30
     }],
         returns: "HarmonicSpectrumData"
 }]);
