@@ -117,7 +117,9 @@ if (typeof AudioBuffer != "undefined") {
             for (var k = 0; k < K; k++) {
                 var frame = new TimeData(data.subarray(frame_size * k, frame_size * k + hop_size), this.sampleRate);
                 frames[c].push(frame);
+                frame = undefined;
             }
+            data = undefined;
         }
         return this.frames;
     }
