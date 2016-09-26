@@ -44,7 +44,7 @@ var jsXtract = new function () {
                         break;
                 }
             } else {
-                json = json + '"' + property + '": "' + _result[property].toString() + '"';
+                json = json + '"' + property + '": "' + result[property].toString() + '"';
             }
         }
         return json + '}';
