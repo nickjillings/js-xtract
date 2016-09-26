@@ -361,7 +361,7 @@ var SpectrumData = function (N, sampleRate, parent) {
                     console.error("Run init_mfcc(num_bands, freq_min, freq_max, style) first");
                     return null;
                 } else {
-                    this.init_mfcc(freq_min, freq_max, num_bands);
+                    this.init_mfcc(num_bands, freq_min, freq_max);
                 }
             }
             if (this.result.mfcc == undefined) {
