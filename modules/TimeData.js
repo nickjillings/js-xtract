@@ -219,7 +219,7 @@ var TimeData = function (N, sampleRate, parent) {
     Object.defineProperty(this, "crest_factor", {
         'value': function () {
             if (this.result.crest_factor == undefined) {
-                this.result.crest_factor = xtract_crest(_amps, this.maximum(), this.mean());
+                this.result.crest_factor = xtract_crest(_data, this.maximum(), this.mean());
             }
             return this.result.crest_factor;
         }

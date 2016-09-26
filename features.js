@@ -175,7 +175,14 @@ TimeData.prototype.features = [
         name: "Onset Detection",
         function: "onset",
         sub_features: [],
-        parameters: [],
+        parameters: [{
+            name: "Frame Size",
+            unit: "samples",
+            type: "number",
+            minimum: 1,
+            maximum: undefined,
+            default: 1024
+        }],
         returns: "array"
     }, {
         name: "Resample",

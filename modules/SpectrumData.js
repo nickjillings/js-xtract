@@ -17,7 +17,7 @@ var SpectrumData = function (N, sampleRate, parent) {
     var _length = N;
     var _Fs = sampleRate;
     var _f0 = undefined;
-    var _mfcc, _bark;
+    var _mfcc, _bark, _dct = this.createDctCoefficients(_length);
 
     function computeFrequencies() {
         for (var i = 0; i < N; i++) {
@@ -101,6 +101,7 @@ var SpectrumData = function (N, sampleRate, parent) {
     Object.defineProperty(this, "init_mfcc", {
         "value": function (freq_min, freq_max, num_bands, style) {
             _mfcc = this.createMfccCoefficients(_length, _Fs * 0.5, style, freq_min, freq_max, num_bands);
+            this.result.mfcc = undefined;
             return _mfcc;
         }
     });
@@ -354,13 +355,17 @@ var SpectrumData = function (N, sampleRate, parent) {
     });
 
     Object.defineProperty(this, "mfcc", {
-        'value': function () {
+        'value': function (freq_min, freq_max, num_bands) {
             if (_mfcc = undefined) {
-                console.error("Run init_mfcc(freq_min, freq_max, num_bands, style) first");
-                return null;
+                if (freq_min == undefined) {
+                    console.error("Run init_mfcc(freq_min, freq_max, num_bands, style) first");
+                    return null;
+                } else {
+                    this.init_mfcc(freq_min, freq_max, num_bands);
+                }
             }
             if (this.result.mfcc == undefined) {
-                this.result.mfcc = xtract_mfcc(_data);
+                this.result.mfcc = xtract_mfcc(_data, _mfcc);
             }
             return this.result.mfcc;
         }
@@ -378,10 +383,10 @@ var SpectrumData = function (N, sampleRate, parent) {
     Object.defineProperty(this, "bark_coefficients", {
         'value': function () {
             if (this.result.bark_coefficients == undefined) {
-                if (this.bark == undefined) {
+                if (_bark == undefined) {
                     this.init_bark(_length, _Fs);
                 }
-                this.result.bark_coefficients = xtract_bark_coefficients(_data, this.bark);
+                this.result.bark_coefficients = xtract_bark_coefficients(_data, _bark);
             }
             return this.result.bark_coefficients;
         }
