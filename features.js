@@ -341,7 +341,7 @@ SpectrumData.prototype.features = [
         parameters: [],
         returns: "number"
 }, {
-        name: "Spectral Crest Factory",
+        name: "Spectral Crest Factor",
         function: "spectral_crest_factor",
         sub_features: ["maximum", "spectral_mean"],
         parameters: [],
