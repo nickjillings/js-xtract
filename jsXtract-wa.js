@@ -110,12 +110,13 @@ if (typeof AudioBuffer != "undefined") {
         }
         this.frames = [];
         var N = this.length;
-        var K = Math.ceil(N / frame_size);
+        var K = this.xtract_get_number_of_frames(hop_size);
         for (var c = 0; c < this.numberOfChannels; c++) {
             var data = this.getChannelData(c);
             this.frames[c] = [];
             for (var k = 0; k < K; k++) {
-                var frame = new TimeData(data.subarray(frame_size * k, frame_size * k + hop_size), this.sampleRate);
+                var frame = new TimeData(frame_size, this.sampleRate);
+                frame.copyDataFrom(data.subarray(hop_size * k, hop_size * k + frame_size));
                 this.frames[c].push(frame);
                 frame = undefined;
             }
@@ -131,7 +132,7 @@ if (typeof AudioBuffer != "undefined") {
         if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
             throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
         }
-        return Math.floor(length / hop_size);
+        return Math.floor(this.length / hop_size);
     }
 
     AudioBuffer.prototype.xtract_process_frame_data = function (func, frame_size, hop_size, arg_this) {
