@@ -2,7 +2,7 @@ var jsXtract = new function () {
 
     var DataProto = function (parent) {
         var _result = {};
-        this.__proto__ = parent;
+        //this.__proto__ = parent;
         this.clearResult = function () {
             _result = {};
         }
@@ -20,6 +20,8 @@ var jsXtract = new function () {
             }
         });
     };
+    DataProto.prototype = this;
+    DataProto.prototype.constructor = DataProto;
 
     this.toJSON = function (result) {
         var json = '{';
@@ -50,6 +52,50 @@ var jsXtract = new function () {
             }
         }
         return json + '}';
+    }
+
+    function recursiveDelta(a, b) {
+        //a and b are objects of Time/Spectrum/PeakS/HarmonicS Data
+        //a and b are the .result object
+        var param, delta = {};
+        for (param in a) {
+            if (b[param]) {
+                if (typeof a[param] == "number") {
+                    delta[param] = a[param] - b[param];
+                } else {
+                    switch (a[param].constructor) {
+                        case Array:
+                        case Float32Array:
+                        case Float64Array:
+                            if (a[param].length == b[param].length) {
+                                delta[param] = new Float64Array(a[param].length);
+                            } else {
+                                delta[param] = [];
+                            }
+                            var n = 0;
+                            while (n < a[param].length && n < b[param].length) {
+                                delta[param][n] = a[param][n] - b[param][n];
+                                n++;
+                            }
+                            break;
+                        case TimeData:
+                        case SpectrumData:
+                        case PeakSpectrumData:
+                        case HarmonicSpectrumData:
+                            delta[param] = recursiveDelta(a[param].result, b[param].result);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+        return delta;
+    }
+
+    this.computeDelta = function (compare) {
+        this.result.delta = recursiveDelta(this.result, compare.result);
+        return this.result.delta;
     }
 
     var dct_map = {
@@ -140,12 +186,12 @@ var jsXtract = new function () {
     }
 
     this.createTimeDataProto = function () {
-        var node = new DataProto(this);
+        var node = new DataProto();
         return node;
     }
 
     this.createSpectrumDataProto = function () {
-        var node = new DataProto(this);
+        var node = new DataProto();
         return node;
     }
 }
