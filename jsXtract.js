@@ -692,7 +692,7 @@ function xtract_highest_value(data, threshold) {
     if (typeof threshold != "number") {
         threshold = +Infinity;
     }
-    var result = +Infinity;
+    var result = -Infinity;
     for (var n = 0; n < data.length; n++) {
         if (data[n] >= threshold) {
             result = Math.max(result, data[n]);
@@ -1165,7 +1165,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         }
         return pitch;
     }
-    return pitchF;
+    return pitchF();
 }
 
 function xtract_midicent(f0) {

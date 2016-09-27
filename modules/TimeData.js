@@ -258,8 +258,11 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "f0", {
         'value': function () {
+            if (_wavelet == undefined) {
+                _wavelet = this.init_wavelet();
+            }
             if (this.result.f0 == undefined) {
-                this.result.f0 = xtract_f0(_data, _Fs);
+                this.result.f0 = xtract_wavelet_f0(_data, _Fs, _wavelet);
             }
             return this.result.f0;
         }
