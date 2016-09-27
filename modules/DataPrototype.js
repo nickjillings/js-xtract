@@ -98,6 +98,14 @@ var jsXtract = new function () {
         return this.result.delta;
     }
 
+    this.computeDeltaDelta = function (compare) {
+        if (!compare.result.delta || !this.result.delta) {
+            throw ("Cannot compute delta-delta without both objects having deltas");
+        }
+        this.result.delta.delta = recursiveDelta(this.result.delta, compare.result.delta);
+        return this.result.delta.delta;
+    }
+
     var dct_map = {
         parent: this,
         store: [],
