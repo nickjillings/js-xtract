@@ -1099,7 +1099,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     }
 
     //_dywapitch_dynamicprocess(pitchtracker, pitch)
-    pitchF = function (pitchtracker, pitchF) {
+    return (function (pitchtracker, pitch) {
         if (pitch == 0.0) {
             return -1.0;
         }
@@ -1164,8 +1164,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
             pitch = 0.0;
         }
         return pitch;
-    }
-    return pitchF();
+    })(pitchtracker, pitchF);
 }
 
 function xtract_midicent(f0) {
