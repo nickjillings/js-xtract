@@ -335,6 +335,16 @@ var SpectrumData = function (N, sampleRate, parent) {
             return this.result.spectral_slope;
         }
     });
+    
+    Object.defineProperty(this, "spectral_fundamental", {
+        'value': function () {
+            if (this.result.spectral_fundamental == undefined) {
+                this.result.spectral_fundamental = xtract_spectral_fundamental(_data, _Fs);
+                this.f0 = this.result.spectral_fundamental;
+            }
+            return this.result.spectral_fundamental;
+        }
+    })
 
     Object.defineProperty(this, "nonzero_count", {
         'value': function () {

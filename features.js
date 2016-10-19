@@ -353,6 +353,12 @@ SpectrumData.prototype.features = [
         parameters: [],
         returns: "number"
 }, {
+        name: "Fundamental Frequency",
+        function: "spectral_fundamental",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+},{
         name: "Non-Zero count",
         function: "nonzero_count",
         sub_features: [],
