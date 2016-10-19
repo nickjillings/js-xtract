@@ -436,8 +436,8 @@ function xtract_tristimulus_3(spectrum, f0) {
         temp = 0.0;
     var N = spectrum.length;
     var K = N >> 1;
-    var amps = spectrum.subarray(0, n);
-    var freqs = spectrum.subarray(n);
+    var amps = spectrum.subarray(0, K);
+    var freqs = spectrum.subarray(K);
 
     for (var i = 0; i < K; i++) {
         temp = amps[i];
