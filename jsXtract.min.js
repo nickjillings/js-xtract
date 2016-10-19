@@ -433,7 +433,8 @@ function xtract_tristimulus_3(spectrum, f0) {
     }
     var den = 0.0,
         num = 0.0,
-        temp = 0.0;
+        temp = 0.0,
+        h = 0;
     var N = spectrum.length;
     var K = N >> 1;
     var amps = spectrum.subarray(0, K);
