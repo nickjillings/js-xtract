@@ -20,7 +20,10 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
     Object.defineProperty(this, "odd_even_ratio", {
         'value': function () {
             if (this.result.odd_even_ratio == undefined) {
-                this.result.odd_even_ratio = xtract_odd_even_ratio(_data, _f0);
+                if (this.f0 == undefined) {
+                    this.spectral_fundamental(this.getData(), this.sampleRate);
+                }
+                this.result.odd_even_ratio = xtract_odd_even_ratio(this.getData(), this.f0);
             }
             return this.result.odd_even_ratio;
         }
