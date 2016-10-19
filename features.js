@@ -276,19 +276,19 @@ SpectrumData.prototype.features = [
 }, {
         name: "Tristimulus 1",
         function: "tristimulus_1",
-        sub_features: [],
+        sub_features: ["spectral_fundamental"],
         parameters: [],
         returns: "number"
 }, {
         name: "Tristimulus 2",
         function: "tristimulus_2",
-        sub_features: [],
+        sub_features: ["spectral_fundamental"],
         parameters: [],
         returns: "number"
 }, {
         name: "Tristimulus 3",
         function: "tristimulus_3",
-        sub_features: [],
+        sub_features: ["spectral_fundamental"],
         parameters: [],
         returns: "number"
 }, {

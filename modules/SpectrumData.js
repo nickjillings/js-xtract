@@ -230,6 +230,9 @@ var SpectrumData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "tristimulus_1", {
         'value': function () {
+            if (_f0 == undefined) {
+                this.spectral_fundamental();
+            }
             if (this.result.tristimulus_1 == undefined) {
                 this.result.tristimulus_1 = xtract_tristimulus_1(_data, _f0);
             }
@@ -239,6 +242,9 @@ var SpectrumData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "tristimulus_2", {
         'value': function () {
+            if (_f0 == undefined) {
+                this.spectral_fundamental();
+            }
             if (this.result.tristimulus_2 == undefined) {
                 this.result.tristimulus_2 = xtract_tristimulus_2(_data, _f0);
             }
@@ -248,6 +254,9 @@ var SpectrumData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "tristimulus_3", {
         'value': function () {
+            if (_f0 == undefined) {
+                this.spectral_fundamental();
+            }
             if (this.result.tristimulus_3 == undefined) {
                 this.result.tristimulus_3 = xtract_tristimulus_3(_data, _f0);
             }
