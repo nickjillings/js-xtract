@@ -1,267 +1,277 @@
 <html lang="en">
-    <head>
-        <script src="../jsXtract.js"></script>
-        <script>
-            var N = 1024;
-            var wave = new Float32Array(N);
-            var wave_f0 = 1000.0;
-            var sample_rate = 44100.0;
-            for (var n=0; n<N; n++) {
-                wave[n] = Math.cos(2.0*Math.PI*wave_f0*(n/sample_rate));
-                if (Math.abs(wave[n]) > 0.25) {
-                    if (wave[n] > 0) {wave[n] = 0.25;} else {wave[n] = -0.25;}
+
+<head>
+    <script src="../jsXtract.min.js"></script>
+    <script>
+        var N = 1024;
+        var wave = new Float32Array(N);
+        var wave_f0 = 1000.0;
+        var sample_rate = 44100.0;
+        for (var n = 0; n < N; n++) {
+            wave[n] = Math.cos(2.0 * Math.PI * wave_f0 * (n / sample_rate));
+            if (Math.abs(wave[n]) > 0.25) {
+                if (wave[n] > 0) {
+                    wave[n] = 0.25;
+                } else {
+                    wave[n] = -0.25;
                 }
             }
-            var result;
-            var spectrum;
-            var context;
-            var barkBands;
-            var peakSpectrum;
-            var harmonicSpectrum;
-            var pitchTracker = xtract_init_wavelet();
-            var energyArray = xtract_energy(wave,sample_rate,1);
-            var dft = xtract_init_dft(N);
-            var dct = xtract_init_dct(N);
-            var mfcc = xtract_init_mfcc((N>>1)+1,sample_rate/2,"XTRACT_EQUAL_GAIN",200,20000,26);
-            var bark_limits = xtract_init_bark((N>>1)+1,44100);
-            window.onload = function() {
-                context = new (window.AudioContext || window.webkitAudioContext)();
-                result = document.getElementById("result");
-                spectrum = xtract_spectrum(wave,sample_rate,1,1);
-                barkBands = xtract_bark_coefficients(spectrum,bark_limits);
-                peakSpectrum = xtract_peak_spectrum(spectrum,sample_rate/N,20);
-                harmonicSpectrum = xtract_harmonic_spectrum(spectrum,wave_f0,20);
-                var buttons = document.getElementsByTagName("button");
-                for (var i=0; i<buttons.length; i++) {
-                    buttons[i].addEventListener("click",button_onclick);
-                }
+        }
+        var result;
+        var spectrum;
+        var context;
+        var barkBands;
+        var peakSpectrum;
+        var harmonicSpectrum;
+        var pitchTracker = xtract_init_wavelet();
+        var energyArray = xtract_energy(wave, sample_rate, 1);
+        var dft = xtract_init_dft(N);
+        var dct = xtract_init_dct(N);
+        var mfcc = xtract_init_mfcc((N >> 1) + 1, sample_rate / 2, "XTRACT_EQUAL_GAIN", 200, 20000, 26);
+        var bark_limits = xtract_init_bark((N >> 1) + 1, 44100);
+        window.onload = function() {
+            context = new(window.AudioContext || window.webkitAudioContext)();
+            result = document.getElementById("result");
+            spectrum = xtract_spectrum(wave, sample_rate, 1, 1);
+            barkBands = xtract_bark_coefficients(spectrum, bark_limits);
+            peakSpectrum = xtract_peak_spectrum(spectrum, sample_rate / N, 20);
+            harmonicSpectrum = xtract_harmonic_spectrum(spectrum, wave_f0, 20);
+            var buttons = document.getElementsByTagName("button");
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].addEventListener("click", button_onclick);
             }
-            
-            function timer(context, func, iter) {
-                if (iter == undefined || iter <= 0) {
-                    iter = 1;
-                }
-                var start = performance.now();
-                for (var i=0; i<iter; i++) {
-                    func();
-                }
-                var stop = performance.now();
-                return (stop-start);
+        }
+
+        function timer(context, func, iter) {
+            if (iter == undefined || iter <= 0) {
+                iter = 1;
             }
-            
-            function button_timer_wrap(context,func,iter) {
+            var start = performance.now();
+            for (var i = 0; i < iter; i++) {
+                func();
+            }
+            var stop = performance.now();
+            return (stop - start);
+        }
+
+        function button_timer_wrap(context, func, iter) {
+            var span = document.createElement("span");
+            span.textContent = ((timer(context, func, iter) / iter) * 1000.0).toFixed(3) + "ns";
+            return span;
+        }
+
+        function button_onclick(event) {
+            var iter = Number(event.currentTarget.getAttribute("iter"));
+            var funcName = event.currentTarget.getAttribute("funcName");
+
+            eval("var func = function(){" + funcName + ";}");
+            if (typeof func == "function") {
                 var span = document.createElement("span");
-                span.textContent = ((timer(context,func,iter)/iter)*1000.0).toFixed(3) + "ns";
-                return span;
-            }
-            
-            function button_onclick(event) {
-                var iter = Number(event.currentTarget.getAttribute("iter"));
-                var funcName = event.currentTarget.getAttribute("funcName");
-                
-                eval("var func = function(){"+funcName+";}");
-                if (typeof func == "function") {
-                    var span = document.createElement("span");
-                    var time = timer(context,func,iter)/iter;
-                    span.textContent = (time*1000.0).toFixed(3) + "ns";
-                    event.currentTarget.parentElement.appendChild(span);
-                    store.add(event.currentTarget.getAttribute("func"),time);
-                }
-                /*
-                var bench = new Benchmark({'fn':funcName, 'minTime': 0.05, 'maxTime': 1.0}).reset().run().run().run().run();
-                var span = document.createElement("span");
-                var time = bench.stats.mean*1000000;
-                var std = bench.stats.deviation*1000000;
-                span.textContent = (time).toFixed(3) + "ns ("+(std).toFixed(3)+" std)";
+                var time = timer(context, func, iter) / iter;
+                span.textContent = (time * 1000.0).toFixed(3) + "ns";
                 event.currentTarget.parentElement.appendChild(span);
-                store.add(event.currentTarget.getAttribute("func"),time,std);
-                */
+                store.add(event.currentTarget.getAttribute("func"), time);
             }
-            
-            var store = {
-                data : {
-                    results: []
-                },
-                add: function(name, time, std) {
-                    this.data.results.push({
-                        name: name,
-                        time: time,
-                    });
-                },
-                export: function(type) {
-                    var str;
-                    switch(type) {
-                        case "JSON":
-                            str = JSON.stringify(this.data);
-                        case "CSV":
-                            str = "name,time";
-                            for (var entry of this.data.results) {
-                                str += "\r\n"+entry.name+","+entry.time;
-                            }
-                    }
-                    document.getElementById("results").value = str;
+            /*
+            var bench = new Benchmark({'fn':funcName, 'minTime': 0.05, 'maxTime': 1.0}).reset().run().run().run().run();
+            var span = document.createElement("span");
+            var time = bench.stats.mean*1000000;
+            var std = bench.stats.deviation*1000000;
+            span.textContent = (time).toFixed(3) + "ns ("+(std).toFixed(3)+" std)";
+            event.currentTarget.parentElement.appendChild(span);
+            store.add(event.currentTarget.getAttribute("func"),time,std);
+            */
+        }
+
+        var store = {
+            data: {
+                results: []
+            },
+            add: function(name, time, std) {
+                this.data.results.push({
+                    name: name,
+                    time: time,
+                });
+            },
+            export: function(type) {
+                var str;
+                switch (type) {
+                    case "JSON":
+                        str = JSON.stringify(this.data);
+                    case "CSV":
+                        str = "name,time";
+                        for (var entry of this.data.results) {
+                            str += "\r\n" + entry.name + "," + entry.time;
+                        }
                 }
+                document.getElementById("results").value = str;
             }
-        </script>
-    </head>
-    <body>
-        <div>
-            <button iter="50000" func="xtract_array_sum" funcName="xtract_array_sum(wave)" onclick="button_onclick">Sum</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_array_min" funcName="xtract_array_min(wave)" onclick="button_onclick">Min</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_array_max" funcName="xtract_array_max(wave)" onclick="button_onclick">Max</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_array_normalise" funcName="xtract_array_normalise(wave)" onclick="button_onclick">Normalise</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_mean" funcName="xtract_mean(wave)" onclick="button_onclick">Mean</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_temporal_centroid" funcName="xtract_temporal_centroid(energyArray,sample_rate,1)" onclick="button_onclick">Temporal Centroid</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_variance" funcName="xtract_variance(wave,0.0023663671054237057)" onclick="button_onclick">Variance</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_standard_deviation" funcName="xtract_standard_deviation(wave,0.05594642537677225)" onclick="button_onclick">Standard Deviation</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_average_deviation" funcName="xtract_average_deviation(wave,0.0023663671054237057)" onclick="button_onclick">Average Deviation</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_skewness" funcName="xtract_skewness(wave,0.0023663671054237057,0.23652996718549693)" onclick="button_onclick">Skewness</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_kurtosis" funcName="xtract_kurtosis(wave,0.0023663671054237057,0.23652996718549693)" onclick="button_onclick">Kurtosis</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_centroid" funcName="xtract_spectral_centroid(spectrum)" onclick="button_onclick">Spectral Centroid</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_mean" funcName="xtract_spectral_mean(spectrum)" onclick="button_onclick">Spectral Mean</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_variance" funcName="xtract_spectral_variance(spectrum,2787.495476295398)" onclick="button_onclick">Spectral Variance</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_standard_deviation" funcName="xtract_spectral_standard_deviation(spectrum,11670441.226843717)" onclick="button_onclick">Spectral STD</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_skewness" funcName="xtract_spectral_skewness(spectrum,0.009047153559644697,3416.2027496686605)" onclick="button_onclick">Spectral Skewness</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_kurtosis"  funcName="xtract_spectral_kurtosis(spectrum,0.009047153559644697,3416.2027496686605)" onclick="button_onclick">Spectral Kurtosis</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_irregularity_k"  funcName="xtract_irregularity_k(spectrum)" onclick="button_onclick">Spectral Irregularity K</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_irregularity_j"  funcName="xtract_irregularity_j(spectrum)" onclick="button_onclick">Spectral Irregularity J</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_tristimulus_1" funcName="xtract_tristimulus_1(spectrum,wave_f0)" onclick="button_onclick">Spectral Tristimulus 1</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_tristimulus_2" funcName="xtract_tristimulus_2(spectrum,wave_f0)" onclick="button_onclick">Spectral Tristimulus 2</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_tristimulus_3" funcName="xtract_tristimulus_3(spectrum,wave_f0)" onclick="button_onclick">Spectral Tristimulus 3</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_smoothness" funcName="xtract_smoothness(spectrum)" onclick="button_onclick">Spectral Smoothness</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_zcr" funcName="xtract_zcr(wave)" onclick="button_onclick">Zero Crossing Rate</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_rolloff" funcName="xtract_rolloff(spectrum,44100.0,0.95)" onclick="button_onclick">Spectral Rolloff (95%)</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_loudness" funcName="xtract_loudness(barkBands)" onclick="button_onclick">Loudness</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_flatness" funcName="xtract_flatness(spectrum)" onclick="button_onclick">Flatness</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_flatness_db" funcName="xtract_flatness_db(spectrum,31.056463867515944)" onclick="button_onclick">Flatness dB</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_tonality" funcName="xtract_tonality(spectrum,14.921520048293857)" onclick="button_onclick">Tonality</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_rms_amplitude" funcName="xtract_rms_amplitude(wave)" onclick="button_onclick">RMS Amplitude</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_inharmonicity" funcName="xtract_spectral_inharmonicity(peakSpectrum,wave_f0)" onclick="button_onclick">Spectral Inharmonicity</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_odd_even_ratio" funcName="xtract_odd_even_ratio(harmonicSpectrum,wave_f0)" onclick="button_onclick">Odd Even Ratio</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_sharpness" funcName="xtract_sharpness(barkBands)" onclick="button_onclick">Sharpness</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_spectral_slope" funcName="xtract_spectral_slope(spectrum)" onclick="button_onclick">Spectral Slope</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_lowest_value" funcName="xtract_lowest_value(wave,0.0)" onclick="button_onclick">Lowest Value</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_highest_value" funcName="xtract_highest_value(wave)" onclick="button_onclick">Highest Value</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_sum" funcName="xtract_sum(wave)" onclick="button_onclick">Sum</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_nonzero_count" funcName="xtract_nonzero_count(wave)" onclick="button_onclick">NonZero count</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_hps" funcName="xtract_hps(spectrum)" onclick="button_onclick">HPS</button>
-        </div>
-        <div>
-            <button iter="250" func="xtract_f0" funcName="xtract_f0(wave,sample_rate)" onclick="button_onclick">F0</button>
-        </div>
-        <div>
-            <button iter="250" func="xtract_wavelet_f0" funcName="xtract_wavelet_f0(wave,sample_rate,pitchTracker)" onclick="button_onclick">Wavelet F0</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_energy" funcName="xtract_energy(wave,sample_rate,1)" onclick="button_onclick">Energy (1ms)</button>
-        </div>
-        <div>
-            <button iter="50" func="xtract_spectrum" funcName="xtract_spectrum(wave,sample_rate,true,false,dft)" onclick="button_onclick">FFT</button>
-        </div>
-        <div>
-            <button iter="50" func="xtract_spectrum" funcName="xtract_spectrum(wave,sample_rate,true,true,dft)" onclick="button_onclick">FFT (Norm)</button>
-        </div>
-        <div>
-            <button iter="5000" func="xtract_mfcc" funcName="xtract_mfcc(spectrum,mfcc)" onclick="button_onclick">MFCC (26 band)</button>
-        </div>
-        <div>
-            <button iter="5" func="xtract_dct" funcName="xtract_dct(wave)" onclick="button_onclick">DCT</button>
-        </div>
-        <div>
-            <button iter="50" func="xtract_autocorrelation" funcName="xtract_autocorrelation(wave)" onclick="button_onclick">Autocorrelation</button>
-        </div>
-        <div>
-            <button iter="50" func="xtract_amdf" funcName="xtract_amdf(wave)" onclick="button_onclick">AMDF</button>
-        </div>
-        <div>
-            <button iter="50" func="xtract_asdf" funcName="xtract_asdf(wave)" onclick="button_onclick">ASDF</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_bark_coefficients" funcName="xtract_bark_coefficients(spectrum,bark_limits)" onclick="button_onclick">Bark Coefficients</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_peak_spectrum" funcName="xtract_peak_spectrum(spectrum,sample_rate/1024,20)" onclick="button_onclick">Peak spectrum</button>
-        </div>
-        <div>
-            <button iter="50000" func="xtract_harmonic_spectrum" funcName="xtract_harmonic_spectrum(spectrum,wave_f0,0.2)" onclick="button_onclick">Harmonic spectrum</button>
-        </div>
-        <div><button onclick="store.export('CSV');">Export</button></div>
-        <textarea id="results"></textarea>
-    </body>
+        }
+
+    </script>
+</head>
+
+<body>
+    <div>
+        <button iter="50000" func="xtract_array_sum" funcName="xtract_array_sum(wave)" onclick="button_onclick">Sum</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_array_min" funcName="xtract_array_min(wave)" onclick="button_onclick">Min</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_array_max" funcName="xtract_array_max(wave)" onclick="button_onclick">Max</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_array_normalise" funcName="xtract_array_normalise(wave)" onclick="button_onclick">Normalise</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_mean" funcName="xtract_mean(wave)" onclick="button_onclick">Mean</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_temporal_centroid" funcName="xtract_temporal_centroid(energyArray,sample_rate,1)" onclick="button_onclick">Temporal Centroid</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_variance" funcName="xtract_variance(wave,0.0023663671054237057)" onclick="button_onclick">Variance</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_standard_deviation" funcName="xtract_standard_deviation(wave,0.05594642537677225)" onclick="button_onclick">Standard Deviation</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_average_deviation" funcName="xtract_average_deviation(wave,0.0023663671054237057)" onclick="button_onclick">Average Deviation</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_skewness" funcName="xtract_skewness(wave,0.0023663671054237057,0.23652996718549693)" onclick="button_onclick">Skewness</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_kurtosis" funcName="xtract_kurtosis(wave,0.0023663671054237057,0.23652996718549693)" onclick="button_onclick">Kurtosis</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_centroid" funcName="xtract_spectral_centroid(spectrum)" onclick="button_onclick">Spectral Centroid</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_mean" funcName="xtract_spectral_mean(spectrum)" onclick="button_onclick">Spectral Mean</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_variance" funcName="xtract_spectral_variance(spectrum,2787.495476295398)" onclick="button_onclick">Spectral Variance</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_standard_deviation" funcName="xtract_spectral_standard_deviation(spectrum,11670441.226843717)" onclick="button_onclick">Spectral STD</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_skewness" funcName="xtract_spectral_skewness(spectrum,0.009047153559644697,3416.2027496686605)" onclick="button_onclick">Spectral Skewness</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_kurtosis" funcName="xtract_spectral_kurtosis(spectrum,0.009047153559644697,3416.2027496686605)" onclick="button_onclick">Spectral Kurtosis</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_irregularity_k" funcName="xtract_irregularity_k(spectrum)" onclick="button_onclick">Spectral Irregularity K</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_irregularity_j" funcName="xtract_irregularity_j(spectrum)" onclick="button_onclick">Spectral Irregularity J</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_tristimulus_1" funcName="xtract_tristimulus_1(spectrum,wave_f0)" onclick="button_onclick">Spectral Tristimulus 1</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_tristimulus_2" funcName="xtract_tristimulus_2(spectrum,wave_f0)" onclick="button_onclick">Spectral Tristimulus 2</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_tristimulus_3" funcName="xtract_tristimulus_3(spectrum,wave_f0)" onclick="button_onclick">Spectral Tristimulus 3</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_smoothness" funcName="xtract_smoothness(spectrum)" onclick="button_onclick">Spectral Smoothness</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_zcr" funcName="xtract_zcr(wave)" onclick="button_onclick">Zero Crossing Rate</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_rolloff" funcName="xtract_rolloff(spectrum,44100.0,0.95)" onclick="button_onclick">Spectral Rolloff (95%)</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_loudness" funcName="xtract_loudness(barkBands)" onclick="button_onclick">Loudness</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_flatness" funcName="xtract_flatness(spectrum)" onclick="button_onclick">Flatness</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_flatness_db" funcName="xtract_flatness_db(spectrum,31.056463867515944)" onclick="button_onclick">Flatness dB</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_tonality" funcName="xtract_tonality(spectrum,14.921520048293857)" onclick="button_onclick">Tonality</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_rms_amplitude" funcName="xtract_rms_amplitude(wave)" onclick="button_onclick">RMS Amplitude</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_inharmonicity" funcName="xtract_spectral_inharmonicity(peakSpectrum,wave_f0)" onclick="button_onclick">Spectral Inharmonicity</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_odd_even_ratio" funcName="xtract_odd_even_ratio(harmonicSpectrum,wave_f0)" onclick="button_onclick">Odd Even Ratio</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_sharpness" funcName="xtract_sharpness(barkBands)" onclick="button_onclick">Sharpness</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_spectral_slope" funcName="xtract_spectral_slope(spectrum)" onclick="button_onclick">Spectral Slope</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_lowest_value" funcName="xtract_lowest_value(wave,0.0)" onclick="button_onclick">Lowest Value</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_highest_value" funcName="xtract_highest_value(wave)" onclick="button_onclick">Highest Value</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_sum" funcName="xtract_sum(wave)" onclick="button_onclick">Sum</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_nonzero_count" funcName="xtract_nonzero_count(wave)" onclick="button_onclick">NonZero count</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_hps" funcName="xtract_hps(spectrum)" onclick="button_onclick">HPS</button>
+    </div>
+    <div>
+        <button iter="250" func="xtract_f0" funcName="xtract_f0(wave,sample_rate)" onclick="button_onclick">F0</button>
+    </div>
+    <div>
+        <button iter="250" func="xtract_wavelet_f0" funcName="xtract_wavelet_f0(wave,sample_rate,pitchTracker)" onclick="button_onclick">Wavelet F0</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_energy" funcName="xtract_energy(wave,sample_rate,1)" onclick="button_onclick">Energy (1ms)</button>
+    </div>
+    <div>
+        <button iter="50" func="xtract_spectrum" funcName="xtract_spectrum(wave,sample_rate,true,false,dft)" onclick="button_onclick">FFT</button>
+    </div>
+    <div>
+        <button iter="50" func="xtract_spectrum" funcName="xtract_spectrum(wave,sample_rate,true,true,dft)" onclick="button_onclick">FFT (Norm)</button>
+    </div>
+    <div>
+        <button iter="5000" func="xtract_mfcc" funcName="xtract_mfcc(spectrum,mfcc)" onclick="button_onclick">MFCC (26 band)</button>
+    </div>
+    <div>
+        <button iter="5" func="xtract_dct" funcName="xtract_dct(wave)" onclick="button_onclick">DCT</button>
+    </div>
+    <div>
+        <button iter="50" func="xtract_autocorrelation" funcName="xtract_autocorrelation(wave)" onclick="button_onclick">Autocorrelation</button>
+    </div>
+    <div>
+        <button iter="50" func="xtract_amdf" funcName="xtract_amdf(wave)" onclick="button_onclick">AMDF</button>
+    </div>
+    <div>
+        <button iter="50" func="xtract_asdf" funcName="xtract_asdf(wave)" onclick="button_onclick">ASDF</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_bark_coefficients" funcName="xtract_bark_coefficients(spectrum,bark_limits)" onclick="button_onclick">Bark Coefficients</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_peak_spectrum" funcName="xtract_peak_spectrum(spectrum,sample_rate/1024,20)" onclick="button_onclick">Peak spectrum</button>
+    </div>
+    <div>
+        <button iter="50000" func="xtract_harmonic_spectrum" funcName="xtract_harmonic_spectrum(spectrum,wave_f0,0.2)" onclick="button_onclick">Harmonic spectrum</button>
+    </div>
+    <div>
+        <button onclick="store.export('CSV');">Export</button>
+    </div>
+    <textarea id="results"></textarea>
+</body>
+
 </html>

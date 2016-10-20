@@ -28,4 +28,15 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
             return this.result.odd_even_ratio;
         }
     });
+
+    Object.defineProperty(this, "noisiness", {
+        'value': function () {
+            if (parent.constructor !== PeakSpectrumData) {
+                this.result.noisiness = null;
+            } else {
+                this.result.noisiness = xtract_noisiness(this.nonzero_count(), parent.nonzero_count());
+            }
+            return this.result.noisiness;
+        }
+    });
 }
