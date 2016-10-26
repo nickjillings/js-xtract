@@ -27,6 +27,8 @@ if (typeof AnalyserNode != "undefined") {
 
     AnalyserNode.prototype.timeData = undefined;
     AnalyserNode.prototype.spectrumData = undefined;
+    AnalyserNode.prototype.callbackObject = undefined;
+    AnalyserNode.prototype.fooGain = undefined;
     AnalyserNode.prototype.getXtractData = function () {
         if (this.timeData == undefined || this.scpectrumData == undefined) {
             this.timeData = new TimeData(this.fftSize, this.context.sampleRate);
