@@ -406,7 +406,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         'value': function (num_bands) {
             if (this.result.bark_coefficients == undefined) {
                 if (_bark == undefined) {
-                    this.init_bark(_length, _Fs, num_bands);
+                    this.init_bark(num_bands);
                 }
                 this.result.bark_coefficients = xtract_bark_coefficients(_data, _bark);
             }
