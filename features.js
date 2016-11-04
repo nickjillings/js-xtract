@@ -358,7 +358,7 @@ SpectrumData.prototype.features = [
         sub_features: [],
         parameters: [],
         returns: "number"
-},{
+}, {
         name: "Non-Zero count",
         function: "nonzero_count",
         sub_features: [],
@@ -406,7 +406,14 @@ SpectrumData.prototype.features = [
         name: "Bark Coefficients",
         function: "bark_coefficients",
         sub_features: [],
-        parameters: [],
+        parameters: [{
+            name: "Band Count",
+            unit: "",
+            type: "number",
+            minimum: 0,
+            maximum: 26,
+            default: 26,
+    }],
         returns: "array"
 }, {
         name: "Peak Spectrum",

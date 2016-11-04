@@ -159,10 +159,11 @@ var jsXtract = new function () {
     var bark_map = {
         parent: this,
         store: [],
-        createCoefficients: function (N, sampleRate) {
+        createCoefficients: function (N, sampleRate, numBands) {
             var search = {
                 N: N,
-                sampleRate: sampleRate
+                sampleRate: sampleRate,
+                numBands: numBands
             }
             var match = this.store.find(function (element) {
                 for (var prop in element) {
@@ -174,7 +175,7 @@ var jsXtract = new function () {
             }, search);
             if (!match) {
                 match = search;
-                match.data = xtract_init_bark(N, sampleRate);
+                match.data = xtract_init_bark(N, sampleRate, numBands);
                 this.store.push(match);
             }
             return match.data;
@@ -189,8 +190,11 @@ var jsXtract = new function () {
         return mfcc_map.createCoefficients(N, nyquist, style, freq_min, freq_max, freq_bands);
     }
 
-    this.createBarkCoefficients = function (N, sampleRate) {
-        return bark_map.createCoefficients(N, sampleRate);
+    this.createBarkCoefficients = function (N, sampleRate, numBands) {
+        if (typeof != "number" || numBands < 0 || numBands > 26) {
+            numBands = 26;
+        }
+        return bark_map.createCoefficients(N, sampleRate, numBands);
     }
 
     this.createTimeDataProto = function () {

@@ -107,8 +107,11 @@ var SpectrumData = function (N, sampleRate, parent) {
     });
 
     Object.defineProperty(this, "init_bark", {
-        "value": function () {
-            _bark = this.createBarkCoefficients(_length, _Fs)
+        "value": function (numBands) {
+            if (typeof != "number" || numBands < 0 || numBands > 26) {
+                numBands = 26;
+            }
+            _bark = this.createBarkCoefficients(_length, _Fs, numBands);
             return _bark;
         }
     });
@@ -344,7 +347,7 @@ var SpectrumData = function (N, sampleRate, parent) {
             return this.result.spectral_slope;
         }
     });
-    
+
     Object.defineProperty(this, "spectral_fundamental", {
         'value': function () {
             if (this.result.spectral_fundamental == undefined) {
@@ -400,10 +403,10 @@ var SpectrumData = function (N, sampleRate, parent) {
     });
 
     Object.defineProperty(this, "bark_coefficients", {
-        'value': function () {
+        'value': function (num_bands) {
             if (this.result.bark_coefficients == undefined) {
                 if (_bark == undefined) {
-                    this.init_bark(_length, _Fs);
+                    this.init_bark(_length, _Fs, num_bands);
                 }
                 this.result.bark_coefficients = xtract_bark_coefficients(_data, _bark);
             }
