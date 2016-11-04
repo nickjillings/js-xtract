@@ -191,7 +191,7 @@ var jsXtract = new function () {
     }
 
     this.createBarkCoefficients = function (N, sampleRate, numBands) {
-        if (typeof != "number" || numBands < 0 || numBands > 26) {
+        if (typeof numBands != "number" || numBands < 0 || numBands > 26) {
             numBands = 26;
         }
         return bark_map.createCoefficients(N, sampleRate, numBands);

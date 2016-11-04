@@ -108,7 +108,7 @@ var SpectrumData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "init_bark", {
         "value": function (numBands) {
-            if (typeof != "number" || numBands < 0 || numBands > 26) {
+            if (typeof numBands != "number" || numBands < 0 || numBands > 26) {
                 numBands = 26;
             }
             _bark = this.createBarkCoefficients(_length, _Fs, numBands);
