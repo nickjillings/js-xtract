@@ -38,7 +38,7 @@ if (typeof AnalyserNode != "undefined") {
         if (this.getFloatTimeDomainData) {
             this.getFloatTimeDomainData(dst);
         } else {
-            var view = new UInt8Array(this.fftSize);
+            var view = new Uint8Array(this.fftSize);
             this.getByteTimeDomainData(view);
             for (var i = 0; i < this.fftSize; i++) {
                 dst[i] = view[i];
