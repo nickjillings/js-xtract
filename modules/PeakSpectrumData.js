@@ -5,8 +5,7 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
     if (sampleRate === undefined) {
         sampleRate = Math.PI;
     }
-    this.__proto__ = new SpectrumData(N);
-    this.__proto__.constructor = PeakSpectrumData;
+    SpectrumData.call(this, N);
 
     Object.defineProperty(this, "features", {
         'get': function () {
@@ -39,3 +38,5 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
         }
     });
 };
+PeakSpectrumData.prototype = Object.create(SpectrumData.prototype);
+PeakSpectrumData.prototype.constructor = PeakSpectrumData;

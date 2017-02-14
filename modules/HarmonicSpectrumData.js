@@ -8,8 +8,7 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
     if (sampleRate === undefined) {
         sampleRate = Math.PI;
     }
-    this.__proto__ = new PeakSpectrumData(N);
-    this.__proto__.constructor = HarmonicSpectrumData;
+    PeakSpectrumData.call(this, N);
 
     Object.defineProperty(this, "features", {
         'get': function () {
@@ -42,3 +41,5 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
         }
     });
 };
+HarmonicSpectrumData.prototype = Object.create(PeakSpectrumData.prototype);
+HarmonicSpectrumData.prototype.constructor = HarmonicSpectrumData;
