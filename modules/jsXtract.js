@@ -158,6 +158,162 @@ function xtract_get_number_of_frames(data, hop_size) {
     return Math.floor(this.length / hop_size);
 }
 
+function xtract_get_data_frames(data, frame_size, hop_size, copy) {
+    if (typeof data !== "object" && data.length === undefined || data.length === 0) {
+        throw ("Invalid data parameter. Must be item with iterable list");
+    }
+    if (typeof frame_size !== "number") {
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+    }
+    if (hop_size === undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+    }
+    var frames = [];
+    var N = data.length;
+    var K = Math.ceil(N / hop_size);
+    var sub_frame;
+    for (var k = 0; k < K; k++) {
+        var offset = k * hop_size;
+        if (copy) {
+            sub_frame = new Float64Array(frame_size);
+            for (var n = 0; n < frame_size && n + offset < data.length; n++) {
+                sub_frame[n] = data[n + offset];
+            }
+        } else {
+            sub_frame = data.subarray(offset, offset + frame_size);
+            if (sub_frame.length < frame_size) {
+                // Must zero-pad up to the length
+                var c_frame = new Float64Array(frame_size);
+                for (var i = 0; i < sub_frame.length; i++) {
+                    c_frame[i] = sub_frame[i];
+                }
+                sub_frame = c_frame;
+            }
+        }
+        frames.push(sub_frame);
+    }
+    return frames;
+}
+
+function xtract_process_frame_data(array, func, sample_rate, frame_size, hop_size, arg_this) {
+    if (typeof array !== "object" && array.length === undefined || array.length === 0) {
+        throw ("Invalid data parameter. Must be item with iterable list");
+    }
+    if (typeof func !== "function") {
+        throw ("xtract_process_frame_data requires func to be a defined function");
+    }
+    if (typeof sample_rate !== "number") {
+        throw ("xtract_get_data_frames requires sample_rate to be defined");
+    }
+    if (typeof frame_size !== "number") {
+        throw ("xtract_get_data_frames requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
+        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+    }
+    if (hop_size === undefined) {
+        hop_size = frame_size;
+    }
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
+        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+    }
+    var frames = xtract_get_data_frames(array, frame_size, hop_size);
+    var result = {
+        num_frames: frames.length,
+        results: []
+    };
+    var fft_size = frame_size >> 1;
+    var frame_time = 0;
+    var data = {
+        frame_size: frame_size,
+        hop_size: hop_size,
+        sample_rate: sample_rate,
+        TimeData: undefined,
+        SpectrumData: undefined
+    };
+    var prev_data;
+    var prev_result;
+    for (var fn = 0; fn < frames.length; fn++) {
+        var frame = frames[fn];
+        data.TimeData = frame;
+        data.SpectrumData = xtract_spectrum(frame, sample_rate, true, false);
+        prev_result = func.call(arg_this || this, data, prev_data, prev_result);
+        var frame_result = {
+            time_start: frame_time,
+            result: prev_result
+        };
+        frame_time += frame_size / sample_rate;
+        prev_data = data;
+        data = {
+            frame_size: frame_size,
+            hop_size: hop_size,
+            sample_rate: sample_rate,
+            TimeData: undefined,
+            SpectrumData: undefined
+        };
+        result.results.push(frame_result);
+    }
+    return result;
+}
+
+function xtract_array_to_JSON(array) {
+    if (array.join) {
+        return '[' + array.join(', ') + ']';
+    }
+    var json = '[';
+    var n = 0;
+    while (n < this.length) {
+        json = json + this[n];
+        if (this[n + 1] !== undefined) {
+            json = json + ',';
+        }
+        n++;
+    }
+    return json + ']';
+}
+
+function xtract_frame_from_array(src, dst, index, frame_size, hop_size) {
+    if (typeof index !== "number" || index !== Math.floor(index)) {
+        throw ("xtract_get_frame requires the index to be an integer value");
+    }
+    if (typeof frame_size !== "number") {
+        throw ("xtract_get_frame requires the frame_size to be defined");
+    }
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
+        throw ("xtract_get_frame requires the frame_size to be a positive integer");
+    }
+    if (hop_size === undefined) {
+        hop_size = frame_size;
+    }
+    if (typeof src !== "object" && src.length === undefined || src.length === 0) {
+        throw ("Invalid data parameter. Must be item with iterable list");
+    }
+    if (typeof dst !== "object" && dst.length === undefined || dst.length !== hop_size) {
+        throw ("dst must be an Array-like object equal in length to hop_size");
+    }
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
+        throw ("xtract_get_frame requires the hop_size to be a positive integer");
+    }
+    var K = this.xtract_get_number_of_frames(hop_size);
+    if (index < 0 || index >= K) {
+        throw ("index number " + index + " out of bounds");
+    }
+    var n = 0;
+    while (n < dst.length && n < this.length && n < frame_size) {
+        dst[n] = this[n];
+        n++;
+    }
+    while (n < dst.length) {
+        dst[n] = 0.0;
+    }
+}
+
 /* Scalar.c */
 
 function xtract_mean(array) {
@@ -2036,154 +2192,3 @@ function xtract_init_bark(N, sampleRate, bands) {
     }
     return band_limits;
 }
-
-Float64Array.prototype.xtract_get_data_frames = Float32Array.prototype.xtract_get_data_frames = function (frame_size, hop_size, copy) {
-    if (typeof frame_size !== "number") {
-        throw ("xtract_get_data_frames requires the frame_size to be defined");
-    }
-    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
-        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
-    }
-    if (hop_size === undefined) {
-        hop_size = frame_size;
-    }
-    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
-        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
-    }
-    var frames = [];
-    var N = this.length;
-    var K = Math.ceil(N / hop_size);
-    var sub_frame;
-    for (var k = 0; k < K; k++) {
-        var offset = k * hop_size;
-        if (copy) {
-            sub_frame = new Float64Array(frame_size);
-            for (var n = 0; n < frame_size && n + offset < this.length; n++) {
-                sub_frame[n] = this[n + offset];
-            }
-        } else {
-            sub_frame = this.subarray(offset, offset + frame_size);
-            if (sub_frame.length < frame_size) {
-                // Must zero-pad up to the length
-                var c_frame = new Float64Array(frame_size);
-                for (var i = 0; i < sub_frame.length; i++) {
-                    c_frame[i] = sub_frame[i];
-                }
-                sub_frame = c_frame;
-            }
-        }
-        frames.push(sub_frame);
-    }
-    return frames;
-};
-
-Float64Array.prototype.xtract_process_frame_data = Float32Array.prototype.xtract_process_frame_data = function (func, sample_rate, frame_size, hop_size, arg_this) {
-    if (typeof func !== "function") {
-        throw ("xtract_process_frame_data requires func to be a defined function");
-    }
-    if (typeof sample_rate !== "number") {
-        throw ("xtract_get_data_frames requires sample_rate to be defined");
-    }
-    if (typeof frame_size !== "number") {
-        throw ("xtract_get_data_frames requires the frame_size to be defined");
-    }
-    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
-        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
-    }
-    if (hop_size === undefined) {
-        hop_size = frame_size;
-    }
-    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
-        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
-    }
-    var frames = this.xtract_get_data_frames(frame_size, hop_size);
-    var result = {
-        num_frames: frames.length,
-        results: []
-    };
-    var fft_size = frame_size >> 1;
-    var frame_time = 0;
-    var data = {
-        frame_size: frame_size,
-        hop_size: hop_size,
-        sample_rate: sample_rate,
-        TimeData: undefined,
-        SpectrumData: undefined
-    };
-    var prev_data;
-    var prev_result;
-    for (var fn = 0; fn < frames.length; fn++) {
-        var frame = frames[fn];
-        data.TimeData = frame;
-        data.SpectrumData = xtract_spectrum(frame, sample_rate, true, false);
-        prev_result = func.call(arg_this || this, data, prev_data, prev_result);
-        var frame_result = {
-            time_start: frame_time,
-            result: prev_result
-        };
-        frame_time += frame_size / sample_rate;
-        prev_data = data;
-        data = {
-            frame_size: frame_size,
-            hop_size: hop_size,
-            sample_rate: sample_rate,
-            TimeData: undefined,
-            SpectrumData: undefined
-        };
-        result.results.push(frame_result);
-    }
-    return result;
-};
-
-Float64Array.prototype.toJSON = Float32Array.prototype.toJSON = function () {
-    var json = '[';
-    var n = 0;
-    while (n < this.length) {
-        json = json + this[n];
-        if (this[n + 1] !== undefined) {
-            json = json + ',';
-        }
-        n++;
-    }
-    return json + ']';
-};
-
-Float64Array.prototype.xtract_get_number_of_frames = Float32Array.prototype.xtract_get_number_of_frames = function (hop_size) {
-    return xtract_get_number_of_frames(this, hop_size);
-};
-
-Float64Array.prototype.xtract_get_frame = Float32Array.prototype.xtract_get_frame = function (dst, index, frame_size, hop_size) {
-    if (typeof dst !== "object" || dst.constructor !== Float32Array) {
-        throw ("dst must be a Float32Array object equal in length to hop_size");
-    }
-    if (typeof index !== "number" || index !== Math.floor(index)) {
-        throw ("xtract_get_frame requires the index to be an integer value");
-    }
-    if (typeof frame_size !== "number") {
-        throw ("xtract_get_frame requires the frame_size to be defined");
-    }
-    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
-        throw ("xtract_get_frame requires the frame_size to be a positive integer");
-    }
-    if (hop_size === undefined) {
-        hop_size = frame_size;
-    }
-    if (dst.length !== hop_size) {
-        throw ("dst must be a Float32Array object equal in length to hop_size");
-    }
-    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
-        throw ("xtract_get_frame requires the hop_size to be a positive integer");
-    }
-    var K = this.xtract_get_number_of_frames(hop_size);
-    if (index < 0 || index >= K) {
-        throw ("index number " + index + " out of bounds");
-    }
-    var n = 0;
-    while (n < dst.length && n < this.length && n < frame_size) {
-        dst[n] = this[n];
-        n++;
-    }
-    while (n < dst.length) {
-        dst[n] = 0.0;
-    }
-};
