@@ -6,75 +6,41 @@ var TimeData = function (N, sampleRate, parent) {
         console.log("Invalid parameter for 'sampleRate' for TimeData");
     }
 
-    var _data, _length, _Fs, _wavelet, _dct;
+    var _length, _Fs, _wavelet, _dct;
 
     if (typeof N === "object") {
         var src, src_data;
         if (N.constructor === TimeData) {
-            src = N;
-            src_data = src.getData();
+            src = src.getData();
+            _length = src.length;
+            DataProto.call(this, _length);
+            N = _length;
+            this.copyDataFrom(src, N, 0);
         } else if (N.constructor === Float32Array || N.constructor === Float64Array) {
             src = N;
-            src_data = N;
+            N = _length = src.length;
+            DataProto.call(this, _length);
+            this.copyDataFrom(src, N, 0);
         } else {
             throw ("TimeData: Invalid object passed as first argument.");
         }
-        _length = src.length;
-        _data = new Float64Array(_length);
-        for (var n = 0; n < _length; n++) {
-            _data[n] = src_data[n];
-        }
+
     } else if (typeof N === "number") {
         if (N <= 0 || N !== Math.floor(N)) {
             throw ("TimeData: Invalid number passed as first argument.");
-        } else {
-            _length = N;
-            _data = new Float64Array(_length);
         }
+        _length = N;
+        DataProto.call(this, N, sampleRate);
     } else {
         throw ("TimeData: Constructor has invalid operators!");
     }
-    DataProto.call(this);
 
     _Fs = sampleRate;
     _dct = this.createDctCoefficients(_length);
     _wavelet = xtract_init_wavelet();
 
-    this.getData = function () {
-        return _data;
-    };
-
     this.zeroData = function () {
-        if (_data.fill) {
-            _data.fill(0);
-        } else {
-            for (var n = 0; n < _data.length; n++) {
-                _data[n] = 0;
-            }
-        }
-        this.clearResult();
-    };
-
-    this.copyDataFrom = function (src, N, offset) {
-        if (typeof src !== "object" || src.length === undefined) {
-            throw ("copyDataFrom requires src to be an Array or TypedArray");
-        }
-        if (offset === undefined) {
-            offset = 0;
-        }
-        if (N === undefined) {
-            N = Math.min(src.length, _data.length);
-        }
-        N = Math.min(N + offset, _data.length);
-        for (var n = 0; n < N; n++) {
-            _data[n + offset] = src[n];
-        }
-        this.clearResult();
-    };
-
-    this.duplicate = function () {
-        var copy = this.prototype.constructor(_data.length, _Fs);
-        copy.copyDataFrom(_data);
+        this.zeroDataRange(0, N);
     };
 
     Object.defineProperties(this, {
@@ -110,7 +76,7 @@ var TimeData = function (N, sampleRate, parent) {
                 var result_frames = [];
                 for (var i = 0; i < num_frames; i++) {
                     var frame = new TimeData(hopSize, _Fs);
-                    frame.copyDataFrom(_data.subarray(frameSize * i, frameSize * i + hopSize));
+                    frame.copyDataFrom(this.data.subarray(frameSize * i, frameSize * i + hopSize));
                     result_frames.push(frame);
                 }
                 return result_frames;
@@ -119,7 +85,7 @@ var TimeData = function (N, sampleRate, parent) {
         "minimum": {
             'value': function () {
                 if (this.result.minimum === undefined) {
-                    this.result.minimum = xtract_array_min(_data);
+                    this.result.minimum = xtract_array_min(this.data);
                 }
                 return this.result.minimum;
             }
@@ -127,7 +93,7 @@ var TimeData = function (N, sampleRate, parent) {
         "maximum": {
             'value': function () {
                 if (this.result.maximum === undefined) {
-                    this.result.maximum = xtract_array_max(_data);
+                    this.result.maximum = xtract_array_max(this.data);
                 }
                 return this.result.maximum;
             }
@@ -135,7 +101,7 @@ var TimeData = function (N, sampleRate, parent) {
         "sum": {
             'value': function () {
                 if (this.result.sum === undefined) {
-                    this.result.sum = xtract_array_sum(_data);
+                    this.result.sum = xtract_array_sum(this.data);
                 }
                 return this.result.sum;
             }
@@ -143,7 +109,7 @@ var TimeData = function (N, sampleRate, parent) {
         "mean": {
             'value': function () {
                 if (this.result.mean === undefined) {
-                    this.result.mean = xtract_mean(_data);
+                    this.result.mean = xtract_mean(this.data);
                 }
                 return this.result.mean;
             }
@@ -160,7 +126,7 @@ var TimeData = function (N, sampleRate, parent) {
         "variance": {
             'value': function () {
                 if (this.result.variance === undefined) {
-                    this.result.variance = xtract_variance(_data, this.mean());
+                    this.result.variance = xtract_variance(this.data, this.mean());
                 }
                 return this.result.variance;
             }
@@ -168,7 +134,7 @@ var TimeData = function (N, sampleRate, parent) {
         "standard_deviation": {
             'value': function () {
                 if (this.result.standard_deviation === undefined) {
-                    this.result.standard_deviation = xtract_standard_deviation(_data, this.variance());
+                    this.result.standard_deviation = xtract_standard_deviation(this.data, this.variance());
                 }
                 return this.result.standard_deviation;
             }
@@ -176,7 +142,7 @@ var TimeData = function (N, sampleRate, parent) {
         "average_deviation": {
             'value': function () {
                 if (this.result.average_deviation === undefined) {
-                    this.result.average_deviation = xtract_average_deviation(_data, this.mean());
+                    this.result.average_deviation = xtract_average_deviation(this.data, this.mean());
                 }
                 return this.result.average_deviation;
             }
@@ -184,7 +150,7 @@ var TimeData = function (N, sampleRate, parent) {
         "skewness": {
             'value': function () {
                 if (this.result.skewness === undefined) {
-                    this.result.skewness = xtract_skewness(_data, this.mean(), this.standard_deviation());
+                    this.result.skewness = xtract_skewness(this.data, this.mean(), this.standard_deviation());
                 }
                 return this.result.skewness;
             }
@@ -192,7 +158,7 @@ var TimeData = function (N, sampleRate, parent) {
         "kurtosis": {
             'value': function () {
                 if (this.result.kurtosis === undefined) {
-                    this.result.kurtosis = xtract_kurtosis(_data, this.mean(), this.standard_deviation());
+                    this.result.kurtosis = xtract_kurtosis(this.data, this.mean(), this.standard_deviation());
                 }
                 return this.result.kurtosis;
             }
@@ -200,7 +166,7 @@ var TimeData = function (N, sampleRate, parent) {
         "zcr": {
             'value': function () {
                 if (this.result.zcr === undefined) {
-                    this.result.zcr = xtract_zcr(_data);
+                    this.result.zcr = xtract_zcr(this.data);
                 }
                 return this.result.zcr;
             }
@@ -208,7 +174,7 @@ var TimeData = function (N, sampleRate, parent) {
         "crest_factor": {
             'value': function () {
                 if (this.result.crest_factor === undefined) {
-                    this.result.crest_factor = xtract_crest(_data, this.maximum(), this.mean());
+                    this.result.crest_factor = xtract_crest(this.data, this.maximum(), this.mean());
                 }
                 return this.result.crest_factor;
             }
@@ -216,7 +182,7 @@ var TimeData = function (N, sampleRate, parent) {
         "rms_amplitude": {
             'value': function () {
                 if (this.result.rms_amplitude === undefined) {
-                    this.result.rms_amplitude = xtract_rms_amplitude(_data);
+                    this.result.rms_amplitude = xtract_rms_amplitude(this.data);
                 }
                 return this.result.rms_amplitude;
             }
@@ -224,7 +190,7 @@ var TimeData = function (N, sampleRate, parent) {
         "lowest_value": {
             'value': function (threshold) {
                 if (this.result.lowest_value === undefined) {
-                    this.result.lowest_value = xtract_lowest_value(_data, threshold);
+                    this.result.lowest_value = xtract_lowest_value(this.data, threshold);
                 }
                 return this.result.lowest_value;
             }
@@ -232,7 +198,7 @@ var TimeData = function (N, sampleRate, parent) {
         "highest_value": {
             'value': function (threshold) {
                 if (this.result.highest_value === undefined) {
-                    this.result.highest_value = xtract_highest_value(_data, threshold);
+                    this.result.highest_value = xtract_highest_value(this.data, threshold);
                 }
                 return this.result.highest_value;
             }
@@ -240,7 +206,7 @@ var TimeData = function (N, sampleRate, parent) {
         "nonzero_count": {
             'value': function () {
                 if (this.result.nonzero_count === undefined) {
-                    this.result.nonzero_count = xtract_nonzero_count(_data);
+                    this.result.nonzero_count = xtract_nonzero_count(this.data);
                 }
                 return this.result.nonzero_count;
             }
@@ -252,7 +218,7 @@ var TimeData = function (N, sampleRate, parent) {
                     _wavelet = this.init_wavelet();
                 }
                 if (this.result.f0 === undefined) {
-                    this.result.f0 = xtract_wavelet_f0(_data, _Fs, _wavelet);
+                    this.result.f0 = xtract_wavelet_f0(this.data, _Fs, _wavelet);
                 }
                 return this.result.f0;
             }
@@ -261,7 +227,7 @@ var TimeData = function (N, sampleRate, parent) {
             'value': function (window_ms) {
                 if (this.result.energy === undefined || this.result.energy.window_ms !== window_ms) {
                     this.result.energy = {
-                        'data': xtract_energy(_data, _Fs, window_ms),
+                        'data': xtract_energy(this.data, _Fs, window_ms),
                         'window_ms': window_ms
                     };
                 }
@@ -271,7 +237,7 @@ var TimeData = function (N, sampleRate, parent) {
         "spectrum": {
             'value': function () {
                 if (this.result.spectrum === undefined) {
-                    var _spec = xtract_spectrum(_data, _Fs, true, false);
+                    var _spec = xtract_spectrum(this.data, _Fs, true, false);
                     this.result.spectrum = new SpectrumData(_spec.length / 2, _Fs);
                     this.result.spectrum.copyDataFrom(_spec);
                     return this.result.spectrum;
@@ -281,7 +247,7 @@ var TimeData = function (N, sampleRate, parent) {
         "dct": {
             'value': function () {
                 if (this.result.dct === undefined) {
-                    this.result.dct = xtract_dct_2(_data, _dct);
+                    this.result.dct = xtract_dct_2(this.data, _dct);
                 }
                 return this.result.dct;
             }
@@ -289,7 +255,7 @@ var TimeData = function (N, sampleRate, parent) {
         "autocorrelation": {
             'value': function () {
                 if (this.result.autocorrelation === undefined) {
-                    this.result.autocorrelation = xtract_autocorrelation(_data);
+                    this.result.autocorrelation = xtract_autocorrelation(this.data);
                 }
                 return this.result.autocorrelation;
             }
@@ -297,7 +263,7 @@ var TimeData = function (N, sampleRate, parent) {
         "amdf": {
             'value': function () {
                 if (this.result.amdf === undefined) {
-                    this.result.amdf = xtract_amdf(_data);
+                    this.result.amdf = xtract_amdf(this.data);
                 }
                 return this.result.amdf;
             }
@@ -305,7 +271,7 @@ var TimeData = function (N, sampleRate, parent) {
         "asdf": {
             'value': function () {
                 if (this.result.asdf === undefined) {
-                    this.result.asdf = xtract_asdf(_data);
+                    this.result.asdf = xtract_asdf(this.data);
                 }
                 return this.result.asdf;
             }
@@ -313,7 +279,7 @@ var TimeData = function (N, sampleRate, parent) {
         "yin": {
             'value': function () {
                 if (this.result.yin === undefined) {
-                    this.result.yin = xtract_yin(_data);
+                    this.result.yin = xtract_yin(this.data);
                 }
                 return this.result.yin;
             }
@@ -322,7 +288,7 @@ var TimeData = function (N, sampleRate, parent) {
             'value': function (frameSize) {
                 if (this.result.onset === undefined || this.result.onset.frameSize !== frameSize) {
                     this.result.onset = {
-                        'data': xtract_onset(_data, frameSize),
+                        'data': xtract_onset(this.data, frameSize),
                         'frameSize': frameSize
                     };
                 }
@@ -337,7 +303,7 @@ var TimeData = function (N, sampleRate, parent) {
                 if (typeof targetSampleRate !== "number" || targetSampleRate <= 0) {
                     throw ("Target sampleRate must be a positive number");
                 }
-                var resampled = xtract_resample(_data, targetSampleRate, _Fs);
+                var resampled = xtract_resample(this.data, targetSampleRate, _Fs);
                 var reply = new TimeData(resampled.length, targetSampleRate);
                 reply.copyDataFrom(resampled);
                 this.result.resample = reply;
@@ -353,7 +319,7 @@ var TimeData = function (N, sampleRate, parent) {
                 throw ("Sample rate must be defined");
             }
             if (this.result.pitch === undefined) {
-                this.result.pitch = xtract_pitch_FB(_data, _Fs);
+                this.result.pitch = xtract_pitch_FB(this.data, _Fs);
             }
             return this.result.pitch;
         }

@@ -5,7 +5,7 @@
 var jsXtract = (function () {
 
     function searchMapProperties(map, properties) {
-        var match = this.map.find(function (e) {
+        var match = map.find(function (e) {
             for (var prop in properties) {
                 if (e[prop] !== properties[prop]) {
                     return false;
@@ -97,18 +97,68 @@ var jsXtract = (function () {
     });
     return pub_obj;
 })();
-var DataProto = function () {
-    var _result = {};
+var DataProto = function (N, sampleRate) {
+    var _result = {},
+        _data = new Float64Array(N);
     this.clearResult = function () {
         _result = {};
     };
 
-    Object.defineProperty(this, "result", {
-        'get': function () {
-            return _result;
+    Object.defineProperties(this, {
+        "result": {
+            'get': function () {
+                return _result;
+            },
+            'set': function () {}
         },
-        'set': function () {}
+        "data": {
+            'value': _data
+        },
+        "getData": {
+            'value': function () {
+                return _data;
+            }
+        }
     });
+
+    this.zeroDataRange = function (start, end) {
+        if (typeof start !== "number" || start <= 0) {
+            start = 0;
+        }
+        if (typeof end !== "number" || end <= 0) {
+            end = _data.length;
+        }
+        if (_data.fill) {
+            _data.fill(0, start, end);
+        } else {
+            for (var n = start; n < end; n++) {
+                _data[n] = 0;
+            }
+        }
+        this.clearResult();
+    };
+
+    this.copyDataFrom = function (src, N, offset) {
+        if (typeof src !== "object" || src.length === undefined) {
+            throw ("copyDataFrom requires src to be an Array or TypedArray");
+        }
+        if (offset === undefined) {
+            offset = 0;
+        }
+        if (N === undefined) {
+            N = Math.min(src.length, _data.length);
+        }
+        N = Math.min(N + offset, _data.length);
+        for (var n = 0; n < N; n++) {
+            _data[n + offset] = src[n];
+        }
+        this.clearResult();
+    };
+
+    this.duplicate = function () {
+        var copy = this.prototype.constructor(N, sampleRate);
+        copy.copyDataFrom(_data);
+    };
 
     this.toJSON = function () {
         var json = '{';
@@ -195,7 +245,7 @@ var DataProto = function () {
     };
 };
 DataProto.prototype.createDctCoefficients = function (N) {
-    jsXtract.createDctCoefficients(Number(N));
+    return jsXtract.createDctCoefficients(Number(N));
 };
 DataProto.prototype.createMfccCoefficients = function (N, nyquist, style, freq_min, freq_max, freq_bands) {
     N = Number(N);
@@ -203,11 +253,11 @@ DataProto.prototype.createMfccCoefficients = function (N, nyquist, style, freq_m
     freq_min = Number(freq_min);
     freq_max = Number(freq_max);
     freq_bands = Number(freq_bands);
-    jsXtract.createMfccCoefficients(N, nyquist, style, freq_min, freq_max, freq_bands);
+    return jsXtract.createMfccCoefficients(N, nyquist, style, freq_min, freq_max, freq_bands);
 };
 DataProto.prototype.createBarkCoefficients = function (N, sampleRate, numBands) {
     N = Number(N);
     sampleRate = Number(sampleRate);
     numBands = Number(numBands);
-    jsXtract.createBarkCoefficients(N, sampleRate, numBands);
+    return jsXtract.createBarkCoefficients(N, sampleRate, numBands);
 };

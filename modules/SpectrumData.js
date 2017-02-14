@@ -9,10 +9,9 @@ var SpectrumData = function (N, sampleRate, parent) {
     if (sampleRate === undefined) {
         sampleRate = Math.PI;
     }
-    DataProto.call(this);
-    var _data = new Float64Array(2 * N);
-    var _amps = _data.subarray(0, N);
-    var _freqs = _data.subarray(N, 2 * N);
+    DataProto.call(this, N, sampleRate);
+    var _amps = this.data.subarray(0, N);
+    var _freqs = this.data.subarray(N, 2 * N);
     var _length = N;
     var _Fs = sampleRate;
     var _f0;
@@ -26,41 +25,8 @@ var SpectrumData = function (N, sampleRate, parent) {
 
     computeFrequencies();
 
-    this.getData = function () {
-        return _data;
-    };
-
     this.zeroData = function () {
-        if (_amps.fill) {
-            _amps.fill(0);
-        } else {
-            for (var n = 0; n < _data.length; n++) {
-                _amps[n] = 0;
-            }
-        }
-        this.clearResult();
-    };
-
-    this.copyDataFrom = function (src, N, offset) {
-        if (typeof src !== "object" || src.length === undefined) {
-            throw ("copyDataFrom requires src to be an Array or TypedArray");
-        }
-        if (offset === undefined) {
-            offset = 0;
-        }
-        if (N === undefined) {
-            N = Math.min(src.length, _amps.length);
-        }
-        N = Math.min(N + offset, _amps.length);
-        for (var n = 0; n < N; n++) {
-            _amps[n + offset] = src[n];
-        }
-        this.clearResult();
-    };
-
-    this.duplicate = function () {
-        var copy = this.prototype.constructor(_length);
-        copy.copyDataFrom(_amps);
+        this.zeroDataRange(0, N);
     };
 
     Object.defineProperties(this, {
@@ -143,7 +109,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_centroid": {
             'value': function () {
                 if (this.result.spectral_centroid === undefined) {
-                    this.result.spectral_centroid = xtract_spectral_centroid(_data);
+                    this.result.spectral_centroid = xtract_spectral_centroid(this.data);
                 }
                 return this.result.spectral_centroid;
             }
@@ -151,7 +117,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_mean": {
             'value': function () {
                 if (this.result.spectral_mean === undefined) {
-                    this.result.spectral_mean = xtract_spectral_mean(_data);
+                    this.result.spectral_mean = xtract_spectral_mean(this.data);
                 }
                 return this.result.spectral_mean;
             }
@@ -159,7 +125,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_variance": {
             'value': function () {
                 if (this.result.spectral_variance === undefined) {
-                    this.result.spectral_variance = xtract_spectral_variance(_data, this.spectral_mean());
+                    this.result.spectral_variance = xtract_spectral_variance(this.data, this.spectral_mean());
                 }
                 return this.result.spectral_variance;
             }
@@ -167,7 +133,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_spread": {
             'value': function () {
                 if (this.result.spectral_spread === undefined) {
-                    this.result.spectral_spread = xtract_spectral_spread(_data, this.spectral_centroid());
+                    this.result.spectral_spread = xtract_spectral_spread(this.data, this.spectral_centroid());
                 }
                 return this.result.spectral_spread;
             }
@@ -175,7 +141,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_standard_deviation": {
             'value': function () {
                 if (this.result.spectral_standard_deviation === undefined) {
-                    this.result.spectral_standard_deviation = xtract_spectral_standard_deviation(_data, this.spectral_variance());
+                    this.result.spectral_standard_deviation = xtract_spectral_standard_deviation(this.data, this.spectral_variance());
                 }
                 return this.result.spectral_standard_deviation;
             }
@@ -183,7 +149,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_skewness": {
             'value': function () {
                 if (this.result.spectral_skewness === undefined) {
-                    this.result.spectral_skewness = xtract_spectral_skewness(_data, this.spectral_mean(), this.spectral_standard_deviation());
+                    this.result.spectral_skewness = xtract_spectral_skewness(this.data, this.spectral_mean(), this.spectral_standard_deviation());
                 }
                 return this.result.spectral_skewness;
             }
@@ -191,7 +157,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_kurtosis": {
             'value': function () {
                 if (this.result.spectral_kurtosis === undefined) {
-                    this.result.spectral_kurtosis = xtract_spectral_kurtosis(_data, this.spectral_mean(), this.spectral_standard_deviation());
+                    this.result.spectral_kurtosis = xtract_spectral_kurtosis(this.data, this.spectral_mean(), this.spectral_standard_deviation());
                 }
                 return this.result.spectral_kurtosis;
             }
@@ -199,7 +165,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "irregularity_k": {
             'value': function () {
                 if (this.result.irregularity_k === undefined) {
-                    this.result.irregularity_k = xtract_irregularity_k(_data);
+                    this.result.irregularity_k = xtract_irregularity_k(this.data);
                 }
                 return this.result.irregularity_k;
             }
@@ -207,7 +173,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "irregularity_j": {
             'value': function () {
                 if (this.result.irregularity_j === undefined) {
-                    this.result.irregularity_j = xtract_irregularity_j(_data);
+                    this.result.irregularity_j = xtract_irregularity_j(this.data);
                 }
                 return this.result.irregularity_j;
             }
@@ -218,7 +184,7 @@ var SpectrumData = function (N, sampleRate, parent) {
                     this.spectral_fundamental();
                 }
                 if (this.result.tristimulus_1 === undefined) {
-                    this.result.tristimulus_1 = xtract_tristimulus_1(_data, _f0);
+                    this.result.tristimulus_1 = xtract_tristimulus_1(this.data, _f0);
                 }
                 return this.result.tristimulus_1;
             }
@@ -229,7 +195,7 @@ var SpectrumData = function (N, sampleRate, parent) {
                     this.spectral_fundamental();
                 }
                 if (this.result.tristimulus_2 === undefined) {
-                    this.result.tristimulus_2 = xtract_tristimulus_2(_data, _f0);
+                    this.result.tristimulus_2 = xtract_tristimulus_2(this.data, _f0);
                 }
                 return this.result.tristimulus_2;
             }
@@ -240,7 +206,7 @@ var SpectrumData = function (N, sampleRate, parent) {
                     this.spectral_fundamental();
                 }
                 if (this.result.tristimulus_3 === undefined) {
-                    this.result.tristimulus_3 = xtract_tristimulus_3(_data, _f0);
+                    this.result.tristimulus_3 = xtract_tristimulus_3(this.data, _f0);
                 }
                 return this.result.tristimulus_3;
             }
@@ -248,7 +214,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "smoothness": {
             'value': function () {
                 if (this.result.smoothness === undefined) {
-                    this.result.smoothness = xtract_smoothness(_data);
+                    this.result.smoothness = xtract_smoothness(this.data);
                 }
                 return this.result.smoothness;
             }
@@ -256,7 +222,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "rolloff": {
             'value': function (threshold) {
                 if (this.result.rolloff === undefined) {
-                    this.result.rolloff = xtract_rolloff(_data, _Fs, threshold);
+                    this.result.rolloff = xtract_rolloff(this.data, _Fs, threshold);
                 }
                 return this.result.rolloff;
             }
@@ -280,7 +246,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "flatness": {
             'value': function () {
                 if (this.result.flatness === undefined) {
-                    this.result.flatness = xtract_flatness(_data);
+                    this.result.flatness = xtract_flatness(this.data);
                 }
                 return this.result.flatness;
             }
@@ -288,7 +254,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "flatness_db": {
             'value': function () {
                 if (this.result.flatness_db === undefined) {
-                    this.result.flatness_db = xtract_flatness_db(_data, this.flatness());
+                    this.result.flatness_db = xtract_flatness_db(this.data, this.flatness());
                 }
                 return this.result.flatness_db;
             }
@@ -296,7 +262,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "tonality": {
             'value': function () {
                 if (this.result.tonality === undefined) {
-                    this.result.tonality = xtract_tonality(_data, this.flatness_db());
+                    this.result.tonality = xtract_tonality(this.data, this.flatness_db());
                 }
                 return this.result.tonality;
             }
@@ -312,7 +278,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_slope": {
             'value': function () {
                 if (this.result.spectral_slope === undefined) {
-                    this.result.spectral_slope = xtract_spectral_slope(_data);
+                    this.result.spectral_slope = xtract_spectral_slope(this.data);
                 }
                 return this.result.spectral_slope;
             }
@@ -320,7 +286,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_fundamental": {
             'value': function () {
                 if (this.result.spectral_fundamental === undefined) {
-                    this.result.spectral_fundamental = xtract_spectral_fundamental(_data, _Fs);
+                    this.result.spectral_fundamental = xtract_spectral_fundamental(this.data, _Fs);
                     this.f0 = this.result.spectral_fundamental;
                 }
                 return this.result.spectral_fundamental;
@@ -337,7 +303,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "hps": {
             'value': function () {
                 if (this.result.hps === undefined) {
-                    this.result.hps = xtract_hps(_data);
+                    this.result.hps = xtract_hps(this.data);
                 }
                 return this.result.hps;
             }
@@ -348,11 +314,11 @@ var SpectrumData = function (N, sampleRate, parent) {
                     if (freq_min === undefined) {
                         throw ("Run init_mfcc(num_bands, freq_min, freq_max, style) first");
                     } else {
-                        this.init_mfcc(num_bands, freq_min, freq_max);
+                        _mfcc = this.init_mfcc(num_bands, freq_min, freq_max);
                     }
                 }
                 if (this.result.mfcc === undefined) {
-                    this.result.mfcc = xtract_mfcc(_data, _mfcc);
+                    this.result.mfcc = xtract_mfcc(this.data, _mfcc);
                 }
                 return this.result.mfcc;
             }
@@ -369,9 +335,9 @@ var SpectrumData = function (N, sampleRate, parent) {
             'value': function (num_bands) {
                 if (this.result.bark_coefficients === undefined) {
                     if (_bark === undefined) {
-                        this.init_bark(num_bands);
+                        _bark = this.init_bark(num_bands);
                     }
-                    this.result.bark_coefficients = xtract_bark_coefficients(_data, _bark);
+                    this.result.bark_coefficients = xtract_bark_coefficients(this.data, _bark);
                 }
                 return this.result.bark_coefficients;
             }
@@ -380,7 +346,7 @@ var SpectrumData = function (N, sampleRate, parent) {
             'value': function (threshold) {
                 if (this.result.peak_spectrum === undefined) {
                     this.result.peak_spectrum = new PeakSpectrumData(_length, _Fs, this);
-                    var ps = xtract_peak_spectrum(_data, _Fs / _length, threshold);
+                    var ps = xtract_peak_spectrum(this.data, _Fs / _length, threshold);
                     this.result.peak_spectrum.copyDataFrom(ps.subarray(0, _length));
                 }
                 return this.result.peak_spectrum;

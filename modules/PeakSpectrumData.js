@@ -17,7 +17,7 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
         "spectral_inharmonicity": {
             'value': function () {
                 if (this.result.spectral_inharmonicity === undefined) {
-                    this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(this.getData(), this.sampleRate);
+                    this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(this.data, this.sampleRate);
                 }
                 return this.result.spectral_inharmonicity;
             }
@@ -26,10 +26,10 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
             'value': function (threshold) {
                 if (this.result.harmonic_spectrum === undefined) {
                     if (this.f0 === undefined) {
-                        this.spectral_fundamental(this.getData(), this.sampleRate);
+                        this.spectral_fundamental(this.data(), this.sampleRate);
                     }
                     this.result.harmonic_spectrum = new HarmonicSpectrumData(this.length, this.sampleRate, this);
-                    var hs = xtract_harmonic_spectrum(this.getData(), this.f0, threshold);
+                    var hs = xtract_harmonic_spectrum(this.data(), this.f0, threshold);
                     this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0, this.length));
                 }
                 return this.result.harmonic_spectrum;
