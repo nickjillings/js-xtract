@@ -3,15 +3,25 @@
 
 // Create the Singleton
 var jsXtract = (function () {
+
+    function searchMapProperties(map, properties) {
+        var match = this.map.find(function (e) {
+            for (var prop in properties) {
+                if (e[prop] !== properties[prop]) {
+                    return false;
+                }
+            }
+            return true;
+        });
+        return match;
+    }
+
     var dct_map = {
         parent: this,
         store: [],
         createCoefficients: function (N) {
-            var match = this.store.find(function (element) {
-                if (element.N === N) {
-                    return true;
-                }
-                return false;
+            var match = searchMapProperties(this.store, {
+                N: N
             });
             if (!match) {
                 match = {
@@ -36,14 +46,7 @@ var jsXtract = (function () {
                 freq_max: freq_max,
                 freq_bands: freq_bands
             };
-            var match = this.store.find(function (element) {
-                for (var prop in search) {
-                    if (element[prop] !== search[prop]) {
-                        return false;
-                    }
-                }
-                return true;
-            });
+            var match = searchMapProperties(this.store, search);
             if (!match) {
                 match = search;
                 match.data = xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands);
@@ -62,14 +65,7 @@ var jsXtract = (function () {
                 sampleRate: sampleRate,
                 numBands: numBands
             };
-            var match = this.store.find(function (element) {
-                for (var prop in element) {
-                    if (element[prop] !== search[prop]) {
-                        return false;
-                    }
-                }
-                return true;
-            });
+            var match = searchMapProperties(this.store, search);
             if (!match) {
                 match = search;
                 match.data = xtract_init_bark(N, sampleRate, numBands);
