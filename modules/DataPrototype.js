@@ -113,7 +113,8 @@ var DataProto = function () {
     this.toJSON = function () {
         var json = '{';
         for (var property in _result) {
-            if (!json.endsWith('{') && !json.endsWith(',')) {
+            var lastchar = json[json.length - 1];
+            if (!lastchar == '{' && !lastchar == ',') {
                 json = json + ', ';
             }
             if (typeof _result[property] === "number" && isFinite(_result[property])) {
