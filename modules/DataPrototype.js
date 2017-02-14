@@ -1,40 +1,28 @@
 /*globals Float32Array, Float64Array */
 /*globals xtract_init_dct, xtract_init_mfcc, xtract_init_bark */
-var jsXtract = function () {
-
-    var DataProto = function (parent) {
-        var _result = {};
-        //this.__proto__ = parent;
-        this.clearResult = function () {
-            _result = {};
-        };
-
-        Object.defineProperty(this, "result", {
-            'get': function () {
-                return _result;
-            },
-            'set': function () {}
-        });
-
-        Object.defineProperty(this, "toJSON", {
-            'value': function () {
-                return this.__proto__.toJSON(_result);
-            }
-        });
+var DataProto = function () {
+    var _result = {};
+    this.clearResult = function () {
+        _result = {};
     };
-    DataProto.prototype = this;
-    DataProto.prototype.constructor = DataProto;
 
-    this.toJSON = function (result) {
+    Object.defineProperty(this, "result", {
+        'get': function () {
+            return _result;
+        },
+        'set': function () {}
+    });
+
+    this.toJSON = function () {
         var json = '{';
-        for (var property in result) {
+        for (var property in _result) {
             if (!json.endsWith('{') && !json.endsWith(',')) {
                 json = json + ', ';
             }
-            if (typeof result[property] == "number" && isFinite(result[property])) {
-                json = json + '"' + property + '": ' + result[property];
-            } else if (typeof result[property] == "object") {
-                switch (result[property].constructor) {
+            if (typeof _result[property] == "number" && isFinite(_result[property])) {
+                json = json + '"' + property + '": ' + _result[property];
+            } else if (typeof _result[property] == "object") {
+                switch (_result[property].constructor) {
                     case Array:
                     case Float32Array:
                     case Float64Array:
@@ -43,14 +31,14 @@ var jsXtract = function () {
                     case PeakSpectrumData:
                     case HarmonicSpectrumData:
                         // Array
-                        json = json + '"' + property + '": ' + result[property].toJSON(result[property]);
+                        json = json + '"' + property + '": ' + _result[property].toJSON(_result[property]);
                         break;
                     default:
-                        json = json + '"' + property + '": ' + this.toJSON(result[property]);
+                        json = json + '"' + property + '": ' + this.toJSON(_result[property]);
                         break;
                 }
             } else {
-                json = json + '"' + property + '": "' + result[property].toString() + '"';
+                json = json + '"' + property + '": "' + _result[property].toString() + '"';
             }
         }
         return json + '}';
@@ -198,15 +186,4 @@ var jsXtract = function () {
         }
         return bark_map.createCoefficients(N, sampleRate, numBands);
     };
-
-    this.createTimeDataProto = function () {
-        var node = new DataProto();
-        return node;
-    };
-
-    this.createSpectrumDataProto = function () {
-        var node = new DataProto();
-        return node;
-    };
 };
-jsXtract = new jsXtract();

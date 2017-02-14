@@ -34,8 +34,7 @@ var TimeData = function (N, sampleRate, parent) {
     } else {
         throw ("TimeData: Constructor has invalid operators!");
     }
-    this.__proto__ = jsXtract.createTimeDataProto();
-    this.__proto__.constructor = TimeData;
+    DataProto.call(this);
 
     _Fs = sampleRate;
     _dct = this.createDctCoefficients(_length);
@@ -380,3 +379,5 @@ var TimeData = function (N, sampleRate, parent) {
     });
     */
 };
+TimeData.prototype = Object.create(DataProto.prototype);
+TimeData.prototype.constructor = TimeData;

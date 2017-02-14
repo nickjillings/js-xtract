@@ -9,8 +9,7 @@ var SpectrumData = function (N, sampleRate, parent) {
     if (sampleRate === undefined) {
         sampleRate = Math.PI;
     }
-    this.__proto__ = jsXtract.createSpectrumDataProto();
-    this.__proto__.constructor = SpectrumData;
+    DataProto.call(this);
     var _data = new Float64Array(2 * N);
     var _amps = _data.subarray(0, N);
     var _freqs = _data.subarray(N, 2 * N);
@@ -425,3 +424,5 @@ var SpectrumData = function (N, sampleRate, parent) {
     });
 
 };
+SpectrumData.prototype = Object.create(DataProto.prototype);
+SpectrumData.prototype.constructor = SpectrumData;
