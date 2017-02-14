@@ -7,34 +7,33 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
     }
     SpectrumData.call(this, N);
 
-    Object.defineProperty(this, "features", {
-        'get': function () {
-            return this.constructor.prototype.features;
+    Object.defineProperties(this, {
+        "features": {
+            'get': function () {
+                return this.constructor.prototype.features;
+            },
+            'set': function () {}
         },
-        'set': function () {}
-    });
-
-    // Peak Specturm features
-    Object.defineProperty(this, "spectral_inharmonicity", {
-        'value': function () {
-            if (this.result.spectral_inharmonicity === undefined) {
-                this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(this.getData(), this.sampleRate);
-            }
-            return this.result.spectral_inharmonicity;
-        }
-    });
-
-    Object.defineProperty(this, "harmonic_spectrum", {
-        'value': function (threshold) {
-            if (this.result.harmonic_spectrum === undefined) {
-                if (this.f0 === undefined) {
-                    this.spectral_fundamental(this.getData(), this.sampleRate);
+        "spectral_inharmonicity": {
+            'value': function () {
+                if (this.result.spectral_inharmonicity === undefined) {
+                    this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(this.getData(), this.sampleRate);
                 }
-                this.result.harmonic_spectrum = new HarmonicSpectrumData(this.length, this.sampleRate, this);
-                var hs = xtract_harmonic_spectrum(this.getData(), this.f0, threshold);
-                this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0, this.length));
+                return this.result.spectral_inharmonicity;
             }
-            return this.result.harmonic_spectrum;
+        },
+        "harmonic_spectrum": {
+            'value': function (threshold) {
+                if (this.result.harmonic_spectrum === undefined) {
+                    if (this.f0 === undefined) {
+                        this.spectral_fundamental(this.getData(), this.sampleRate);
+                    }
+                    this.result.harmonic_spectrum = new HarmonicSpectrumData(this.length, this.sampleRate, this);
+                    var hs = xtract_harmonic_spectrum(this.getData(), this.f0, threshold);
+                    this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0, this.length));
+                }
+                return this.result.harmonic_spectrum;
+            }
         }
     });
 };

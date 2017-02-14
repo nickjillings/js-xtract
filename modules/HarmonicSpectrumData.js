@@ -10,34 +10,33 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
     }
     PeakSpectrumData.call(this, N);
 
-    Object.defineProperty(this, "features", {
-        'get': function () {
-            return this.constructor.prototype.features;
+    Object.defineProperties(this, {
+        "features": {
+            'get': function () {
+                return this.constructor.prototype.features;
+            },
+            'set': function () {}
         },
-        'set': function () {}
-    });
-
-    // Harmonic Spectrum features
-    Object.defineProperty(this, "odd_even_ratio", {
-        'value': function () {
-            if (this.result.odd_even_ratio === undefined) {
-                if (this.f0 === undefined) {
-                    this.spectral_fundamental(this.getData(), this.sampleRate);
+        "odd_even_ratio": {
+            'value': function () {
+                if (this.result.odd_even_ratio === undefined) {
+                    if (this.f0 === undefined) {
+                        this.spectral_fundamental(this.getData(), this.sampleRate);
+                    }
+                    this.result.odd_even_ratio = xtract_odd_even_ratio(this.getData(), this.f0);
                 }
-                this.result.odd_even_ratio = xtract_odd_even_ratio(this.getData(), this.f0);
+                return this.result.odd_even_ratio;
             }
-            return this.result.odd_even_ratio;
-        }
-    });
-
-    Object.defineProperty(this, "noisiness", {
-        'value': function () {
-            if (parent.constructor !== PeakSpectrumData) {
-                this.result.noisiness = null;
-            } else {
-                this.result.noisiness = xtract_noisiness(this.nonzero_count(), parent.nonzero_count());
+        },
+        "noisiness": {
+            'value': function () {
+                if (parent.constructor !== PeakSpectrumData) {
+                    this.result.noisiness = null;
+                } else {
+                    this.result.noisiness = xtract_noisiness(this.nonzero_count(), parent.nonzero_count());
+                }
+                return this.result.noisiness;
             }
-            return this.result.noisiness;
         }
     });
 };
