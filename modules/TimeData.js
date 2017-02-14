@@ -79,7 +79,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperties(this, {
         "features": {
-            'values': this.constructor.prototype.features;
+            'values': this.constructor.prototype.features
         },
         "sampleRate": {
             'get': function () {
@@ -238,14 +238,13 @@ var TimeData = function (N, sampleRate, parent) {
             }
         },
         "nonzero_count": {
-            'value': {
-                function () {
-                    if (this.result.nonzero_count === undefined) {
-                        this.result.nonzero_count = xtract_nonzero_count(_data);
-                    }
-                    return this.result.nonzero_count;
+            'value': function () {
+                if (this.result.nonzero_count === undefined) {
+                    this.result.nonzero_count = xtract_nonzero_count(_data);
                 }
+                return this.result.nonzero_count;
             }
+
         },
         "f0": {
             'value': function () {
