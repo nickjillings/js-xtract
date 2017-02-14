@@ -139,13 +139,7 @@ if (typeof AudioBuffer !== "undefined") {
     };
 
     AudioBuffer.prototype.xtract_get_number_of_frames = function (hop_size) {
-        if (hop_size === undefined) {
-            throw ("xtract_get_number_of_frames requires the hop_size to be defined");
-        }
-        if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
-            throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
-        }
-        return Math.floor(this.length / hop_size);
+        return xtract_get_number_of_frames(this, hop_size);
     };
 
     AudioBuffer.prototype.xtract_get_frame = function (dst, channel, index, frame_size, hop_size) {
