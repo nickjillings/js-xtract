@@ -26,6 +26,9 @@
 // This work is based upon LibXtract developed by Jamie Bullock
 //https://github.com/jamiebullock/LibXtract
 
+/*globals window, console, Float32Array, Float64Array, Int32Array */
+/*globals inverseTransform, transform */
+
 // A Few Polyfills:
 if (!String.prototype.endsWith) {
     String.prototype.endsWith = function (searchString, position) {
@@ -86,7 +89,7 @@ function xtract_array_normalise(data) {
 }
 
 function xtract_array_bound(data, min, max) {
-    if (typeof min != "number" && typeof max != "number") {
+    if (typeof min !== "number" && typeof max !== "number") {
         return data;
     }
     if (min >= max) {
@@ -103,7 +106,7 @@ function xtract_array_bound(data, min, max) {
 function xtract_array_interlace(data) {
     var length = data.length;
     for (var argument of arguments) {
-        if (argument.length != length) {
+        if (argument.length !== length) {
             console.error("All argument lengths must be the same");
         }
     }
@@ -118,15 +121,15 @@ function xtract_array_interlace(data) {
 }
 
 function xtract_array_deinterlace(data, num_arrays) {
-    if (typeof num_arrays != "number" || num_arrays <= 0) {
+    if (typeof num_arrays !== "number" || num_arrays <= 0) {
         console.error("num_arrays must be a positive integer");
     }
-    if (num_arrays == 1) {
+    if (num_arrays === 1) {
         return data;
     }
     var result = [];
     var N = data.length / num_arrays;
-    if (N != Math.round(N)) {
+    if (N !== Math.round(N)) {
         console.error("Cannot safely divide data into " + num_arrays + " sub arrays");
     }
     for (var n = 0; n < num_arrays; n++) {
@@ -147,11 +150,11 @@ function xtract_mean(array) {
 }
 
 function xtract_temporal_centroid(energyArray, sample_rate, window_ms) {
-    if (typeof sample_rate != "number") {
+    if (typeof sample_rate !== "number") {
         console.error("xtract_temporal_centroid requires sample_rate to be a number");
         return;
     }
-    if (typeof window_ms != "number") {
+    if (typeof window_ms !== "number") {
         console.log("xtract_temporal_centroid assuming window_ms = 100ms");
         window_ms = 100.0;
     }
@@ -169,7 +172,7 @@ function xtract_temporal_centroid(energyArray, sample_rate, window_ms) {
 }
 
 function xtract_variance(array, mean) {
-    if (typeof mean != "number") {
+    if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
     var result = 0.0;
@@ -180,14 +183,14 @@ function xtract_variance(array, mean) {
 }
 
 function xtract_standard_deviation(array, variance) {
-    if (typeof variance != "number") {
+    if (typeof variance !== "number") {
         variance = xtract_variance(array);
     }
     return Math.sqrt(variance);
 }
 
 function xtract_average_deviation(array, mean) {
-    if (typeof mean != "number") {
+    if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
     var result = 0.0;
@@ -198,11 +201,11 @@ function xtract_average_deviation(array, mean) {
 }
 
 function xtract_skewness(array, mean, standard_deviation) {
-    if (typeof mean != "number") {
+    if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
-    if (typeof standard_deviation != "number") {
-        standard_deviation = xtract_standard_deviation(array, xtract_variance(data, mean));
+    if (typeof standard_deviation !== "number") {
+        standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
     var result = 0.0;
     for (var n = 0; n < array.length; n++) {
@@ -212,11 +215,11 @@ function xtract_skewness(array, mean, standard_deviation) {
 }
 
 function xtract_kurtosis(array, mean, standard_deviation) {
-    if (typeof mean != "number") {
+    if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
-    if (typeof standard_deviation != "number") {
-        standard_deviation = xtract_standard_deviation(array, xtract_variance(data, mean));
+    if (typeof standard_deviation !== "number") {
+        standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
     var result = 0.0;
     for (var n = 0; n < array.length; n++) {
@@ -236,7 +239,7 @@ function xtract_spectral_centroid(spectrum) {
     }
     amps = xtract_array_normalise(Amps);
     var A_d = xtract_array_sum(amps) / n;
-    if (A_d == 0.0) {
+    if (A_d === 0.0) {
         return 0.0;
     }
     var sum = 0.0;
@@ -255,7 +258,7 @@ function xtract_spectral_mean(spectrum) {
 }
 
 function xtract_spectral_variance(spectrum, spectral_mean) {
-    if (typeof spectral_mean != "number") {
+    if (typeof spectral_mean !== "number") {
         spectral_mean = xtract_spectral_centroid(spectrum);
     }
     var A = 0,
@@ -281,24 +284,24 @@ function xtract_spectral_variance(spectrum, spectral_mean) {
 }
 
 function xtract_spectral_spread(spectrum, spectral_centroid) {
-    if (typeof spectral_centroid != "number") {
+    if (typeof spectral_centroid !== "number") {
         spectral_centroid = xtract_spectral_centroid(spectrum);
     }
     return xtract_spectral_variance(spectrum, spectral_centroid);
 }
 
 function xtract_spectral_standard_deviation(spectrum, spectral_variance) {
-    if (typeof spectral_variance != "number") {
+    if (typeof spectral_variance !== "number") {
         spectral_variance = xtract_spectral_variance(spectrum);
     }
     return Math.sqrt(spectral_variance);
 }
 
 function xtract_spectral_skewness(spectrum, spectral_mean, spectral_standard_deviation) {
-    if (typeof spectral_mean != "number") {
+    if (typeof spectral_mean !== "number") {
         spectral_mean = xtract_spectral_mean(spectrum);
     }
-    if (typeof spectral_standard_deviation != "number") {
+    if (typeof spectral_standard_deviation !== "number") {
         spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum, xtract_spectral_variance(spectrum, spectral_mean));
     }
     var result = 0;
@@ -313,10 +316,10 @@ function xtract_spectral_skewness(spectrum, spectral_mean, spectral_standard_dev
 }
 
 function xtract_spectral_kurtosis(spectrum, spectral_mean, spectral_standard_deviation) {
-    if (typeof spectral_mean != "number") {
+    if (typeof spectral_mean !== "number") {
         spectral_mean = xtract_spectral_mean(spectrum);
     }
-    if (typeof spectral_standard_deviation != "number") {
+    if (typeof spectral_standard_deviation !== "number") {
         spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum, xtract_spectral_variance(spectrum, spectral_mean));
     }
     var result = 0;
@@ -355,7 +358,7 @@ function xtract_irregularity_j(spectrum) {
 }
 
 function xtract_tristimulus_1(spectrum, f0) {
-    if (typeof f0 != "number") {
+    if (typeof f0 !== "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
     }
@@ -370,16 +373,16 @@ function xtract_tristimulus_1(spectrum, f0) {
 
     for (var i = 0; i < K; i++) {
         temp = amps[i];
-        if (temp != 0) {
+        if (temp !== 0) {
             den += temp;
             h = Math.floor(freqs[i] / f0 + 0.5);
-            if (h == 1) {
+            if (h === 1) {
                 p1 += temp;
             }
         }
     }
 
-    if (den == 0.0 || p1 == 0.0) {
+    if (den === 0.0 || p1 === 0.0) {
         return 0.0;
     } else {
         return p1 / den;
@@ -387,7 +390,7 @@ function xtract_tristimulus_1(spectrum, f0) {
 }
 
 function xtract_tristimulus_2(spectrum, f0) {
-    if (typeof f0 != "number") {
+    if (typeof f0 !== "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
     }
@@ -400,7 +403,7 @@ function xtract_tristimulus_2(spectrum, f0) {
 
     for (var i = 0; i < K; i++) {
         temp = amps[i];
-        if (temp != 0) {
+        if (temp !== 0) {
             den += temp;
             h = Math.floor(freqs[i] / f0 + 0.5);
             switch (h) {
@@ -419,7 +422,7 @@ function xtract_tristimulus_2(spectrum, f0) {
         }
     }
     ps = p2 + p3 + p4;
-    if (den == 0.0 || ps == 0.0) {
+    if (den === 0.0 || ps === 0.0) {
         return 0.0;
     } else {
         return ps / den;
@@ -427,7 +430,7 @@ function xtract_tristimulus_2(spectrum, f0) {
 }
 
 function xtract_tristimulus_3(spectrum, f0) {
-    if (typeof f0 != "number") {
+    if (typeof f0 !== "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
     }
@@ -442,7 +445,7 @@ function xtract_tristimulus_3(spectrum, f0) {
 
     for (var i = 0; i < K; i++) {
         temp = amps[i];
-        if (temp != 0.0) {
+        if (temp !== 0.0) {
             den += temp;
             h = Math.floor(freqs[i] / f0 + 0.5);
             if (h >= 5) {
@@ -450,8 +453,8 @@ function xtract_tristimulus_3(spectrum, f0) {
             }
         }
     }
-    if (den == 0.0 || num == 0.0) {
-        return 0.0
+    if (den === 0.0 || num === 0.0) {
+        return 0.0;
     } else {
         return num / den;
     }
@@ -488,7 +491,7 @@ function xtract_zcr(timeArray) {
 }
 
 function xtract_rolloff(spectrum, sampleRate, threshold) {
-    if (typeof sampleRate != "number" || typeof threshold != "number") {
+    if (typeof sampleRate !== "number" || typeof threshold !== "number") {
         console.log("xtract_rolloff requires sampleRate and threshold to be defined");
         return null;
     }
@@ -529,7 +532,7 @@ function xtract_flatness(spectrum) {
     var amps = spectrum.subarray(0, K);
 
     for (var n = 0; n < K; n++) {
-        if (amps[n] != 0.0) {
+        if (amps[n] !== 0.0) {
             if (xtract_is_denormal(num)) {
                 denormal_found = true;
                 break;
@@ -539,7 +542,7 @@ function xtract_flatness(spectrum) {
             count++;
         }
     }
-    if (count == 0) {
+    if (count === 0) {
         return 0;
     }
     num = Math.pow(num, 1.0 / K);
@@ -549,24 +552,24 @@ function xtract_flatness(spectrum) {
 }
 
 function xtract_flatness_db(spectrum, flatness) {
-    if (typeof flatness != "number") {
+    if (typeof flatness !== "number") {
         flatness = xtract_flatness(spectrum);
     }
     return 10.0 * Math.log10(flatness);
 }
 
 function xtract_tonality(spectrum, flatness_db) {
-    if (typeof flatness_db != "number") {
+    if (typeof flatness_db !== "number") {
         flatness_db = xtract_flatness_db(spectrum);
     }
     return Math.min(flatness_db / -60.0, 1);
 }
 
 function xtract_crest(data, max, mean) {
-    if (typeof max != "number") {
+    if (typeof max !== "number") {
         max = xtract_array_max(data);
     }
-    if (typeof mean != "number") {
+    if (typeof mean !== "number") {
         mean = xtract_mean(data);
     }
     return max / mean;
@@ -590,7 +593,7 @@ function xtract_rms_amplitude(timeArray) {
 }
 
 function xtract_spectral_inharmonicity(peakSpectrum, f0) {
-    if (typeof f0 != "number") {
+    if (typeof f0 !== "number") {
         console.error("spectral_inharmonicity requires f0 to be defined.");
         return null;
     }
@@ -602,10 +605,10 @@ function xtract_spectral_inharmonicity(peakSpectrum, f0) {
     var amps = peakSpectrum.subarray(0, n);
     var freqs = peakSpectrum.subarray(n);
     for (var n = 0; n < K; n++) {
-        if (amps[n] != 0.0) {
+        if (amps[n] !== 0.0) {
             h = Math.floor(freqs[n] / f0 + 0.5);
             var mag_sq = Math.pow(amps[n], 2);
-            num += Math.abs(freqs[n] - h * f0) * mag_sq
+            num += Math.abs(freqs[n] - h * f0) * mag_sq;
             den += mag_sq;
         }
     }
@@ -617,7 +620,7 @@ function xtract_power(magnitudeArray) {
 }
 
 function xtract_odd_even_ratio(harmonicSpectrum, f0) {
-    if (typeof f0 != "number") {
+    if (typeof f0 !== "number") {
         console.error("spectral_inharmonicity requires f0 to be defined.");
         return null;
     }
@@ -631,9 +634,9 @@ function xtract_odd_even_ratio(harmonicSpectrum, f0) {
     var freqs = harmonicSpectrum.subarray(n);
     for (var n = 0; n < K; n++) {
         temp = amps[n];
-        if (temp != 0.0) {
+        if (temp !== 0.0) {
             h = Math.floor(freqs[n] / f0 + 0.5);
-            if (h % 2 != 0) {
+            if (h % 2 !== 0) {
                 odd += temp;
             } else {
                 even += temp;
@@ -641,7 +644,7 @@ function xtract_odd_even_ratio(harmonicSpectrum, f0) {
         }
     }
 
-    if (odd == 0.0 || even == 0.0) {
+    if (odd === 0.0 || even === 0.0) {
         return 0.0;
     } else {
         return odd / even;
@@ -682,7 +685,7 @@ function xtract_spectral_slope(spectrum) {
 }
 
 function xtract_lowest_value(data, threshold) {
-    if (typeof threshold != "number") {
+    if (typeof threshold !== "number") {
         threshold = -Infinity;
     }
     var result = +Infinity;
@@ -695,7 +698,7 @@ function xtract_lowest_value(data, threshold) {
 }
 
 function xtract_highest_value(data, threshold) {
-    if (typeof threshold != "number") {
+    if (typeof threshold !== "number") {
         threshold = +Infinity;
     }
     var result = -Infinity;
@@ -714,7 +717,7 @@ function xtract_sum(data) {
 function xtract_nonzero_count(data) {
     var count = 0;
     for (var n = 0; n < data.length; n++) {
-        if (data[n] != 0) {
+        if (data[n] !== 0) {
             count++;
         }
     }
@@ -733,12 +736,13 @@ function xtract_hps(spectrum) {
     var amps = spectrum.subarray(0, K);
     var freqs = spectrum.subarray(K);
     var M = Math.ceil(K / 3.0);
+    var i;
     if (M <= 1) {
         console.error("Input Data is too short for HPS");
         return null;
     }
 
-    for (var i = 0; i < M; ++i) {
+    for (i = 0; i < M; ++i) {
         tempProduct = amps[i] * amps[i * 2] * amps[i * 3];
         if (tempProduct > peak) {
             peak = tempProduct;
@@ -746,8 +750,8 @@ function xtract_hps(spectrum) {
         }
     }
 
-    for (var i = 0; i < K; i++) {
-        if (amps[i] > largest1_lwr && i != peak_index) {
+    for (i = 0; i < K; i++) {
+        if (amps[i] > largest1_lwr && i !== peak_index) {
             largest1_lwr = amps[i];
             position1_lwr = i;
         }
@@ -762,13 +766,14 @@ function xtract_hps(spectrum) {
 }
 
 function xtract_f0(timeArray, sampleRate) {
-    if (typeof sampleRate != "number") {
+    if (typeof sampleRate !== "number") {
         sampleRate = 44100.0;
     }
     var sub_arr = new Float64Array(timeArray.length);
     var N = sub_arr.length;
     var M = N / 2;
-    for (var n = 0; n < N; n++) {
+    var n;
+    for (n = 0; n < N; n++) {
         sub_arr[n] = timeArray[n];
     }
 
@@ -781,7 +786,7 @@ function xtract_f0(timeArray, sampleRate) {
     threshold_peak *= array_max;
     threshold_centre *= array_max;
 
-    for (var n = 0; n < sub_arr.length; n++) {
+    for (n = 0; n < sub_arr.length; n++) {
         if (sub_arr[n] > threshold_peak) {
             sub_arr[n] = threshold_peak;
         } else if (sub_arr[n] < -threshold_peak) {
@@ -795,12 +800,12 @@ function xtract_f0(timeArray, sampleRate) {
         }
     }
 
-    for (var n = 1; n < M; n++) {
+    for (n = 1; n < M; n++) {
         err_tau_1 += Math.abs(sub_arr[n] - sub_arr[n + 1]);
     }
     for (var tau = 2; tau < M; tau++) {
         var err_tau_x = 0;
-        for (var n = 1; n < M; n++) {
+        for (n = 1; n < M; n++) {
             err_tau_x += Math.abs(sub_arr[n] - sub_arr[n + tau]);
         }
         if (err_tau_x < err_tau_1) {
@@ -816,19 +821,19 @@ function xtract_failsafe_f0(timeArray, sampleRate) {
 }
 
 function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
-    if (pitchtracker == undefined) {
+    if (pitchtracker === undefined) {
         console.error("xtract_wavelet_f0 requires pitchtracker to be defined");
         return null;
     }
-    if (xtract_array_sum(timeArray) == 0) {
+    if (xtract_array_sum(timeArray) === 0) {
         return;
     }
 
     function _power2p(value) {
-        if (value == 0) {
+        if (value === 0) {
             return 1;
         }
-        if (value == 2) {
+        if (value === 2) {
             return 1;
         }
         if (value & 0x1) {
@@ -838,13 +843,13 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     }
 
     function _bitcount(value) {
-        if (value == 0) {
+        if (value === 0) {
             return 0;
         }
-        if (value == 1) {
+        if (value === 1) {
             return 1;
         }
-        if (value == 2) {
+        if (value === 2) {
             return 2;
         }
         return _bitcount(value >> 1) + 1;
@@ -855,7 +860,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
             return value;
         }
 
-        if (value == 1) {
+        if (value === 1) {
             return 2;
         }
         var j, i = _bitcount(value);
@@ -882,8 +887,8 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         var res = 1,
             j;
         for (j = 0; j < i; j++) {
-            res <<= 1
-        };
+            res <<= 1;
+        }
         return res;
     }
 
@@ -894,19 +899,19 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     }
 
     var _minmax = {
-            index: undefined,
-            next: undefined
-        }
-        //_dywapitch_computeWaveletPitch(samples, startsample, samplecount)
+        index: undefined,
+        next: undefined
+    };
+    //_dywapitch_computeWaveletPitch(samples, startsample, samplecount)
     var samples = timeArray,
         startsample = 0,
         samplecount = timeArray.length;
     var pitchF = 0.0;
-    var j, si, si1;
+    var i, j, si, si1;
 
     samplecount = _floor_power2(samplecount);
     var sam = new Float64Array(samplecount);
-    for (var i = 0; i < samplecount; i++) {
+    for (i = 0; i < samplecount; i++) {
         sam[i] = samples[i];
     }
 
@@ -918,7 +923,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     var nbMins, nbMaxs;
 
     var maxFLWTlevels = 6;
-    var maxF = 3000.;
+    var maxF = 3000;
     var differenceLevelsN = 3;
     var maximaThresholdRatio = 0.75;
 
@@ -926,7 +931,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     var theDC = 0.0; {
         var maxValue = 0.0;
         var minValue = 0.0;
-        for (var i = 0; i < samplecount; i++) {
+        for (i = 0; i < samplecount; i++) {
             si = sam[i];
             theDC = theDC + si;
             if (si > maxValue) {
@@ -945,13 +950,13 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     }
 
     var curLevel = 0;
-    var curModeDistance = -1.;
+    var curModeDistance = -1;
     var delta;
 
     var cont = true;
 
     while (cont) {
-        delta = Math.floor(44100. / (_2power(curLevel) * maxF));
+        delta = Math.floor(44100 / (_2power(curLevel) * maxF));
         if (curSamNb < 2) {
             cont = false;
             break;
@@ -964,7 +969,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         var findMax = 0;
         var findMin = 0;
 
-        for (var i = 2; i < curSamNb; i++) {
+        for (i = 2; i < curSamNb; i++) {
             si = sam[i] - theDC;
             si1 = sam[i - 1] - theDC;
 
@@ -1006,17 +1011,17 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
             previousDV = dv;
         }
 
-        if (nbMins == 0 && nbMaxs == 0) {
+        if (nbMins === 0 && nbMaxs === 0) {
             cont = false;
             break;
         }
 
         var d;
         //memset(distances, 0, samplecount*sizeof(int));
-        for (var i = 0; i < samplecount; i++) {
+        for (i = 0; i < samplecount; i++) {
             distances[i] = 0.0;
         }
-        for (var i = 0; i < nbMins; i++) {
+        for (i = 0; i < nbMins; i++) {
             for (j = 1; j < differenceLevelsN; j++) {
                 if (i + j < nbMins) {
                     d = _iabs(mins[i] - mins[i + j]);
@@ -1024,8 +1029,8 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
                 }
             }
         }
-        for (var i = 0; i < nbMaxs; i++) {
-            for (var j = 1; j < differenceLevelsN; j++) {
+        for (i = 0; i < nbMaxs; i++) {
+            for (j = 1; j < differenceLevelsN; j++) {
                 if (i + j < nbMaxs) {
                     d = _iabs(maxs[i] - maxs[i + j]);
                     //asLog("dywapitch i=%ld j=%ld d=%ld\n", i, j, d);
@@ -1036,15 +1041,15 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
 
         var bestDistance = -1;
         var bestValue = -1;
-        for (var i = 0; i < curSamNb; i++) {
+        for (i = 0; i < curSamNb; i++) {
             var summed = 0;
-            for (var j = -delta; j <= delta; j++) {
+            for (j = -delta; j <= delta; j++) {
                 if (i + j >= 0 && i + j < curSamNb)
                     summed += distances[i + j];
             }
             //asLog("dywapitch i=%ld summed=%ld bestDistance=%ld\n", i, summed, bestDistance);
-            if (summed == bestValue) {
-                if (i == 2 * bestDistance)
+            if (summed === bestValue) {
+                if (i === 2 * bestDistance)
                     bestDistance = i;
 
             } else if (summed > bestValue) {
@@ -1055,7 +1060,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
 
         var distAvg = 0.0;
         var nbDists = 0;
-        for (var j = -delta; j <= delta; j++) {
+        for (j = -delta; j <= delta; j++) {
             if (bestDistance + j >= 0 && bestDistance + j < samplecount) {
                 var nbDist = distances[bestDistance + j];
                 if (nbDist > 0) {
@@ -1074,7 +1079,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
                 //if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"ok"
                 //asLog("dywapitch similarity=%f OK !\n", similarity);
                 // two consecutive similar mode distances : ok !
-                pitchF = 44100. / (_2power(curLevel - 1) * curModeDistance);
+                pitchF = 44100 / (_2power(curLevel - 1) * curModeDistance);
                 cont = false;
                 break;
             }
@@ -1098,7 +1103,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
             cont = false;
             break;
         }
-        for (var i = 0; i < curSamNb / 2; i++) {
+        for (i = 0; i < curSamNb / 2; i++) {
             sam[i] = (sam[2 * i] + sam[2 * i + 1]) / 2.0;
         }
         curSamNb /= 2;
@@ -1106,17 +1111,17 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
 
     //_dywapitch_dynamicprocess(pitchtracker, pitch)
     return (function (pitchtracker, pitch) {
-        if (pitch == 0.0) {
+        if (pitch === 0.0) {
             return -1.0;
         }
 
         var estimatedPitch = -1,
             acceptedError = 0.2,
             maxConfidence = 5;
-        if (pitch != -1) {
+        if (pitch !== -1) {
             // I have a pitch here
 
-            if (pitchtracker._prevPitch == -1) {
+            if (pitchtracker._prevPitch === -1) {
                 // no Previous
                 estimatedPitch = pitch;
                 pitchtracker._prevPitch = pitch;
@@ -1147,7 +1152,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
             }
         } else {
             // No pitch
-            if (pitchtracker._prevPitch != -1) {
+            if (pitchtracker._prevPitch !== -1) {
                 // was a pitch before
                 if (pitchtracker._pitchConfidence >= 1) {
                     // previous trusted
@@ -1166,7 +1171,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         } else {
             pitch = -1;
         }
-        if (pitch == -1) {
+        if (pitch === -1) {
             pitch = 0.0;
         }
         return pitch;
@@ -1188,7 +1193,7 @@ function xtract_spectral_fundamental(spectrum, sample_rate) {
         var o = [],
             N = E.length,
             n;
-        if (window == undefined) {
+        if (window === undefined) {
             window = 5;
         }
         for (n = window; n < N - window - 1; n++) {
@@ -1200,7 +1205,7 @@ function xtract_spectral_fundamental(spectrum, sample_rate) {
                     break;
                 }
             }
-            if (max == 1) {
+            if (max === 1) {
                 o.push(n);
             }
         }
@@ -1229,7 +1234,7 @@ function xtract_spectral_fundamental(spectrum, sample_rate) {
 
     // Get the peaks
     var p = peak_picking(R, 5);
-    if (p.length == 0) {
+    if (p.length === 0) {
         return 0;
     }
     p = p[0];
@@ -1242,11 +1247,11 @@ function xtract_spectral_fundamental(spectrum, sample_rate) {
 /* Vector.c */
 
 function xtract_energy(array, sample_rate, window_ms) {
-    if (typeof sample_rate != "number") {
+    if (typeof sample_rate !== "number") {
         console.error("xtract_energy requires sample_rate to be defined");
         return;
     }
-    if (typeof window_ms != "number") {
+    if (typeof window_ms !== "number") {
         window_ms = 100;
     }
     if (window_ms <= 0) {
@@ -1265,14 +1270,14 @@ function xtract_energy(array, sample_rate, window_ms) {
 }
 
 function xtract_spectrum(array, sample_rate, withDC, normalise) {
-    if (typeof sample_rate != "number") {
+    if (typeof sample_rate !== "number") {
         console.error("Sample Rate must be defined");
         return null;
     }
-    if (withDC == undefined) {
+    if (withDC === undefined) {
         withDC = false;
     }
-    if (normalise == undefined) {
+    if (normalise === undefined) {
         normalise = false;
     }
     var N = array.length;
@@ -1307,11 +1312,11 @@ function xtract_spectrum(array, sample_rate, withDC, normalise) {
 }
 
 function xtract_complex_spectrum(array, sample_rate, withDC) {
-    if (typeof sample_rate != "number") {
+    if (typeof sample_rate !== "number") {
         console.error("Sample Rate must be defined");
         return null;
     }
-    if (withDC == undefined) {
+    if (withDC === undefined) {
         withDC = false;
     }
     var N = array.length;
@@ -1340,16 +1345,16 @@ function xtract_complex_spectrum(array, sample_rate, withDC) {
 }
 
 function xtract_mfcc(spectrum, mfcc) {
-    if (typeof mfcc != "object") {
+    if (typeof mfcc !== "object") {
         console.error("Invalid MFCC, must be MFCC object built using xtract_init_mfcc");
         return null;
     }
-    if (mfcc.n_filters == 0) {
+    if (mfcc.n_filters === 0) {
         console.error("Invalid MFCC, object must be built using xtract_init_mfcc");
         return null;
     }
     var K = spectrum.length >> 1;
-    if (mfcc.filters[0].length != K) {
+    if (mfcc.filters[0].length !== K) {
         console.error("Lengths do not match");
         return null;
     }
@@ -1376,7 +1381,7 @@ function xtract_dct(array) {
         if (array.reduce) {
             result[n] = array.reduce(function (sum, value, m) {
                 return sum + value * Math.cos(Math.PI * nN * (m + 0.5));
-            }, 0.0)
+            }, 0.0);
         } else {
             for (var m = 0; m < N; m++) {
                 result[n] += array[m] * Math.cos(Math.PI * nN * (m + 0.5));
@@ -1388,7 +1393,7 @@ function xtract_dct(array) {
 
 function xtract_dct_2(array, dct) {
     var N = array.length;
-    if (dct == undefined) {
+    if (dct === undefined) {
         dct = xtract_init_dct(N);
     }
     var result = new Float64Array(N);
@@ -1441,7 +1446,7 @@ function xtract_asdf(array) {
 }
 
 function xtract_bark_coefficients(spectrum, bark_limits) {
-    if (bark_limits == undefined) {
+    if (bark_limits === undefined) {
         console.error("xtract_bark_coefficients requires compute limits from xtract_init_bark");
         return null;
     }
@@ -1465,7 +1470,7 @@ function xtract_peak_spectrum(spectrum, q, threshold) {
         y2 = 0.0,
         y3 = 0.0,
         p = 0.0;
-    if (typeof q != "number") {
+    if (typeof q !== "number") {
         console.error("xtract_peak_spectrum requires second argument to be sample_rate/N");
     }
     if (threshold < 0 || threshold > 100) {
@@ -1509,7 +1514,7 @@ function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
     var ampsOut = result.subarray(0, K);
     var freqsOut = result.subarray(K);
     var n = K;
-    if (f0 == undefined || threshold == undefined) {
+    if (f0 === undefined || threshold === undefined) {
         console.error("harmonic_spectrum requires f0 and threshold to be numbers and defined");
         return null;
     }
@@ -1518,7 +1523,7 @@ function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
         console.log("harmonic_spectrum assuming integer for threshold inserted, operating at t=" + threshold);
     }
     while (n--) {
-        if (freqsIn[n] != 0.0) {
+        if (freqsIn[n] !== 0.0) {
             var ratio = freqsIn[n] / f0;
             var nearest = Math.round(ratio);
             var distance = Math.abs(nearest - ratio);
@@ -1538,12 +1543,12 @@ function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
 }
 
 function xtract_lpc(autocorr) {
-    var i, j, r, ref, error = autocorr[0];
+    var i, j, r, error = autocorr[0];
     var N = autocorr.length;
     var L = N - 1;
     var lpc = new Float64Array(L);
     var ref = new Float64Array(L);
-    if (error == 0.0) {
+    if (error === 0.0) {
         return lpc;
     }
 
@@ -1573,7 +1578,7 @@ function xtract_lpcc(lpc, Q) {
     var N = lpc.length;
     var n, k, sum, order = N - 1,
         cep_length;
-    if (typeof Q != "number") {
+    if (typeof Q !== "number") {
         Q = N - 1;
     }
     cep_length = Q;
@@ -1599,8 +1604,8 @@ function xtract_lpcc(lpc, Q) {
 
 function xtract_pcp(spectrum, M, fs) {
     var N = spectrum.length >> 1;
-    if (typeof M != "object") {
-        if (typeof fs != "number" || fs <= 0.0) {
+    if (typeof M !== "object") {
+        if (typeof fs !== "number" || fs <= 0.0) {
             console.error("Cannot dynamically compute M if fs is undefined / not a valid sample rate");
             return [];
         }
@@ -1635,7 +1640,7 @@ function xtract_yin(array) {
 }
 
 function xtract_onset(timeData, frameSize) {
-    if (timeData == undefined || frameSize == undefined) {
+    if (timeData === undefined || frameSize === undefined) {
         console.error("All arguments for xtract_onset must be defined: xtract_onset(timeData, frameSize)");
     }
 
@@ -1645,8 +1650,9 @@ function xtract_onset(timeData, frameSize) {
     var real = new Float64Array(frameSize);
     var imag = new Float64Array(frameSize);
     var K = frameSize / 2 + 1;
+    var n;
     for (var i = 0; i < N; i++) {
-        for (var n = 0; n < frameSize; n++) {
+        for (n = 0; n < frameSize; n++) {
             real[n] = frames[i][n];
             imag[n] = 0.0;
         }
@@ -1655,14 +1661,14 @@ function xtract_onset(timeData, frameSize) {
     }
 
     function angle(real, imag) {
-        if (imag == undefined && real.length == 2) {
+        if (imag === undefined && real.length === 2) {
             return Math.atan2(real[1], real[0]);
         }
         return Math.atan2(imag, real);
     }
 
     function abs(real, imag) {
-        if (imag == undefined && real.length == 2) {
+        if (imag === undefined && real.length === 2) {
             return Math.sqrt(Math.pow(real[0], 2) + Math.pow(real[1], 2));
         }
         return Math.sqrt(Math.pow(real, 2) + Math.pow(imag, 2));
@@ -1674,7 +1680,7 @@ function xtract_onset(timeData, frameSize) {
     }
 
     function complex_mul(cplx_pair_A, cplx_pair_B) {
-        if (cplx_pair_A.length != 2 || cplx_pair_B.length != 2) {
+        if (cplx_pair_A.length !== 2 || cplx_pair_B.length !== 2) {
             console.error("Both arguments must be numeral arrays of length 2");
         }
         var result = new cplx_pair_A.constructor(2);
@@ -1687,7 +1693,7 @@ function xtract_onset(timeData, frameSize) {
     for (var k = 0; k < K; k++) {
         var phase_prev = angle(X[0].subarray(2 * k, 2 * k + 2));
         var phase_delta = angle(X[0].subarray(2 * k, 2 * k + 2));
-        for (var n = 1; n < N; n++) {
+        for (n = 1; n < N; n++) {
             var phi = princarg(phase_prev + phase_delta);
             var exp = [Math.cos(phi), Math.sin(phi)];
             var XT = complex_mul(X[n].subarray(2 * k, 2 * k + 2), exp);
@@ -1700,7 +1706,7 @@ function xtract_onset(timeData, frameSize) {
         }
     }
 
-    for (var n = 0; n < N; n++) {
+    for (n = 0; n < N; n++) {
         E[n] /= frameSize;
     }
     return E;
@@ -1747,7 +1753,7 @@ function xtract_resample(data, p, q, n) {
             t = 0,
             k;
         for (k = 0; k < K; k++) {
-            if (t == n) {
+            if (t === n) {
                 // Points lie on same time
                 dst[k] = data[n];
             } else {
@@ -1785,7 +1791,7 @@ function xtract_resample(data, p, q, n) {
         var B = {
             real: zp(b),
             imag: new Float64Array(N * 2)
-        }
+        };
         transform(B.real, B.imag);
         var Xi = X.xtract_get_data_frames(N, N, false);
         var Yi = Y.xtract_get_data_frames(N, N, false);
@@ -1799,11 +1805,11 @@ function xtract_resample(data, p, q, n) {
         var xF = {
             real: new Float64Array(N2),
             imag: new Float64Array(N2)
-        }
+        };
         var yF = {
             real: new Float64Array(N2),
             imag: new Float64Array(N2)
-        }
+        };
         for (f = 0; f < Xi.length; f++) {
             for (i = 0; i < N; i++) {
                 xF.real[i] = x_last[i] * w[i];
@@ -1834,10 +1840,10 @@ function xtract_resample(data, p, q, n) {
 
     // Determine which way to go
     var b, N = data.length;
-    if (typeof n != "number" || n <= 0) {
+    if (typeof n !== "number" || n <= 0) {
         n = 512;
     }
-    if (p == q) {
+    if (p === q) {
         return data;
     }
     var ratio = (p / q);
@@ -1848,12 +1854,12 @@ function xtract_resample(data, p, q, n) {
         // 1. Expand Data range
         dst = polyn(data, K);
         // 2. Filter out spurious energy above q
-        var b = filter(n, 1 / ratio);
+        b = filter(n, 1 / ratio);
         overlap(data, b);
     } else {
         // Downsampling
         // 1. Filter out energy above p
-        var b = filter(n, ratio / 2);
+        b = filter(n, ratio / 2);
         var ds1 = overlap(data, b);
         // 2. Decrease data range
         dst = polyn(ds1, K);
@@ -1866,8 +1872,8 @@ function xtract_init_dft(N) {
         N: N / 2 + 1,
         real: [],
         imag: []
-    }
-    var power_const = -2.0 * Math.PI / N;;
+    };
+    var power_const = -2.0 * Math.PI / N;
     for (var k = 0; k < dft.N; k++) {
         var power_k = power_const * k;
         dft.real[k] = new Float64Array(N);
@@ -1885,7 +1891,7 @@ function xtract_init_dct(N) {
     var dct = {
         N: N,
         wt: []
-    }
+    };
     for (var k = 0; k < N; k++) {
         dct.wt[k] = new Float64Array(N);
         for (var n = 0; n < N; n++) {
@@ -1902,7 +1908,7 @@ function xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands) {
     };
     var norm = 1,
         M = N / 2,
-        height, norm_fact;
+        height, norm_fact, n;
 
     if (freq_bands <= 1) {
         return null;
@@ -1919,16 +1925,16 @@ function xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands) {
     lin_peak[0] = freq_min;
     fft_peak[0] = Math.floor(lin_peak[0] / nyquist * M);
 
-    for (var n = 1; n < (freq_bands + 2); ++n) {
+    for (n = 1; n < (freq_bands + 2); ++n) {
         //roll out peak locations - mel, linear and linear on fft window scale
         mel_peak[n] = mel_peak[n - 1] + freq_bw_mel;
         lin_peak[n] = 700 * (Math.exp(mel_peak[n] / 1127) - 1);
         fft_peak[n] = Math.floor(lin_peak[n] / nyquist * M);
     }
 
-    for (var n = 0; n < freq_bands; n++) {
+    for (n = 0; n < freq_bands; n++) {
         //roll out normalised gain of each peak
-        if (style == "XTRACT_EQUAL_GAIN") {
+        if (style === "XTRACT_EQUAL_GAIN") {
             height = 1;
             norm_fact = norm;
         } else {
@@ -1941,9 +1947,9 @@ function xtract_init_mfcc(N, nyquist, style, freq_min, freq_max, freq_bands) {
     var i = 0,
         inc;
     var next_peak;
-    for (var n = 0; n < freq_bands; n++) {
+    for (n = 0; n < freq_bands; n++) {
         // calculate the rise increment
-        if (n == 0) {
+        if (n === 0) {
             inc = height_norm[n] / fft_peak[n];
         } else {
             inc = height_norm[n] / (fft_peak[n] - fft_peak[n - 1]);
@@ -1975,20 +1981,20 @@ function xtract_init_wavelet() {
     return {
         _prevPitch: -1,
         _pitchConfidence: -1
-    }
+    };
 }
 
 function xtract_init_pcp(N, fs, f_ref) {
-    if (typeof fs != "number" || typeof N != "number") {
+    if (typeof fs !== "number" || typeof N !== "number") {
         console.error('The Sample Rate and sample count have to be defined: xtract_init_pcp(N, fs, f_ref)');
     }
-    if (N <= 0 || N != Math.floor(N)) {
+    if (N <= 0 || N !== Math.floor(N)) {
         console.error("The sample count, N, must be a positive integer: xtract_init_pcp(N, fs, f_ref)");
     }
     if (fs <= 0.0) {
         console.error('The Sample Rate must be a positive number: xtract_init_pcp(N, fs, f_ref)');
     }
-    if (typeof f_ref != "number" || f_ref <= 0.0 || f_ref >= fs / 2) {
+    if (typeof f_ref !== "number" || f_ref <= 0.0 || f_ref >= fs / 2) {
         console.log("Assuming f_ref to be 48.9994294977Hz");
         f_ref = 48.9994294977;
     }
@@ -2003,7 +2009,7 @@ function xtract_init_pcp(N, fs, f_ref) {
 }
 
 function xtract_init_bark(N, sampleRate, bands) {
-    if (typeof bands != "number" || bands < 0 || bands > 26) {
+    if (typeof bands !== "number" || bands < 0 || bands > 26) {
         bands = 26;
     }
     var edges = [0, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500, 20500, 27000];
@@ -2015,16 +2021,16 @@ function xtract_init_bark(N, sampleRate, bands) {
 }
 
 Float32Array.prototype.xtract_get_data_frames = function (frame_size, hop_size, copy) {
-    if (typeof frame_size != "number") {
+    if (typeof frame_size !== "number") {
         throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
-    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
         throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
     }
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
     var frames = [];
@@ -2052,19 +2058,19 @@ Float32Array.prototype.xtract_get_data_frames = function (frame_size, hop_size, 
         frames.push(sub_frame);
     }
     return frames;
-}
+};
 
 Float64Array.prototype.xtract_get_data_frames = function (frame_size, hop_size, copy) {
-    if (typeof frame_size != "number") {
+    if (typeof frame_size !== "number") {
         throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
-    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
         throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
     }
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
     var frames = [];
@@ -2092,25 +2098,25 @@ Float64Array.prototype.xtract_get_data_frames = function (frame_size, hop_size, 
         frames.push(sub_frame);
     }
     return frames;
-}
+};
 
 Float32Array.prototype.xtract_process_frame_data = function (func, sample_rate, frame_size, hop_size, arg_this) {
-    if (typeof func != "function") {
+    if (typeof func !== "function") {
         throw ("xtract_process_frame_data requires func to be a defined function");
     }
-    if (typeof sample_rate != "number") {
+    if (typeof sample_rate !== "number") {
         throw ("xtract_get_data_frames requires sample_rate to be defined");
     }
-    if (typeof frame_size != "number") {
+    if (typeof frame_size !== "number") {
         throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
-    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
         throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
     }
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
     var frames = this.xtract_get_data_frames(frame_size, hop_size);
@@ -2127,8 +2133,8 @@ Float32Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
         TimeData: undefined,
         SpectrumData: undefined
     };
-    var prev_data = undefined;
-    var prev_result = undefined;
+    var prev_data;
+    var prev_result;
     for (var frame of frames) {
         data.TimeData = frame;
         data.SpectrumData = xtract_spectrum(frame, sample_rate, true, false);
@@ -2149,25 +2155,25 @@ Float32Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
         result.results.push(frame_result);
     }
     return result;
-}
+};
 
 Float64Array.prototype.xtract_process_frame_data = function (func, sample_rate, frame_size, hop_size, arg_this) {
-    if (typeof func != "function") {
+    if (typeof func !== "function") {
         throw ("xtract_process_frame_data requires func to be a defined function");
     }
-    if (typeof sample_rate != "number") {
+    if (typeof sample_rate !== "number") {
         throw ("xtract_get_data_frames requires sample_rate to be defined");
     }
-    if (typeof frame_size != "number") {
+    if (typeof frame_size !== "number") {
         throw ("xtract_get_data_frames requires the frame_size to be defined");
     }
-    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
         throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
     }
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
     var frames = this.xtract_get_data_frames(frame_size, hop_size);
@@ -2184,8 +2190,8 @@ Float64Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
         TimeData: undefined,
         SpectrumData: undefined
     };
-    var prev_data = undefined;
-    var prev_result = undefined;
+    var prev_data;
+    var prev_result;
     for (var frame of frames) {
         data.TimeData = frame;
         data.SpectrumData = xtract_spectrum(frame, sample_rate, true, false);
@@ -2206,74 +2212,74 @@ Float64Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
         result.results.push(frame_result);
     }
     return result;
-}
+};
 
 Float32Array.prototype.toJSON = function () {
     var json = '[';
     var n = 0;
     while (n < this.length) {
         json = json + this[n];
-        if (this[n + 1] != undefined) {
+        if (this[n + 1] !== undefined) {
             json = json + ',';
         }
         n++;
     }
     return json + ']';
-}
+};
 
 Float64Array.prototype.toJSON = function () {
     var json = '[';
     var n = 0;
     while (n < this.length) {
         json = json + this[n];
-        if (this[n + 1] != undefined) {
+        if (this[n + 1] !== undefined) {
             json = json + ',';
         }
         n++;
     }
     return json + ']';
-}
+};
 
 Float32Array.prototype.xtract_get_number_of_frames = function (hop_size) {
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         throw ("xtract_get_number_of_frames requires the hop_size to be defined");
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
     return Math.floor(this.length / hop_size);
-}
+};
 
 Float64Array.prototype.xtract_get_number_of_frames = function (hop_size) {
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         throw ("xtract_get_number_of_frames requires the hop_size to be defined");
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
     return Math.floor(this.length / hop_size);
-}
+};
 
 Float32Array.prototype.xtract_get_frame = function (dst, index, frame_size, hop_size) {
-    if (typeof dst != "object" || dst.constructor != Float32Array) {
+    if (typeof dst !== "object" || dst.constructor !== Float32Array) {
         throw ("dst must be a Float32Array object equal in length to hop_size");
     }
-    if (typeof index != "number" || index != Math.floor(index)) {
+    if (typeof index !== "number" || index !== Math.floor(index)) {
         throw ("xtract_get_frame requires the index to be an integer value");
     }
-    if (typeof frame_size != "number") {
+    if (typeof frame_size !== "number") {
         throw ("xtract_get_frame requires the frame_size to be defined");
     }
-    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
         throw ("xtract_get_frame requires the frame_size to be a positive integer");
     }
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (dst.length != hop_size) {
+    if (dst.length !== hop_size) {
         throw ("dst must be a Float32Array object equal in length to hop_size");
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_frame requires the hop_size to be a positive integer");
     }
     var K = this.xtract_get_number_of_frames(hop_size);
@@ -2288,28 +2294,28 @@ Float32Array.prototype.xtract_get_frame = function (dst, index, frame_size, hop_
     while (n < dst.length) {
         dst[n] = 0.0;
     }
-}
+};
 
 Float64Array.prototype.xtract_get_frame = function (dst, index, frame_size, hop_size) {
-    if (typeof dst != "object" || dst.constructor != Float32Array) {
+    if (typeof dst !== "object" || dst.constructor !== Float32Array) {
         throw ("dst must be a Float32Array object equal in length to hop_size");
     }
-    if (typeof index != "number" || index != Math.floor(index)) {
+    if (typeof index !== "number" || index !== Math.floor(index)) {
         throw ("xtract_get_frame requires the index to be an integer value");
     }
-    if (typeof frame_size != "number") {
+    if (typeof frame_size !== "number") {
         throw ("xtract_get_frame requires the frame_size to be defined");
     }
-    if (frame_size <= 0 || frame_size != Math.floor(frame_size)) {
+    if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
         throw ("xtract_get_frame requires the frame_size to be a positive integer");
     }
-    if (hop_size == undefined) {
+    if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (dst.length != hop_size) {
+    if (dst.length !== hop_size) {
         throw ("dst must be a Float32Array object equal in length to hop_size");
     }
-    if (hop_size <= 0 || hop_size != Math.floor(hop_size)) {
+    if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_frame requires the hop_size to be a positive integer");
     }
     var K = this.xtract_get_number_of_frames(hop_size);
@@ -2325,4 +2331,4 @@ Float64Array.prototype.xtract_get_frame = function (dst, index, frame_size, hop_
         dst[n] = 0.0;
         n++;
     }
-}
+};

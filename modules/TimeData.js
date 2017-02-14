@@ -1,4 +1,5 @@
 // Prototype for Time Domain based data
+/*globals console, Float32Array, Float64Array */
 var TimeData = function (N, sampleRate, parent) {
     if (sampleRate <= 0) {
         sampleRate = undefined;
@@ -7,31 +8,31 @@ var TimeData = function (N, sampleRate, parent) {
 
     var _data, _length, _Fs, _wavelet, _dct;
 
-    if (typeof N == "object") {
+    if (typeof N === "object") {
         var src, src_data;
-        if (N.constructor == TimeData) {
+        if (N.constructor === TimeData) {
             src = N;
             src_data = src.getData();
-        } else if (N.constructor == Float32Array || N.constructor == Float64Array) {
+        } else if (N.constructor === Float32Array || N.constructor === Float64Array) {
             src = N;
             src_data = N;
         } else {
-            console.error("TimeData: Invalid object passed as first argument.");
+            throw ("TimeData: Invalid object passed as first argument.");
         }
         _length = src.length;
         _data = new Float64Array(_length);
         for (var n = 0; n < _length; n++) {
             _data[n] = src_data[n];
         }
-    } else if (typeof N == "number") {
-        if (N <= 0 || N != Math.floor(N)) {
-            console.error("TimeData: Invalid number passed as first argument.");
+    } else if (typeof N === "number") {
+        if (N <= 0 || N !== Math.floor(N)) {
+            throw ("TimeData: Invalid number passed as first argument.");
         } else {
             _length = N;
             _data = new Float64Array(_length);
         }
     } else {
-        console.error("TimeData: Constructor has invalid operators!");
+        throw ("TimeData: Constructor has invalid operators!");
     }
     this.__proto__ = jsXtract.createTimeDataProto();
     this.__proto__.constructor = TimeData;
@@ -42,7 +43,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     this.getData = function () {
         return _data;
-    }
+    };
 
     this.zeroData = function () {
         if (_data.fill) {
@@ -53,16 +54,16 @@ var TimeData = function (N, sampleRate, parent) {
             }
         }
         this.clearResult();
-    }
+    };
 
     this.copyDataFrom = function (src, N, offset) {
-        if (typeof src != "object" || src.length == undefined) {
-            console.error("copyDataFrom requires src to be an Array or TypedArray");
+        if (typeof src !== "object" || src.length === undefined) {
+            throw ("copyDataFrom requires src to be an Array or TypedArray");
         }
-        if (offset == undefined) {
+        if (offset === undefined) {
             offset = 0;
         }
-        if (N == undefined) {
+        if (N === undefined) {
             N = Math.min(src.length, _data.length);
         }
         N = Math.min(N + offset, _data.length);
@@ -70,12 +71,12 @@ var TimeData = function (N, sampleRate, parent) {
             _data[n + offset] = src[n];
         }
         this.clearResult();
-    }
+    };
 
     this.duplicate = function () {
         var copy = this.prototype.constructor(_data.length, _Fs);
         copy.copyDataFrom(_data);
-    }
+    };
 
     Object.defineProperty(this, "features", {
         'get': function () {
@@ -86,13 +87,13 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "sampleRate", {
         'get': function () {
-            return _Fs
+            return _Fs;
         },
         'set': function (sampleRate) {
-            if (_Fs == undefined) {
+            if (_Fs === undefined) {
                 _Fs = sampleRate;
             } else {
-                console.error("Cannot set one-time variable");
+                throw ("Cannot set one-time variable");
             }
         }
     });
@@ -105,7 +106,7 @@ var TimeData = function (N, sampleRate, parent) {
     // Array Properties
     Object.defineProperty(this, "minimum", {
         'value': function () {
-            if (this.result.minimum == undefined) {
+            if (this.result.minimum === undefined) {
                 this.result.minimum = xtract_array_min(_data);
             }
             return this.result.minimum;
@@ -113,7 +114,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "maximum", {
         'value': function () {
-            if (this.result.maximum == undefined) {
+            if (this.result.maximum === undefined) {
                 this.result.maximum = xtract_array_max(_data);
             }
             return this.result.maximum;
@@ -121,7 +122,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "sum", {
         'value': function () {
-            if (this.result.sum == undefined) {
+            if (this.result.sum === undefined) {
                 this.result.sum = xtract_array_sum(_data);
             }
             return this.result.sum;
@@ -130,10 +131,10 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "getFrames", {
         'value': function (frameSize, hopSize) {
-            if (typeof frameSize != "number" || frameSize <= 0 || frameSize != Math.floor(frameSize)) {
-                console.error("frameSize must be a defined, positive integer");
+            if (typeof frameSize !== "number" || frameSize <= 0 || frameSize !== Math.floor(frameSize)) {
+                throw ("frameSize must be a defined, positive integer");
             }
-            if (typeof hopSize != "number") {
+            if (typeof hopSize !== "number") {
                 hopSize = frameSize;
             }
             var num_frames = Math.ceil(_length / frameSize);
@@ -145,13 +146,13 @@ var TimeData = function (N, sampleRate, parent) {
             }
             return result_frames;
         }
-    })
+    });
 
     // Features
 
     Object.defineProperty(this, "mean", {
         'value': function () {
-            if (this.result.mean == undefined) {
+            if (this.result.mean === undefined) {
                 this.result.mean = xtract_mean(_data);
             }
             return this.result.mean;
@@ -160,7 +161,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "temporal_centroid", {
         'value': function (window_ms) {
-            if (this.result.temporal_centroid == undefined) {
+            if (this.result.temporal_centroid === undefined) {
                 this.energy(window_ms);
                 this.result.temporal_centroid = xtract_temporal_centroid(this.result.energy.data, _Fs, window_ms);
             }
@@ -170,7 +171,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "variance", {
         'value': function () {
-            if (this.result.variance == undefined) {
+            if (this.result.variance === undefined) {
                 this.result.variance = xtract_variance(_data, this.mean());
             }
             return this.result.variance;
@@ -178,7 +179,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "standard_deviation", {
         'value': function () {
-            if (this.result.standard_deviation == undefined) {
+            if (this.result.standard_deviation === undefined) {
                 this.result.standard_deviation = xtract_standard_deviation(_data, this.variance());
             }
             return this.result.standard_deviation;
@@ -186,7 +187,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "average_deviation", {
         'value': function () {
-            if (this.result.average_deviation == undefined) {
+            if (this.result.average_deviation === undefined) {
                 this.result.average_deviation = xtract_average_deviation(_data, this.mean());
             }
             return this.result.average_deviation;
@@ -194,7 +195,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "skewness", {
         'value': function () {
-            if (this.result.skewness == undefined) {
+            if (this.result.skewness === undefined) {
                 this.result.skewness = xtract_skewness(_data, this.mean(), this.standard_deviation());
             }
             return this.result.skewness;
@@ -202,7 +203,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "kurtosis", {
         'value': function () {
-            if (this.result.kurtosis == undefined) {
+            if (this.result.kurtosis === undefined) {
                 this.result.kurtosis = xtract_kurtosis(_data, this.mean(), this.standard_deviation());
             }
             return this.result.kurtosis;
@@ -210,7 +211,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "zcr", {
         'value': function () {
-            if (this.result.zcr == undefined) {
+            if (this.result.zcr === undefined) {
                 this.result.zcr = xtract_zcr(_data);
             }
             return this.result.zcr;
@@ -218,7 +219,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "crest_factor", {
         'value': function () {
-            if (this.result.crest_factor == undefined) {
+            if (this.result.crest_factor === undefined) {
                 this.result.crest_factor = xtract_crest(_data, this.maximum(), this.mean());
             }
             return this.result.crest_factor;
@@ -226,7 +227,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "rms_amplitude", {
         'value': function () {
-            if (this.result.rms_amplitude == undefined) {
+            if (this.result.rms_amplitude === undefined) {
                 this.result.rms_amplitude = xtract_rms_amplitude(_data);
             }
             return this.result.rms_amplitude;
@@ -234,7 +235,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "lowest_value", {
         'value': function (threshold) {
-            if (this.result.lowest_value == undefined) {
+            if (this.result.lowest_value === undefined) {
                 this.result.lowest_value = xtract_lowest_value(_data, threshold);
             }
             return this.result.lowest_value;
@@ -242,7 +243,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "highest_value", {
         'value': function (threshold) {
-            if (this.result.highest_value == undefined) {
+            if (this.result.highest_value === undefined) {
                 this.result.highest_value = xtract_highest_value(_data, threshold);
             }
             return this.result.highest_value;
@@ -250,7 +251,7 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "nonzero_count", {
         'value': function () {
-            if (this.result.nonzero_count == undefined) {
+            if (this.result.nonzero_count === undefined) {
                 this.result.nonzero_count = xtract_nonzero_count(_data);
             }
             return this.result.nonzero_count;
@@ -258,10 +259,10 @@ var TimeData = function (N, sampleRate, parent) {
     });
     Object.defineProperty(this, "f0", {
         'value': function () {
-            if (_wavelet == undefined) {
+            if (_wavelet === undefined) {
                 _wavelet = this.init_wavelet();
             }
-            if (this.result.f0 == undefined) {
+            if (this.result.f0 === undefined) {
                 this.result.f0 = xtract_wavelet_f0(_data, _Fs, _wavelet);
             }
             return this.result.f0;
@@ -271,7 +272,7 @@ var TimeData = function (N, sampleRate, parent) {
     // Vector features
     Object.defineProperty(this, "energy", {
         'value': function (window_ms) {
-            if (this.result.energy == undefined || this.result.energy.window_ms != window_ms) {
+            if (this.result.energy === undefined || this.result.energy.window_ms !== window_ms) {
                 this.result.energy = {
                     'data': xtract_energy(_data, _Fs, window_ms),
                     'window_ms': window_ms
@@ -283,7 +284,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "spectrum", {
         'value': function () {
-            if (this.result.spectrum == undefined) {
+            if (this.result.spectrum === undefined) {
                 var _spec = xtract_spectrum(_data, _Fs, true, false);
                 this.result.spectrum = new SpectrumData(_spec.length / 2, _Fs);
                 this.result.spectrum.copyDataFrom(_spec);
@@ -294,7 +295,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "dct", {
         'value': function () {
-            if (this.result.dct == undefined) {
+            if (this.result.dct === undefined) {
                 this.result.dct = xtract_dct_2(_data, _dct);
             }
             return this.result.dct;
@@ -303,7 +304,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "autocorrelation", {
         'value': function () {
-            if (this.result.autocorrelation == undefined) {
+            if (this.result.autocorrelation === undefined) {
                 this.result.autocorrelation = xtract_autocorrelation(_data);
             }
             return this.result.autocorrelation;
@@ -312,7 +313,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "amdf", {
         'value': function () {
-            if (this.result.amdf == undefined) {
+            if (this.result.amdf === undefined) {
                 this.result.amdf = xtract_amdf(_data);
             }
             return this.result.amdf;
@@ -321,7 +322,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "asdf", {
         'value': function () {
-            if (this.result.asdf == undefined) {
+            if (this.result.asdf === undefined) {
                 this.result.asdf = xtract_asdf(_data);
             }
             return this.result.asdf;
@@ -330,7 +331,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "yin", {
         'value': function () {
-            if (this.result.yin == undefined) {
+            if (this.result.yin === undefined) {
                 this.result.yin = xtract_yin(_data);
             }
             return this.result.yin;
@@ -339,7 +340,7 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "onset", {
         'value': function (frameSize) {
-            if (this.result.onset == undefined || this.result.onset.frameSize != frameSize) {
+            if (this.result.onset === undefined || this.result.onset.frameSize !== frameSize) {
                 this.result.onset = {
                     'data': xtract_onset(_data, frameSize),
                     'frameSize': frameSize
@@ -351,11 +352,11 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "resample", {
         'value': function (targetSampleRate) {
-            if (_Fs == undefined) {
-                console.error("Source sampleRate must be defined");
+            if (_Fs === undefined) {
+                throw ("Source sampleRate must be defined");
             }
-            if (typeof targetSampleRate != "number" || targetSampleRate <= 0) {
-                console.error("Target sampleRate must be a positive number");
+            if (typeof targetSampleRate !== "number" || targetSampleRate <= 0) {
+                throw ("Target sampleRate must be a positive number");
             }
             var resampled = xtract_resample(_data, targetSampleRate, _Fs);
             var reply = new TimeData(resampled.length, targetSampleRate);
@@ -367,13 +368,13 @@ var TimeData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "pitch", {
         'value': function () {
-            if (_Fs == undefined) {
-                console.error("Sample rate must be defined");
+            if (_Fs === undefined) {
+                throw ("Sample rate must be defined");
             }
-            if (this.result.pitch == undefined) {
+            if (this.result.pitch === undefined) {
                 this.result.pitch = xtract_pitch_FB(_data, _Fs);
             }
             return this.result.pitch;
         }
     });
-}
+};

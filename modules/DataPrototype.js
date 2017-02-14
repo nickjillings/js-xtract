@@ -1,11 +1,13 @@
-var jsXtract = new function () {
+/*globals Float32Array, Float64Array */
+/*globals xtract_init_dct, xtract_init_mfcc, xtract_init_bark */
+var jsXtract = function () {
 
     var DataProto = function (parent) {
         var _result = {};
         //this.__proto__ = parent;
         this.clearResult = function () {
             _result = {};
-        }
+        };
 
         Object.defineProperty(this, "result", {
             'get': function () {
@@ -52,7 +54,7 @@ var jsXtract = new function () {
             }
         }
         return json + '}';
-    }
+    };
 
     function recursiveDelta(a, b) {
         //a and b are objects of Time/Spectrum/PeakS/HarmonicS Data
@@ -96,7 +98,7 @@ var jsXtract = new function () {
     this.computeDelta = function (compare) {
         this.result.delta = recursiveDelta(this.result, compare.result);
         return this.result.delta;
-    }
+    };
 
     this.computeDeltaDelta = function (compare) {
         if (!compare.result.delta || !this.result.delta) {
@@ -104,7 +106,7 @@ var jsXtract = new function () {
         }
         this.result.delta.delta = recursiveDelta(this.result.delta, compare.result.delta);
         return this.result.delta.delta;
-    }
+    };
 
     var dct_map = {
         parent: this,
@@ -120,12 +122,12 @@ var jsXtract = new function () {
                 match = {
                     N: N,
                     data: xtract_init_dct(N)
-                }
+                };
                 this.store.push(match);
             }
             return match.data;
         }
-    }
+    };
 
     var mfcc_map = {
         parent: this,
@@ -138,7 +140,7 @@ var jsXtract = new function () {
                 freq_min: freq_min,
                 freq_max: freq_max,
                 freq_bands: freq_bands
-            }
+            };
             var match = this.store.find(function (element) {
                 for (var prop in this) {
                     if (element[prop] != this[prop]) {
@@ -154,7 +156,7 @@ var jsXtract = new function () {
             }
             return match.data;
         }
-    }
+    };
 
     var bark_map = {
         parent: this,
@@ -164,7 +166,7 @@ var jsXtract = new function () {
                 N: N,
                 sampleRate: sampleRate,
                 numBands: numBands
-            }
+            };
             var match = this.store.find(function (element) {
                 for (var prop in element) {
                     if (element[prop] != this[prop]) {
@@ -180,30 +182,31 @@ var jsXtract = new function () {
             }
             return match.data;
         }
-    }
+    };
 
     this.createDctCoefficients = function (N) {
         return dct_map.createCoefficients(N);
-    }
+    };
 
     this.createMfccCoefficients = function (N, nyquist, style, freq_min, freq_max, freq_bands) {
         return mfcc_map.createCoefficients(N, nyquist, style, freq_min, freq_max, freq_bands);
-    }
+    };
 
     this.createBarkCoefficients = function (N, sampleRate, numBands) {
         if (typeof numBands != "number" || numBands < 0 || numBands > 26) {
             numBands = 26;
         }
         return bark_map.createCoefficients(N, sampleRate, numBands);
-    }
+    };
 
     this.createTimeDataProto = function () {
         var node = new DataProto();
         return node;
-    }
+    };
 
     this.createSpectrumDataProto = function () {
         var node = new DataProto();
         return node;
-    }
-}
+    };
+};
+jsXtract = new jsXtract();

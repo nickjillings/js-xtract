@@ -1,3 +1,4 @@
+/*globals Float32Array, Float64Array */
 TimeData.prototype.features = [
     {
         name: "Minimum",

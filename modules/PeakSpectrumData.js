@@ -1,9 +1,8 @@
 var PeakSpectrumData = function (N, sampleRate, parent) {
-    if (N == undefined || N <= 0) {
-        console.error("SpectrumData constructor requires N to be a defined, whole number");
-        return;
+    if (N === undefined || N <= 0) {
+        throw ("SpectrumData constructor requires N to be a defined, whole number");
     }
-    if (sampleRate == undefined) {
+    if (sampleRate === undefined) {
         sampleRate = Math.PI;
     }
     this.__proto__ = new SpectrumData(N);
@@ -19,7 +18,7 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
     // Peak Specturm features
     Object.defineProperty(this, "spectral_inharmonicity", {
         'value': function () {
-            if (this.result.spectral_inharmonicity == undefined) {
+            if (this.result.spectral_inharmonicity === undefined) {
                 this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(this.getData(), this.sampleRate);
             }
             return this.result.spectral_inharmonicity;
@@ -28,8 +27,8 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
 
     Object.defineProperty(this, "harmonic_spectrum", {
         'value': function (threshold) {
-            if (this.result.harmonic_spectrum == undefined) {
-                if (this.f0 == undefined) {
+            if (this.result.harmonic_spectrum === undefined) {
+                if (this.f0 === undefined) {
                     this.spectral_fundamental(this.getData(), this.sampleRate);
                 }
                 this.result.harmonic_spectrum = new HarmonicSpectrumData(this.length, this.sampleRate, this);
@@ -39,4 +38,4 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
             return this.result.harmonic_spectrum;
         }
     });
-}
+};

@@ -28,13 +28,13 @@
  * The vector can have any length. This is a wrapper function.
  */
 function transform(real, imag) {
-    if (real.length != imag.length)
+    if (real.length !== imag.length)
         throw "Mismatched lengths";
 
     var n = real.length;
-    if (n == 0)
+    if (n === 0)
         return;
-    else if ((n & (n - 1)) == 0) // Is power of 2
+    else if ((n & (n - 1)) === 0) // Is power of 2
         transformRadix2(real, imag);
     else // More complicated algorithm for arbitrary sizes
         transformBluestein(real, imag);
@@ -56,28 +56,29 @@ function inverseTransform(real, imag) {
  */
 function transformRadix2(real, imag) {
     // Initialization
-    if (real.length != imag.length)
+    var i, j, k;
+    if (real.length !== imag.length)
         throw "Mismatched lengths";
     var n = real.length;
-    if (n == 1) // Trivial transform
+    if (n === 1) // Trivial transform
         return;
     var levels = -1;
-    for (var i = 0; i < 32; i++) {
-        if (1 << i == n)
+    for (i = 0; i < 32; i++) {
+        if (1 << i === n)
             levels = i; // Equal to log2(n)
     }
-    if (levels == -1)
+    if (levels === -1)
         throw "Length is not a power of 2";
     var cosTable = new Array(n / 2);
     var sinTable = new Array(n / 2);
-    for (var i = 0; i < n / 2; i++) {
+    for (i = 0; i < n / 2; i++) {
         cosTable[i] = Math.cos(2 * Math.PI * i / n);
         sinTable[i] = Math.sin(2 * Math.PI * i / n);
     }
 
     // Bit-reversed addressing permutation
-    for (var i = 0; i < n; i++) {
-        var j = reverseBits(i, levels);
+    for (i = 0; i < n; i++) {
+        j = reverseBits(i, levels);
         if (j > i) {
             var temp = real[i];
             real[i] = real[j];
@@ -92,8 +93,8 @@ function transformRadix2(real, imag) {
     for (var size = 2; size <= n; size *= 2) {
         var halfsize = size / 2;
         var tablestep = n / size;
-        for (var i = 0; i < n; i += size) {
-            for (var j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
+        for (i = 0; i < n; i += size) {
+            for (j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
                 var tpre = real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k];
                 var tpim = -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k];
                 real[j + halfsize] = real[j] - tpre;
@@ -123,8 +124,9 @@ function transformRadix2(real, imag) {
  */
 function transformBluestein(real, imag) {
     // Find a power-of-2 convolution length m such that m >= n * 2 + 1
-    if (real.length != imag.length)
+    if (real.length !== imag.length)
         throw "Mismatched lengths";
+    var i, j;
     var n = real.length;
     var m = 1;
     while (m < n * 2 + 1)
@@ -133,8 +135,8 @@ function transformBluestein(real, imag) {
     // Trignometric tables
     var cosTable = new Array(n);
     var sinTable = new Array(n);
-    for (var i = 0; i < n; i++) {
-        var j = i * i % (n * 2); // This is more accurate than j = i * i
+    for (i = 0; i < n; i++) {
+        j = i * i % (n * 2); // This is more accurate than j = i * i
         cosTable[i] = Math.cos(Math.PI * j / n);
         sinTable[i] = Math.sin(Math.PI * j / n);
     }
@@ -142,21 +144,21 @@ function transformBluestein(real, imag) {
     // Temporary vectors and preprocessing
     var areal = new Array(m);
     var aimag = new Array(m);
-    for (var i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) {
         areal[i] = real[i] * cosTable[i] + imag[i] * sinTable[i];
         aimag[i] = -real[i] * sinTable[i] + imag[i] * cosTable[i];
     }
-    for (var i = n; i < m; i++)
+    for (i = n; i < m; i++)
         areal[i] = aimag[i] = 0;
     var breal = new Array(m);
     var bimag = new Array(m);
     breal[0] = cosTable[0];
     bimag[0] = sinTable[0];
-    for (var i = 1; i < n; i++) {
+    for (i = 1; i < n; i++) {
         breal[i] = breal[m - i] = cosTable[i];
         bimag[i] = bimag[m - i] = sinTable[i];
     }
-    for (var i = n; i <= m - n; i++)
+    for (i = n; i <= m - n; i++)
         breal[i] = bimag[i] = 0;
 
     // Convolution
@@ -165,7 +167,7 @@ function transformBluestein(real, imag) {
     convolveComplex(areal, aimag, breal, bimag, creal, cimag);
 
     // Postprocessing
-    for (var i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) {
         real[i] = creal[i] * cosTable[i] + cimag[i] * sinTable[i];
         imag[i] = -creal[i] * sinTable[i] + cimag[i] * cosTable[i];
     }
@@ -176,7 +178,7 @@ function transformBluestein(real, imag) {
  * Computes the circular convolution of the given real vectors. Each vector's length must be the same.
  */
 function convolveReal(x, y, out) {
-    if (x.length != y.length || x.length != out.length)
+    if (x.length !== y.length || x.length !== out.length)
         throw "Mismatched lengths";
     var zeros = new Array(x.length);
     for (var i = 0; i < zeros.length; i++)
@@ -189,9 +191,9 @@ function convolveReal(x, y, out) {
  * Computes the circular convolution of the given complex vectors. Each vector's length must be the same.
  */
 function convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag) {
-    if (xreal.length != ximag.length || xreal.length != yreal.length || yreal.length != yimag.length || xreal.length != outreal.length || outreal.length != outimag.length)
+    if (xreal.length !== ximag.length || xreal.length !== yreal.length || yreal.length !== yimag.length || xreal.length !== outreal.length || outreal.length !== outimag.length)
         throw "Mismatched lengths";
-
+    var i;
     var n = xreal.length;
     xreal = xreal.slice();
     ximag = ximag.slice();
@@ -200,13 +202,13 @@ function convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag) {
 
     transform(xreal, ximag);
     transform(yreal, yimag);
-    for (var i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) {
         var temp = xreal[i] * yreal[i] - ximag[i] * yimag[i];
         ximag[i] = ximag[i] * yreal[i] + xreal[i] * yimag[i];
         xreal[i] = temp;
     }
     inverseTransform(xreal, ximag);
-    for (var i = 0; i < n; i++) { // Scaling (because this FFT implementation omits it)
+    for (i = 0; i < n; i++) { // Scaling (because this FFT implementation omits it)
         outreal[i] = xreal[i] / n;
         outimag[i] = ximag[i] / n;
     }

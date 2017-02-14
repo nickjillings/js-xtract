@@ -1,9 +1,11 @@
+/*globals Float32Array, Float64Array */
+/*globals window, console */
 var HarmonicSpectrumData = function (N, sampleRate, parent) {
-    if (N == undefined || N <= 0) {
+    if (N === undefined || N <= 0) {
         console.error("SpectrumData constructor requires N to be a defined, whole number");
         return;
     }
-    if (sampleRate == undefined) {
+    if (sampleRate === undefined) {
         sampleRate = Math.PI;
     }
     this.__proto__ = new PeakSpectrumData(N);
@@ -19,8 +21,8 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
     // Harmonic Spectrum features
     Object.defineProperty(this, "odd_even_ratio", {
         'value': function () {
-            if (this.result.odd_even_ratio == undefined) {
-                if (this.f0 == undefined) {
+            if (this.result.odd_even_ratio === undefined) {
+                if (this.f0 === undefined) {
                     this.spectral_fundamental(this.getData(), this.sampleRate);
                 }
                 this.result.odd_even_ratio = xtract_odd_even_ratio(this.getData(), this.f0);
@@ -39,4 +41,4 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
             return this.result.noisiness;
         }
     });
-}
+};
