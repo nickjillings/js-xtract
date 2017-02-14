@@ -104,17 +104,20 @@ function xtract_array_bound(data, min, max) {
 }
 
 function xtract_array_interlace(data) {
-    var length = data.length;
-    for (var argument of arguments) {
-        if (argument.length !== length) {
-            console.error("All argument lengths must be the same");
+    var num_arrays = data.length;
+    if (num_arrays === 0) {
+        return [];
+    }
+    var length = data[0].length;
+    for (var n = 0; n < num_arrays; n++) {
+        if (data[n].length !== length) {
+            throw ("All argument lengths must be the same");
         }
     }
-    var num_args = arguments.length;
-    var result = new data.constructor(num_args * length);
+    var result = new data.constructor(num_arrays * length);
     for (var k = 0; k < length; k++) {
-        for (var j = 0; j < num_args; j++) {
-            result[k * num_args + j] = arguments[j][k];
+        for (var j = 0; j < num_arrays; j++) {
+            result[k * num_arrays + j] = data[j][k];
         }
     }
     return result;
@@ -1657,7 +1660,7 @@ function xtract_onset(timeData, frameSize) {
             imag[n] = 0.0;
         }
         transform(real, imag);
-        X[i] = xtract_array_interlace(real.subarray(0, K), imag.subarray(0, K));
+        X[i] = xtract_array_interlace([real.subarray(0, K), imag.subarray(0, K)]);
     }
 
     function angle(real, imag) {
