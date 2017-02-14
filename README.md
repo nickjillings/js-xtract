@@ -1,5 +1,7 @@
 # JS-Xtract
 
+[![Code Climate](https://codeclimate.com/github/nickjillings/js-xtract/badges/gpa.svg)](https://codeclimate.com/github/nickjillings/js-xtract) [![Build Status](https://travis-ci.org/nickjillings/js-xtract.svg?branch=master)](https://travis-ci.org/nickjillings/js-xtract)
+
 JS-Xtract is a feature extraction library built in JavaScript. The library is based upon a previous library, LibXtract[1], which defined several functions for the C langauge.
 
 ## How to use it
