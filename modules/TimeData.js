@@ -365,7 +365,8 @@ var TimeData = function (N, sampleRate, parent) {
             return reply;
         }
     });
-
+    //TODO:
+    /*
     Object.defineProperty(this, "pitch", {
         'value': function () {
             if (_Fs === undefined) {
@@ -377,4 +378,5 @@ var TimeData = function (N, sampleRate, parent) {
             return this.result.pitch;
         }
     });
+    */
 };

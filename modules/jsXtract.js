@@ -21,7 +21,7 @@
  *
  */
 
-"use strict";
+//"use strict";
 
 // This work is based upon LibXtract developed by Jamie Bullock
 //https://github.com/jamiebullock/LibXtract
@@ -1225,7 +1225,7 @@ function xtract_spectral_fundamental(spectrum, sample_rate) {
     var n;
     for (n = 0; n < N; n++) {
         power[n] = Math.pow(amps[n], 2);
-        power[K - 1 - n];
+        power[K - 1 - n] = power[n];
     }
 
     // Perform autocorrelation using IFFT
@@ -1381,14 +1381,8 @@ function xtract_dct(array) {
     var result = new Float64Array(N);
     for (var n = 0; n < N; n++) {
         var nN = n / N;
-        if (array.reduce) {
-            result[n] = array.reduce(function (sum, value, m) {
-                return sum + value * Math.cos(Math.PI * nN * (m + 0.5));
-            }, 0.0);
-        } else {
-            for (var m = 0; m < N; m++) {
-                result[n] += array[m] * Math.cos(Math.PI * nN * (m + 0.5));
-            }
+        for (var m = 0; m < N; m++) {
+            result[n] += array[m] * Math.cos(Math.PI * nN * (m + 0.5));
         }
     }
     return result;
@@ -2138,7 +2132,8 @@ Float32Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
     };
     var prev_data;
     var prev_result;
-    for (var frame of frames) {
+    for (var fn = 0; fn < frames.length; fn++) {
+        var frame = frames[fn];
         data.TimeData = frame;
         data.SpectrumData = xtract_spectrum(frame, sample_rate, true, false);
         prev_result = func.call(arg_this || this, data, prev_data, prev_result);
@@ -2195,8 +2190,8 @@ Float64Array.prototype.xtract_process_frame_data = function (func, sample_rate, 
     };
     var prev_data;
     var prev_result;
-    for (var frame of frames) {
-        data.TimeData = frame;
+    for (var fn = 0; fn < frames.length; fn++) {
+        var frame = frames[fn];
         data.SpectrumData = xtract_spectrum(frame, sample_rate, true, false);
         prev_result = func.call(arg_this || this, data, prev_data, prev_result);
         var frame_result = {

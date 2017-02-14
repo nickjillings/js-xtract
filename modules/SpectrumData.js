@@ -1,5 +1,5 @@
 // Prototpye for the Spectrum data type
-/*globals jsXtract, Float64Array */
+/*globals Float64Array */
 var SpectrumData = function (N, sampleRate, parent) {
     // N specifies the number of elements to create. Actually creates 2N to hold amplitudes and frequencies.
     // If sampleRate is null, calculate using radians per second [0, pi/2]
