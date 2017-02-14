@@ -19,9 +19,9 @@ var DataProto = function () {
             if (!json.endsWith('{') && !json.endsWith(',')) {
                 json = json + ', ';
             }
-            if (typeof _result[property] == "number" && isFinite(_result[property])) {
+            if (typeof _result[property] === "number" && isFinite(_result[property])) {
                 json = json + '"' + property + '": ' + _result[property];
-            } else if (typeof _result[property] == "object") {
+            } else if (typeof _result[property] === "object") {
                 switch (_result[property].constructor) {
                     case Array:
                     case Float32Array:
@@ -50,14 +50,14 @@ var DataProto = function () {
         var param, delta = {};
         for (param in a) {
             if (b[param]) {
-                if (typeof a[param] == "number") {
+                if (typeof a[param] === "number") {
                     delta[param] = a[param] - b[param];
                 } else {
                     switch (a[param].constructor) {
                         case Array:
                         case Float32Array:
                         case Float64Array:
-                            if (a[param].length == b[param].length) {
+                            if (a[param].length === b[param].length) {
                                 delta[param] = new Float64Array(a[param].length);
                             } else {
                                 delta[param] = [];
@@ -101,7 +101,7 @@ var DataProto = function () {
         store: [],
         createCoefficients: function (N) {
             var match = this.store.find(function (element) {
-                if (element.N == this) {
+                if (element.N === this) {
                     return true;
                 }
                 return false;
@@ -131,7 +131,7 @@ var DataProto = function () {
             };
             var match = this.store.find(function (element) {
                 for (var prop in this) {
-                    if (element[prop] != this[prop]) {
+                    if (element[prop] !== this[prop]) {
                         return false;
                     }
                 }
@@ -157,7 +157,7 @@ var DataProto = function () {
             };
             var match = this.store.find(function (element) {
                 for (var prop in element) {
-                    if (element[prop] != this[prop]) {
+                    if (element[prop] !== this[prop]) {
                         return false;
                     }
                 }
@@ -181,7 +181,7 @@ var DataProto = function () {
     };
 
     this.createBarkCoefficients = function (N, sampleRate, numBands) {
-        if (typeof numBands != "number" || numBands < 0 || numBands > 26) {
+        if (typeof numBands !== "number" || numBands < 0 || numBands > 26) {
             numBands = 26;
         }
         return bark_map.createCoefficients(N, sampleRate, numBands);

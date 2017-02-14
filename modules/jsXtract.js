@@ -38,7 +38,7 @@ if (!String.prototype.endsWith) {
         }
         position -= searchString.length;
         var lastIndex = subjectString.indexOf(searchString, position);
-        return lastIndex !== -1 && lastIndex === position;
+        return (lastIndex !== -1 && lastIndex === position);
     };
 }
 
@@ -171,7 +171,8 @@ function xtract_temporal_centroid(energyArray, sample_rate, window_ms) {
     for (var n = 0; n < energyArray.length; n++) {
         num += energyArray[n] * (n * L * ts);
     }
-    return num / den;
+    var result = num / den;
+    return result;
 }
 
 function xtract_variance(array, mean) {
@@ -182,7 +183,8 @@ function xtract_variance(array, mean) {
     for (var n = 0; n < array.length; n++) {
         result += Math.pow(array[n] - mean, 2);
     }
-    return result /= (array.length - 1);
+    result = result /= (array.length - 1);
+    return result;
 }
 
 function xtract_standard_deviation(array, variance) {
@@ -200,7 +202,8 @@ function xtract_average_deviation(array, mean) {
     for (var n = 0; n < array.length; n++) {
         result += Math.abs(array[n] - mean);
     }
-    return result /= array.length;
+    result /= array.length;
+    return result;
 }
 
 function xtract_skewness(array, mean, standard_deviation) {
@@ -214,7 +217,8 @@ function xtract_skewness(array, mean, standard_deviation) {
     for (var n = 0; n < array.length; n++) {
         result += Math.pow((array[n] - mean) / standard_deviation, 3);
     }
-    return result /= array.length;
+    result /= array.length;
+    return result;
 }
 
 function xtract_kurtosis(array, mean, standard_deviation) {
@@ -228,7 +232,8 @@ function xtract_kurtosis(array, mean, standard_deviation) {
     for (var n = 0; n < array.length; n++) {
         result += Math.pow((array[n] - mean) / standard_deviation, 4);
     }
-    return result / array.length;
+    result /= array.length;
+    return result;
 }
 
 function xtract_spectral_centroid(spectrum) {
@@ -249,7 +254,8 @@ function xtract_spectral_centroid(spectrum) {
     while (n--) {
         sum += freqs[n] * (amps[n] / A_d);
     }
-    return sum / (N >> 1);
+    var result = sum / (N >> 1);
+    return result;
 }
 
 function xtract_spectral_mean(spectrum) {
@@ -257,7 +263,8 @@ function xtract_spectral_mean(spectrum) {
     var n = N >> 1;
     var amps = spectrum.subarray(0, n);
     var sum = xtract_array_sum(amps);
-    return sum / n;
+    var result = sum / n;
+    return result;
 }
 
 function xtract_spectral_variance(spectrum, spectral_mean) {
@@ -283,7 +290,8 @@ function xtract_spectral_variance(spectrum, spectral_mean) {
     while (n--) {
         result += Math.pow(freqs[n] - spectral_mean, 2) * amps[n];
     }
-    return result /= A;
+    result /= A;
+    return result;
 }
 
 function xtract_spectral_spread(spectrum, spectral_centroid) {
@@ -315,7 +323,8 @@ function xtract_spectral_skewness(spectrum, spectral_mean, spectral_standard_dev
     for (var n = 0; n < K; n++) {
         result += Math.pow(freqs[n] - spectral_mean, 3) * amps[n];
     }
-    return result /= Math.pow(spectral_standard_deviation, 3);
+    result /= Math.pow(spectral_standard_deviation, 3);
+    return result;
 }
 
 function xtract_spectral_kurtosis(spectrum, spectral_mean, spectral_standard_deviation) {

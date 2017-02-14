@@ -381,7 +381,7 @@ SpectrumData.prototype.features = [
             type: "number",
             minimum: 0,
             maximum: undefined,
-            default: 26,
+            default: 26
     }, {
             name: "Minimum Frequency",
             unit: "Hz",
@@ -413,7 +413,7 @@ SpectrumData.prototype.features = [
             type: "number",
             minimum: 0,
             maximum: 26,
-            default: 26,
+            default: 26
     }],
         returns: "array"
 }, {
