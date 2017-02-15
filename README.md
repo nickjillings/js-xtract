@@ -2,6 +2,7 @@
 
 [![Code Climate](https://codeclimate.com/github/nickjillings/js-xtract/badges/gpa.svg)](https://codeclimate.com/github/nickjillings/js-xtract) [![Build Status](https://travis-ci.org/nickjillings/js-xtract.svg?branch=master)](https://travis-ci.org/nickjillings/js-xtract)
 
+
 JS-Xtract is a feature extraction library built in JavaScript. The library is based upon a previous library, LibXtract[1], which defined several functions for the C langauge.
 
 ## How to use it
@@ -21,24 +22,23 @@ The following components have their own documentation points:
 - Guides
   - [Using the procedural calls](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/procedural.md)
   - [Using the Object Oriented calls](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/object-oriented.md)
-  - Using the prototype modifiers
   - [Tying into a Web Audio API chain](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/WebAudio.md)
 - Features
   - [Time Domain](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/temporal-features.md)
-  - Spectral Domain
+  - [Spectral Domain](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/spectral-features.md)
 - Objects
   - [TimeData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/TimeData.md)
   - [SpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/SpectrumData.md)
   - [PeakSpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/PeakSpectrumData.md)
   - [HarmonicSpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/HarmonicSpectrumData.md)
-- Typed Arrays
+- [Typed Arrays](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/TypedArrays.md)
 - Web Audio Prototypes
 
 ## Development
 
-This work is still in very active development and is updated regularly. However if you do find bugs, issues, prangs and scratches please let us know through the Issues above.
+This work is still in very active development and is updated regularly. However if you do find bugs, issues, prangs and scratches please let us know through the [issue tracker on GitHub](https://github.com/nickjillings/js-xtract)
 
-## Papaer
+## Paper
 
 A paper on this project was presented at ISMIR 2016, available [here](http://dmtlab.bcu.ac.uk/nickjillings/papers/Jillings-JSXtract.pdf)
 
