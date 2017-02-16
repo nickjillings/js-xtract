@@ -168,11 +168,14 @@ var DataProto = function (N, sampleRate) {
                     case Array:
                     case Float32Array:
                     case Float64Array:
+                        //Array data type
+                        json = json + '"' + property + '": ' + xtract_array_to_JSON(_result[property]);
+                        break;
                     case TimeData:
                     case SpectrumData:
                     case PeakSpectrumData:
                     case HarmonicSpectrumData:
-                        // Array
+                        // JSXtract Data type
                         json = json + '"' + property + '": ' + _result[property].toJSON(_result[property]);
                         break;
                     default:
