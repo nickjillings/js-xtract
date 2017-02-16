@@ -8,12 +8,6 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
     SpectrumData.call(this, N);
 
     Object.defineProperties(this, {
-        "features": {
-            'get': function () {
-                return this.constructor.prototype.features;
-            },
-            'set': function () {}
-        },
         "spectral_inharmonicity": {
             'value': function () {
                 if (this.result.spectral_inharmonicity === undefined) {
