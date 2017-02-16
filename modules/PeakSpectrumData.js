@@ -20,10 +20,10 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
             'value': function (threshold) {
                 if (this.result.harmonic_spectrum === undefined) {
                     if (this.f0 === undefined) {
-                        this.spectral_fundamental(this.data(), this.sampleRate);
+                        this.spectral_fundamental(this.data, this.sampleRate);
                     }
                     this.result.harmonic_spectrum = new HarmonicSpectrumData(this.length, this.sampleRate, this);
-                    var hs = xtract_harmonic_spectrum(this.data(), this.f0, threshold);
+                    var hs = xtract_harmonic_spectrum(this.data, this.f0, threshold);
                     this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0, this.length));
                 }
                 return this.result.harmonic_spectrum;

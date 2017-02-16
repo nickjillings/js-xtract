@@ -15,9 +15,9 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
             'value': function () {
                 if (this.result.odd_even_ratio === undefined) {
                     if (this.f0 === undefined) {
-                        this.spectral_fundamental(this.data(), this.sampleRate);
+                        this.spectral_fundamental(this.data, this.sampleRate);
                     }
-                    this.result.odd_even_ratio = xtract_odd_even_ratio(this.data(), this.f0);
+                    this.result.odd_even_ratio = xtract_odd_even_ratio(this.data, this.f0);
                 }
                 return this.result.odd_even_ratio;
             }
