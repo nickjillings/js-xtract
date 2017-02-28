@@ -1032,16 +1032,31 @@ function xtract_lowest_value(data, threshold) {
 }
 
 function xtract_highest_value(data, threshold) {
-    if (typeof threshold !== "number") {
-        threshold = +Infinity;
-    }
-    var result = -Infinity;
-    for (var n = 0; n < data.length; n++) {
-        if (data[n] >= threshold) {
-            result = Math.max(result, data[n]);
+    if (data.filter && data.reduce) {
+        var interim;
+        if (typeof threshold !== "number") {
+            interim = data.filter(function (a) {
+                return a >= threshold;
+            });
+            if (interim.length === 0) {
+                return +Infinity;
+            }
+        } else {
+            interim = data;
         }
+        return xtract_array_max(interim);
+    } else {
+        if (typeof threshold !== "number") {
+            threshold = -Infinity;
+        }
+        var result = +Infinity;
+        for (var n = 0; n < data.length; n++) {
+            if (data[n] >= threshold) {
+                result = Math.max(result, data[n]);
+            }
+        }
+        return result;
     }
-    return result;
 }
 
 function xtract_sum(data) {
@@ -1742,9 +1757,17 @@ function xtract_dct_2(array, dct) {
     }
     var result = new Float64Array(N);
     result[0] = xtract_array_sum(array);
-    for (var k = 1; k < N; k++) {
-        for (var n = 0; n < N; n++) {
-            result[k] += array[n] * dct.wt[k][n];
+    if (result.forEach && array.reduce) {
+        result.forEach(function (e, k, ar) {
+            ar[k] = array.reduce(function (a, b, n) {
+                return a += b * dct.wt[k][n];
+            });
+        });
+    } else {
+        for (var k = 1; k < N; k++) {
+            for (var n = 0; n < N; n++) {
+                result[k] += array[n] * dct.wt[k][n];
+            }
         }
     }
     return result;
