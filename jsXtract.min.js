@@ -791,9 +791,6 @@ function xtract_smoothness(spectrum) {
 
 function xtract_zcr(timeArray) {
     var result = 0;
-    if (timeArray.reduce) {
-        result = timeArray.reduce(function (a, b))
-    }
     for (var n = 1; n < timeArray.length; n++) {
         if (timeArray[n] * timeArray[n - 1] < 0) {
             result++;
@@ -1010,11 +1007,11 @@ function xtract_lowest_value(data, threshold) {
     if (data.filter && data.reduce) {
         var interim;
         if (typeof threshold !== "number") {
-            var interim = data.filter(function (a) {
+            interim = data.filter(function (a) {
                 return a > threshold;
             });
             if (interim.length === 0) {
-                return result;
+                return +Infinity;
             }
         } else {
             interim = data;
