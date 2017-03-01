@@ -32,7 +32,7 @@ The following components have their own documentation points:
   - [PeakSpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/PeakSpectrumData.md)
   - [HarmonicSpectrumData](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/HarmonicSpectrumData.md)
 - [Typed Arrays](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/TypedArrays.md)
-- Web Audio Prototypes
+- [Web Audio Prototypes](http://dmtlab.bcu.ac.uk/nickjillings/docs/index.php?src=js-xtract/WebAudio.md)
 
 ## Development
 
