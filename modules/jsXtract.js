@@ -859,8 +859,8 @@ function xtract_flatness(spectrum) {
     if (count === 0) {
         return 0;
     }
-    num = Math.pow(num, 1.0 / K);
-    den /= K;
+    num = Math.pow(num, 1.0 / count);
+    den /= count;
 
     return num / den;
 }
