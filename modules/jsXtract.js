@@ -136,7 +136,7 @@ function xtract_is_denormal(num) {
 function xtract_array_sum(data) {
     if (data.reduce) {
         return data.reduce(function (a, b) {
-            return a += b;
+            return a + b;
         }, 0);
     }
     var sum = 0,

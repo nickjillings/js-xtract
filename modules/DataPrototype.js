@@ -62,33 +62,35 @@ var DataProto = function (N, sampleRate) {
     this.toJSON = function () {
         var json = '{';
         for (var property in _result) {
-            var lastchar = json[json.length - 1];
-            if (lastchar !== '{' && lastchar !== ',') {
-                json = json + ', ';
-            }
-            if (typeof _result[property] === "number" && isFinite(_result[property])) {
-                json = json + '"' + property + '": ' + _result[property];
-            } else if (typeof _result[property] === "object") {
-                switch (_result[property].constructor) {
-                    case Array:
-                    case Float32Array:
-                    case Float64Array:
-                        //Array data type
-                        json = json + '"' + property + '": ' + xtract_array_to_JSON(_result[property]);
-                        break;
-                    case TimeData:
-                    case SpectrumData:
-                    case PeakSpectrumData:
-                    case HarmonicSpectrumData:
-                        // JSXtract Data type
-                        json = json + '"' + property + '": ' + _result[property].toJSON(_result[property]);
-                        break;
-                    default:
-                        json = json + '"' + property + '": ' + this.toJSON(_result[property]);
-                        break;
+            if (_result.hasOwnProperty(property)) {
+                var lastchar = json[json.length - 1];
+                if (lastchar !== '{' && lastchar !== ',') {
+                    json = json + ', ';
                 }
-            } else {
-                json = json + '"' + property + '": "' + _result[property].toString() + '"';
+                if (typeof _result[property] === "number" && isFinite(_result[property])) {
+                    json = json + '"' + property + '": ' + _result[property];
+                } else if (typeof _result[property] === "object") {
+                    switch (_result[property].constructor) {
+                        case Array:
+                        case Float32Array:
+                        case Float64Array:
+                            //Array data type
+                            json = json + '"' + property + '": ' + xtract_array_to_JSON(_result[property]);
+                            break;
+                        case TimeData:
+                        case SpectrumData:
+                        case PeakSpectrumData:
+                        case HarmonicSpectrumData:
+                            // JSXtract Data type
+                            json = json + '"' + property + '": ' + _result[property].toJSON(_result[property]);
+                            break;
+                        default:
+                            json = json + '"' + property + '": ' + this.toJSON(_result[property]);
+                            break;
+                    }
+                } else {
+                    json = json + '"' + property + '": "' + _result[property].toString() + '"';
+                }
             }
         }
         return json + '}';
