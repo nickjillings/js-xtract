@@ -485,7 +485,7 @@ function xtract_average_deviation(array, mean) {
     var result = 0.0;
     if (array.reduce) {
         result = array.reduce(function (a, b) {
-            return a += Math.abs(b - mean);
+            return a + Math.abs(b - mean);
         }, 0);
     } else {
         for (var n = 0; n < array.length; n++) {
@@ -505,7 +505,7 @@ function xtract_skewness(array, mean, standard_deviation) {
     var result = 0.0;
     if (array.reduce) {
         result = array.reduce(function (a, b) {
-            return a += Math.pow((a - mean) / standard_deviation, 3);
+            return a + Math.pow((a - mean) / standard_deviation, 3);
         }, 0);
     } else {
         for (var n = 0; n < array.length; n++) {
@@ -526,7 +526,7 @@ function xtract_kurtosis(array, mean, standard_deviation) {
     var result = 0.0;
     if (array.reduce) {
         result = array.reduce(function (a, b) {
-            return a += Math.pow((a - mean) / standard_deviation, 4);
+            return a + Math.pow((a - mean) / standard_deviation, 4);
         }, 0);
     } else {
         for (var n = 0; n < array.length; n++) {
@@ -826,7 +826,7 @@ function xtract_loudness(barkBandsArray) {
     var result = 0;
     if (barkBandsArray.reduce) {
         result = barkBandsArray.reduce(function (a, b) {
-            return a += Math.pow(b, 0.23);
+            return a + Math.pow(b, 0.23);
         }, 0);
     } else {
         for (var n = 0; n < barkBandsArray.length; n++) {
@@ -902,7 +902,7 @@ function xtract_rms_amplitude(timeArray) {
     var result = 0;
     if (timeArray.reduce) {
         result = timeArray.reduce(function (a, b) {
-            return a += b * b;
+            return a + b * b;
         }, 0);
     }
     for (var n = 0; n < timeArray.length; n++) {
@@ -1036,7 +1036,7 @@ function xtract_highest_value(data, threshold) {
         var interim;
         if (typeof threshold !== "number") {
             interim = data.filter(function (a) {
-                return a >= threshold;
+                return (a >= threshold);
             });
             if (interim.length === 0) {
                 return +Infinity;
@@ -1736,7 +1736,7 @@ function xtract_dct(array) {
         result.forEach(function (e, i, a) {
             var nN = i / N;
             a[i] = array.reduce(function (r, d, m) {
-                return r += d * Math.cos(Math.PI * nN * (m + 0.5));
+                return r + d * Math.cos(Math.PI * nN * (m + 0.5));
             });
         });
     } else {
@@ -1760,7 +1760,7 @@ function xtract_dct_2(array, dct) {
     if (result.forEach && array.reduce) {
         result.forEach(function (e, k, ar) {
             ar[k] = array.reduce(function (a, b, n) {
-                return a += b * dct.wt[k][n];
+                return a + b * dct.wt[k][n];
             });
         });
     } else {
