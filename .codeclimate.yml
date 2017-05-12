@@ -8,10 +8,11 @@ engines:
     checks:
       Similar code:
         enabled: false
-      complexity:
-        enabled: false
   eslint:
     enabled: true
+    checks:
+      complexity:
+        max: 20
   fixme:
     enabled: true
 ratings:
