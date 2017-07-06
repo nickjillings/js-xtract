@@ -133,6 +133,10 @@ function xtract_is_denormal(num) {
     return false;
 }
 
+function xtract_assert_array(array) {
+    return (typeof array == "object" && array.length != undefined && array.length > 0);
+}
+
 function xtract_array_sum(data) {
     if (data.reduce) {
         return data.reduce(function (a, b) {
@@ -234,16 +238,17 @@ function xtract_array_interlace(data) {
 }
 
 function xtract_array_deinterlace(data, num_arrays) {
+    var result, N;
     if (typeof num_arrays !== "number" || num_arrays <= 0) {
-        console.error("num_arrays must be a positive integer");
+        throw ("num_arrays must be a positive integer");
     }
     if (num_arrays === 1) {
         return data;
     }
-    var result = [];
-    var N = data.length / num_arrays;
+    result = [];
+    N = data.length / num_arrays;
     if (N !== Math.round(N)) {
-        console.error("Cannot safely divide data into " + num_arrays + " sub arrays");
+        throw ("Cannot safely divide data into " + num_arrays + " sub arrays");
     }
     for (var n = 0; n < num_arrays; n++) {
         result[n] = new data.constructor(N);
@@ -269,7 +274,7 @@ function xtract_get_number_of_frames(data, hop_size) {
 }
 
 function xtract_get_data_frames(data, frame_size, hop_size, copy) {
-    if (typeof data !== "object" && data.length === undefined || data.length === 0) {
+    if (typeof data !== "object" && (data.length === undefined || data.length === 0)) {
         throw ("Invalid data parameter. Must be item with iterable list");
     }
     if (typeof frame_size !== "number") {
@@ -427,6 +432,8 @@ function xtract_frame_from_array(src, dst, index, frame_size, hop_size) {
 /* Scalar.c */
 
 function xtract_mean(array) {
+    if (!xtract_assert_array(array))
+        return 0;
     return xtract_array_sum(array) / array.length;
 }
 
@@ -454,6 +461,8 @@ function xtract_temporal_centroid(energyArray, sample_rate, window_ms) {
 }
 
 function xtract_variance(array, mean) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
@@ -461,6 +470,7 @@ function xtract_variance(array, mean) {
     if (array.reduce) {
         result = array.reduce(function (a, b) {
             a += Math.pow(b - mean, 2);
+            return a;
         }, 0);
     } else {
         for (var n = 0; n < array.length; n++) {
@@ -472,6 +482,8 @@ function xtract_variance(array, mean) {
 }
 
 function xtract_standard_deviation(array, variance) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof variance !== "number") {
         variance = xtract_variance(array);
     }
@@ -479,6 +491,8 @@ function xtract_standard_deviation(array, variance) {
 }
 
 function xtract_average_deviation(array, mean) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
@@ -496,16 +510,21 @@ function xtract_average_deviation(array, mean) {
 }
 
 function xtract_skewness(array, mean, standard_deviation) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
     if (typeof standard_deviation !== "number") {
         standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
+    if (standard_deviation == 0) {
+        return 0;
+    }
     var result = 0.0;
     if (array.reduce) {
         result = array.reduce(function (a, b) {
-            return a + Math.pow((a - mean) / standard_deviation, 3);
+            return a + Math.pow((b - mean) / standard_deviation, 3);
         }, 0);
     } else {
         for (var n = 0; n < array.length; n++) {
@@ -517,16 +536,21 @@ function xtract_skewness(array, mean, standard_deviation) {
 }
 
 function xtract_kurtosis(array, mean, standard_deviation) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
     if (typeof standard_deviation !== "number") {
         standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
+    if (standard_deviation == 0) {
+        return 0;
+    }
     var result = 0.0;
     if (array.reduce) {
         result = array.reduce(function (a, b) {
-            return a + Math.pow((a - mean) / standard_deviation, 4);
+            return a + Math.pow((b - mean) / standard_deviation, 4);
         }, 0);
     } else {
         for (var n = 0; n < array.length; n++) {
@@ -538,11 +562,12 @@ function xtract_kurtosis(array, mean, standard_deviation) {
 }
 
 function xtract_spectral_centroid(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var N = spectrum.length;
     var n = N >> 1;
     var amps = spectrum.subarray(0, n);
     var freqs = spectrum.subarray(n);
-    amps = xtract_array_normalise(amps);
     var A_d = xtract_array_sum(amps) / n;
     if (A_d === 0.0) {
         return 0.0;
@@ -556,6 +581,8 @@ function xtract_spectral_centroid(spectrum) {
 }
 
 function xtract_spectral_mean(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var N = spectrum.length;
     var n = N >> 1;
     var amps = spectrum.subarray(0, n);
@@ -565,6 +592,8 @@ function xtract_spectral_mean(spectrum) {
 }
 
 function xtract_spectral_variance(spectrum, spectral_mean) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof spectral_mean !== "number") {
         spectral_mean = xtract_spectral_centroid(spectrum);
     }
@@ -573,32 +602,22 @@ function xtract_spectral_variance(spectrum, spectral_mean) {
     var N = spectrum.length;
     var n = N >> 1;
     var amps = spectrum.subarray(0, n);
-    var freqs = spectrum.subarray(n);
-    if (amps.reduce) {
-        A = amps.reduce(function (a, b) {
-            return a + b;
-        });
-    } else {
-        A = 0.0;
-        for (var i = 0; i < n; i++) {
-            A += amps[i];
-        }
-    }
+    var freqs = spectrum.subarray(n, N);
+    amps = xtract_array_scale(amps, 1 / xtract_array_sum(amps))
+    A = xtract_array_sum(amps);
     while (n--) {
-        result += Math.pow(freqs[n] - spectral_mean, 2) * amps[n];
+        result += Math.pow(freqs[n] - spectral_mean, 2) * (amps[n] / A);
     }
-    result /= A;
     return result;
 }
 
 function xtract_spectral_spread(spectrum, spectral_centroid) {
-    if (typeof spectral_centroid !== "number") {
-        spectral_centroid = xtract_spectral_centroid(spectrum);
-    }
     return xtract_spectral_variance(spectrum, spectral_centroid);
 }
 
 function xtract_spectral_standard_deviation(spectrum, spectral_variance) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof spectral_variance !== "number") {
         spectral_variance = xtract_spectral_variance(spectrum);
     }
@@ -606,6 +625,8 @@ function xtract_spectral_standard_deviation(spectrum, spectral_variance) {
 }
 
 function xtract_spectral_skewness(spectrum, spectral_mean, spectral_standard_deviation) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof spectral_mean !== "number") {
         spectral_mean = xtract_spectral_mean(spectrum);
     }
@@ -625,6 +646,8 @@ function xtract_spectral_skewness(spectrum, spectral_mean, spectral_standard_dev
 }
 
 function xtract_spectral_kurtosis(spectrum, spectral_mean, spectral_standard_deviation) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof spectral_mean !== "number") {
         spectral_mean = xtract_spectral_mean(spectrum);
     }
@@ -643,6 +666,8 @@ function xtract_spectral_kurtosis(spectrum, spectral_mean, spectral_standard_dev
 }
 
 function xtract_irregularity_k(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var result = 0;
     var N = spectrum.length;
     var K = N >> 1;
@@ -654,6 +679,8 @@ function xtract_irregularity_k(spectrum) {
 }
 
 function xtract_irregularity_j(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var num = 0,
         den = 0;
     var N = spectrum.length;
@@ -667,6 +694,8 @@ function xtract_irregularity_j(spectrum) {
 }
 
 function xtract_tristimulus_1(spectrum, f0) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof f0 !== "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
@@ -699,6 +728,8 @@ function xtract_tristimulus_1(spectrum, f0) {
 }
 
 function xtract_tristimulus_2(spectrum, f0) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof f0 !== "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
@@ -739,6 +770,8 @@ function xtract_tristimulus_2(spectrum, f0) {
 }
 
 function xtract_tristimulus_3(spectrum, f0) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof f0 !== "number") {
         console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
         return null;
@@ -770,6 +803,8 @@ function xtract_tristimulus_3(spectrum, f0) {
 }
 
 function xtract_smoothness(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var prev = 0,
         current = 0,
         next = 0,
@@ -790,6 +825,8 @@ function xtract_smoothness(spectrum) {
 }
 
 function xtract_zcr(timeArray) {
+    if (!xtract_assert_array(timeArray))
+        return 0;
     var result = 0;
     for (var n = 1; n < timeArray.length; n++) {
         if (timeArray[n] * timeArray[n - 1] < 0) {
