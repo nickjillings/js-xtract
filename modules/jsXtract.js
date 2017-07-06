@@ -138,6 +138,8 @@ function xtract_assert_array(array) {
 }
 
 function xtract_array_sum(data) {
+    if (!xtract_assert_array(data))
+        return 0;
     if (data.reduce) {
         return data.reduce(function (a, b) {
             return a + b;
@@ -152,6 +154,8 @@ function xtract_array_sum(data) {
 }
 
 function xtract_array_min(data) {
+    if (!xtract_assert_array(data))
+        return Infinity;
     if (data.reduce) {
         return data.reduce(function (a, b) {
             if (b < a) {
@@ -171,6 +175,8 @@ function xtract_array_min(data) {
 }
 
 function xtract_array_max(data) {
+    if (!xtract_assert_array(data))
+        return -Infinity;
     if (data.reduce) {
         return data.reduce(function (a, b) {
             if (b > a) {
@@ -190,6 +196,11 @@ function xtract_array_max(data) {
 }
 
 function xtract_array_scale(data, factor) {
+    if (!xtract_assert_array(data))
+        return 0;
+    if (typeof factor != "number") {
+        return 0;
+    }
     var i = 0,
         l = data.length;
     for (i = 0; i < l; i++) {
@@ -199,15 +210,22 @@ function xtract_array_scale(data, factor) {
 }
 
 function xtract_array_normalise(data) {
+    if (!xtract_assert_array(data))
+        return 0;
     return xtract_array_scale(data, 1.0 / xtract_array_max(data));
 }
 
 function xtract_array_bound(data, min, max) {
-    if (typeof min !== "number" && typeof max !== "number") {
-        return data;
+    if (!xtract_assert_array(data))
+        return 0;
+    if (typeof min !== "number") {
+        min = xtract_array_min(data);
+    }
+    if (typeof max !== "number") {
+        max = xtract_array_max(data);
     }
     if (min >= max) {
-        console.error("Invalid boundaries! Minimum cannot be greater than maximum");
+        throw ("Invalid boundaries! Minimum cannot be greater than maximum");
         return [];
     }
     var result = new data.constructor(data.length);
