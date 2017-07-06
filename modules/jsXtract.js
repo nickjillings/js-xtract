@@ -1253,7 +1253,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     if (!xtract_assert_array(timeArray))
         return 0;
     if (pitchtracker === undefined) {
-        console.error("xtract_wavelet_f0 requires pitchtracker to be defined");
+        throw ("xtract_wavelet_f0 requires pitchtracker to be defined");
         return null;
     }
     if (xtract_array_sum(timeArray) === 0) {
@@ -1609,6 +1609,9 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
 }
 
 function xtract_midicent(f0) {
+    if (typeof f0 !== "number") {
+        return -1;
+    }
     var note = 0.0;
     note = 69 + Math.log(f0 / 440.0) * 17.31234;
     note *= 100;

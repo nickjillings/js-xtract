@@ -713,15 +713,60 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_f0([]));
             done();
         });
-        /*
-        it('should equal to 43.06640625 if array is of sine', function (done) {
-            assert.equal(43.06640625, sandbox.xtract_f0(sine, 44100));
+        it('should equal to -0 if array is of impulse', function (done) {
+            assert.equal(-0, sandbox.xtract_f0(impulse, 44100));
             done();
         });
-        it('should equal to 0 if array is of impulse', function (done) {
-            assert.equal(0, sandbox.xtract_f0(impulse, 44100));
+        it('should equal to 1000 if array is of sine 1kHz', function (done) {
+            assert.equal(1000, Number(sandbox.xtract_f0(sinef(1000, 44100), 44100).toPrecision(3)));
             done();
         });
-        */
+    });
+    describe('xtract_wavelet_f0', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_wavelet_f0(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_wavelet_f0([]));
+            done();
+        });
+        it('should equal to -1 if array is of sine', function (done) {
+            assert.equal(-1, sandbox.xtract_wavelet_f0(sine, 44100, sandbox.xtract_init_wavelet()));
+            done();
+        });
+        it('should equal to -1 if array is of impulse', function (done) {
+            assert.equal(-1, sandbox.xtract_wavelet_f0(impulse, 44100, sandbox.xtract_init_wavelet()));
+            done();
+        });
+        it('should equal to 1000 if array is of sine 1kHz', function (done) {
+            assert.equal(1000, Number(sandbox.xtract_wavelet_f0(sinef(1000, 44100), 44100, sandbox.xtract_init_wavelet()).toPrecision(3)));
+            done();
+        });
+    });
+    describe('xtract_midicent', function () {
+        it('should equal to -1 if f0 is undefined', function (done) {
+            assert.equal(-1, sandbox.xtract_midicent(undefined));
+            done();
+        });
+        it('should equal to 6901 if f0 is undefined', function (done) {
+            assert.equal(6901, sandbox.xtract_midicent(440.00));
+            done();
+        });
+    });
+    describe('xtract_spectral_fundamental', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_spectral_fundamental(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_spectral_fundamental([]));
+            done();
+        });
+        it('should equal to 1000 if array is of sine 1kHz', function (done) {
+            var sp = sandbox.xtract_spectrum(sinef(1000, 44100), 44100, true, false);
+            assert.equal(1000, Number(sandbox.xtract_spectral_fundamental(sp, 44100).toPrecision(2)));
+            done();
+        });
     });
 });
