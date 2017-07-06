@@ -249,7 +249,7 @@ function xtract_array_interlace(data) {
             throw ("All argument lengths must be the same");
         }
     }
-    var result = new data.constructor(num_arrays * length);
+    var result = new data[0].constructor(num_arrays * length);
     for (var k = 0; k < length; k++) {
         for (var j = 0; j < num_arrays; j++) {
             result[k * num_arrays + j] = data[j][k];
@@ -1707,6 +1707,8 @@ function xtract_spectral_fundamental(spectrum, sample_rate) {
 /* Vector.c */
 
 function xtract_energy(array, sample_rate, window_ms) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof sample_rate !== "number") {
         console.error("xtract_energy requires sample_rate to be defined");
         return;
@@ -1730,6 +1732,8 @@ function xtract_energy(array, sample_rate, window_ms) {
 }
 
 function xtract_spectrum(array, sample_rate, withDC, normalise) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof sample_rate !== "number") {
         console.error("Sample Rate must be defined");
         return null;
@@ -1758,20 +1762,19 @@ function xtract_spectrum(array, sample_rate, withDC, normalise) {
         reals[i] = array[i];
     }
     transform(reals, imags);
-    for (var k = align; k < result.length / 2; k++) {
+    for (var k = align; k <= result.length / 2; k++) {
         amps[k - align] = Math.sqrt((reals[k] * reals[k]) + (imags[k] * imags[k])) / array.length;
         freqs[k - align] = (2 * k / N) * (sample_rate / 2);
     }
     if (normalise) {
-        var max = xtract_array_max(amps);
-        for (var n = 0; n < amps.length; n++) {
-            amps[n] /= max;
-        }
+        amps = xtract_array_normalise(amps);
     }
     return result;
 }
 
 function xtract_complex_spectrum(array, sample_rate, withDC) {
+    if (!xtract_assert_array(array))
+        return 0;
     if (typeof sample_rate !== "number") {
         console.error("Sample Rate must be defined");
         return null;
@@ -1796,7 +1799,7 @@ function xtract_complex_spectrum(array, sample_rate, withDC) {
         reals[i] = array[i];
     }
     transform(reals, imags);
-    for (var k = align; k < reals.length / 2 + 1; k++) {
+    for (var k = align; k <= reals.length / 2; k++) {
         amps[(k - align) * 2] = reals[k];
         amps[(k - align) * 2 + 1] = imags[k];
         freqs[k - align] = (2 * k / N) * (sample_rate / 2);
@@ -1805,17 +1808,19 @@ function xtract_complex_spectrum(array, sample_rate, withDC) {
 }
 
 function xtract_mfcc(spectrum, mfcc) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof mfcc !== "object") {
-        console.error("Invalid MFCC, must be MFCC object built using xtract_init_mfcc");
+        throw ("Invalid MFCC, must be MFCC object built using xtract_init_mfcc");
         return null;
     }
     if (mfcc.n_filters === 0) {
-        console.error("Invalid MFCC, object must be built using xtract_init_mfcc");
+        throw ("Invalid MFCC, object must be built using xtract_init_mfcc");
         return null;
     }
     var K = spectrum.length >> 1;
     if (mfcc.filters[0].length !== K) {
-        console.error("Lengths do not match");
+        throw ("Lengths do not match");
         return null;
     }
     var result = new Float64Array(mfcc.n_filters);
@@ -1834,6 +1839,8 @@ function xtract_mfcc(spectrum, mfcc) {
 }
 
 function xtract_dct(array) {
+    if (!xtract_assert_array(array))
+        return 0;
     var N = array.length;
     var result = new Float64Array(N);
     if (array.reduce) {
@@ -1855,6 +1862,8 @@ function xtract_dct(array) {
 }
 
 function xtract_dct_2(array, dct) {
+    if (!xtract_assert_array(array))
+        return 0;
     var N = array.length;
     if (dct === undefined) {
         dct = xtract_init_dct(N);
@@ -1878,6 +1887,8 @@ function xtract_dct_2(array, dct) {
 }
 
 function xtract_autocorrelation(array) {
+    if (!xtract_assert_array(array))
+        return 0;
     var n = array.length;
     var result = new Float64Array(n);
     while (n--) {
@@ -1891,6 +1902,8 @@ function xtract_autocorrelation(array) {
 }
 
 function xtract_amdf(array) {
+    if (!xtract_assert_array(array))
+        return 0;
     var n = array.length;
     var result = new Float64Array(n);
     while (n--) {
@@ -1904,6 +1917,8 @@ function xtract_amdf(array) {
 }
 
 function xtract_asdf(array) {
+    if (!xtract_assert_array(array))
+        return 0;
     var n = array.length;
     var result = new Float64Array(n);
     while (n--) {
@@ -1917,6 +1932,8 @@ function xtract_asdf(array) {
 }
 
 function xtract_bark_coefficients(spectrum, bark_limits) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (bark_limits === undefined) {
         console.error("xtract_bark_coefficients requires compute limits from xtract_init_bark");
         return null;
@@ -1934,6 +1951,8 @@ function xtract_bark_coefficients(spectrum, bark_limits) {
 }
 
 function xtract_peak_spectrum(spectrum, q, threshold) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var N = spectrum.length;
     var K = N >> 1;
     var max = 0.0,
@@ -1977,6 +1996,8 @@ function xtract_peak_spectrum(spectrum, q, threshold) {
 }
 
 function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
+    if (!xtract_assert_array(peakSpectrum))
+        return 0;
     var N = peakSpectrum.length;
     var K = N >> 1;
     var result = new Float64Array(N);
@@ -1986,12 +2007,11 @@ function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
     var freqsOut = result.subarray(K);
     var n = K;
     if (f0 === undefined || threshold === undefined) {
-        console.error("harmonic_spectrum requires f0 and threshold to be numbers and defined");
+        throw ("harmonic_spectrum requires f0 and threshold to be numbers and defined");
         return null;
     }
     if (threshold > 1) {
         threshold /= 100.0;
-        console.log("harmonic_spectrum assuming integer for threshold inserted, operating at t=" + threshold);
     }
     while (n--) {
         if (freqsIn[n] !== 0.0) {
@@ -2014,6 +2034,8 @@ function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
 }
 
 function xtract_lpc(autocorr) {
+    if (!xtract_assert_array(autocorr))
+        return 0;
     var i, j, r, error = autocorr[0];
     var N = autocorr.length;
     var L = N - 1;
@@ -2046,6 +2068,8 @@ function xtract_lpc(autocorr) {
 }
 
 function xtract_lpcc(lpc, Q) {
+    if (!xtract_assert_array(lpc))
+        return 0;
     var N = lpc.length;
     var n, k, sum, order = N - 1,
         cep_length;
@@ -2074,10 +2098,12 @@ function xtract_lpcc(lpc, Q) {
 }
 
 function xtract_pcp(spectrum, M, fs) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var N = spectrum.length >> 1;
     if (typeof M !== "object") {
         if (typeof fs !== "number" || fs <= 0.0) {
-            console.error("Cannot dynamically compute M if fs is undefined / not a valid sample rate");
+            throw ("Cannot dynamically compute M if fs is undefined / not a valid sample rate");
             return [];
         }
         M = xtract_init_pcp(N, fs);
@@ -2093,6 +2119,8 @@ function xtract_pcp(spectrum, M, fs) {
 
 function xtract_yin(array) {
     // Uses the YIN process
+    if (!xtract_assert_array(array))
+        return 0;
     var T = array.length;
     var d = new Float64Array(array.length);
     var r = new array.constructor(array.length);
@@ -2111,11 +2139,13 @@ function xtract_yin(array) {
 }
 
 function xtract_onset(timeData, frameSize) {
-    if (timeData === undefined || frameSize === undefined) {
-        console.error("All arguments for xtract_onset must be defined: xtract_onset(timeData, frameSize)");
+    if (!xtract_assert_array(timeData))
+        return 0;
+    if (frameSize === undefined) {
+        throw ("All arguments for xtract_onset must be defined: xtract_onset(timeData, frameSize)");
     }
 
-    var frames = timeData.xtract_get_data_frames(frameSize, frameSize, false);
+    var frames = xtract_get_data_frames(timeData, frameSize, frameSize, false);
     var N = frames.length;
     var X = [];
     var real = new Float64Array(frameSize);
@@ -2184,6 +2214,8 @@ function xtract_onset(timeData, frameSize) {
 }
 
 function xtract_resample(data, p, q, n) {
+    if (!xtract_assert_array(data))
+        return 0;
     // Same function call as matlab:
     // data is the array
     // p is the target sample rate
@@ -2264,8 +2296,8 @@ function xtract_resample(data, p, q, n) {
             imag: new Float64Array(N * 2)
         };
         transform(B.real, B.imag);
-        var Xi = X.xtract_get_data_frames(N, N, false);
-        var Yi = Y.xtract_get_data_frames(N, N, false);
+        var Xi = xtract_get_data_frames(X, N, N, false);
+        var Yi = xtract_get_data_frames(Y, N, N, false);
         var x_last = new Float64Array(N);
         var y_last = new Float64Array(N);
         var w = new Float64Array(N2);
@@ -2457,16 +2489,16 @@ function xtract_init_wavelet() {
 
 function xtract_init_pcp(N, fs, f_ref) {
     if (typeof fs !== "number" || typeof N !== "number") {
-        console.error('The Sample Rate and sample count have to be defined: xtract_init_pcp(N, fs, f_ref)');
+        throw ('The Sample Rate and sample count have to be defined: xtract_init_pcp(N, fs, f_ref)');
     }
     if (N <= 0 || N !== Math.floor(N)) {
-        console.error("The sample count, N, must be a positive integer: xtract_init_pcp(N, fs, f_ref)");
+        throw ("The sample count, N, must be a positive integer: xtract_init_pcp(N, fs, f_ref)");
     }
     if (fs <= 0.0) {
-        console.error('The Sample Rate must be a positive number: xtract_init_pcp(N, fs, f_ref)');
+        throw ('The Sample Rate must be a positive number: xtract_init_pcp(N, fs, f_ref)');
     }
     if (typeof f_ref !== "number" || f_ref <= 0.0 || f_ref >= fs / 2) {
-        console.log("Assuming f_ref to be 48.9994294977Hz");
+        //("Assuming f_ref to be 48.9994294977Hz");
         f_ref = 48.9994294977;
     }
 
