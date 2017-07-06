@@ -204,4 +204,112 @@ describe("Array Manipulation", function () {
             done();
         });
     });
+    describe("xtract_array_interlace", function () {
+        it("should return [] if data is undefined", function (done) {
+            var ret = sandbox.xtract_array_interlace(undefined);
+            assert.equal("object", typeof ret);
+            assert.equal(0, ret.length);
+            done();
+        });
+        it("should return [] if data is empty", function (done) {
+            var ret = sandbox.xtract_array_interlace([]);
+            assert.equal("object", typeof ret);
+            assert.equal(0, ret.length);
+            done();
+        });
+        it("should return [1,2,3] if data is [[1,2,3]]", function (done) {
+            var ret = sandbox.xtract_array_interlace([[1, 2, 3]]);
+            assert.equal(1, ret[0]);
+            assert.equal(2, ret[1]);
+            assert.equal(3, ret[2]);
+            done();
+        });
+        it("should return [1,1,2,2,3,3] if data is [[1,2,3],[1,2,3]]", function (done) {
+            var ret = sandbox.xtract_array_interlace([[1, 2, 3], [1, 2, 3]]);
+            assert.equal(1, ret[0]);
+            assert.equal(1, ret[1]);
+            assert.equal(2, ret[2]);
+            assert.equal(2, ret[3]);
+            assert.equal(3, ret[4]);
+            assert.equal(3, ret[5]);
+            done();
+        });
+    });
+    describe("xtract_array_deinterlace", function () {
+        it("should return [] if data is undefined", function (done) {
+            var ret = sandbox.xtract_array_deinterlace(undefined);
+            assert.equal("object", typeof ret);
+            assert.equal(0, ret.length);
+            done();
+        });
+        it("should return [] if data is empty", function (done) {
+            var ret = sandbox.xtract_array_deinterlace([]);
+            assert.equal("object", typeof ret);
+            assert.equal(0, ret.length);
+            done();
+        });
+        it("should return [[1],[2],[3]] if data is [[1,2,3]]", function (done) {
+            var ret = sandbox.xtract_array_deinterlace([1, 2, 3], 3);
+            assert.equal(1, ret[0][0]);
+            assert.equal(2, ret[1][0]);
+            assert.equal(3, ret[2][0]);
+            done();
+        });
+        it("should return [1,1,2,2,3,3] if data is [[1,2,3],[1,2,3]]", function (done) {
+            var ret = sandbox.xtract_array_deinterlace([1, 1, 2, 2, 3, 3], 2);
+            assert.equal(1, ret[0][0]);
+            assert.equal(1, ret[1][0]);
+            assert.equal(2, ret[0][1]);
+            assert.equal(2, ret[1][1]);
+            assert.equal(3, ret[0][2]);
+            assert.equal(3, ret[1][2]);
+            done();
+        });
+    });
+    describe("xtract_get_number_of_frames", function () {
+        it("should equal 1 when data.length is 1024 and hop_size is 1024", function (done) {
+            assert.equal(1, sandbox.xtract_get_number_of_frames(sine, 1024));
+            done();
+        });
+        it("should equal 2 when data.length is 1024 and hop_size is 512", function (done) {
+            assert.equal(2, sandbox.xtract_get_number_of_frames(new Float32Array(1024), 512));
+            done();
+        });
+        it("should equal 8 when data.length is 1024 and hop_size is 128", function (done) {
+            assert.equal(8, sandbox.xtract_get_number_of_frames(new Float32Array(1024), 128));
+            done();
+        });
+    });
+    describe("xtract_get_data_frames", function () {
+        it("should return 8 frames when data.length is 1024 and frame_size is 128", function (done) {
+            assert.equal(8, sandbox.xtract_get_data_frames(new Float32Array(1024), 128).length);
+            done();
+        });
+        it("should return 16 frames when data.length is 1024, frame_size is 128 and hop_size is 64", function (done) {
+            assert.equal(16, sandbox.xtract_get_data_frames(new Float32Array(1024), 128, 64).length);
+            done();
+        });
+    });
+    describe("xtract_frame_from_array", function () {
+        it("should return first frame when index = 0", function (done) {
+            var N = 128,
+                sub = new Float64Array(N),
+                n;
+            sandbox.xtract_frame_from_array(sine, sub, 0, N, N);
+            for (n = 0; n < N; n++) {
+                assert.equal(sub[n], sine[n]);
+            }
+            done();
+        });
+        it("should return first frame when index = 1", function (done) {
+            var N = 128,
+                sub = new Float64Array(N),
+                n;
+            sandbox.xtract_frame_from_array(sine, sub, 1, N, N);
+            for (n = 0; n < N; n++) {
+                assert.equal(sub[n], sine[n + N]);
+            }
+            done();
+        });
+    });
 });

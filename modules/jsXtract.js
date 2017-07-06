@@ -236,6 +236,9 @@ function xtract_array_bound(data, min, max) {
 }
 
 function xtract_array_interlace(data) {
+    if (data === undefined || data.length === undefined) {
+        return [];
+    }
     var num_arrays = data.length;
     if (num_arrays === 0) {
         return [];
@@ -256,6 +259,9 @@ function xtract_array_interlace(data) {
 }
 
 function xtract_array_deinterlace(data, num_arrays) {
+    if (!xtract_assert_array(data)) {
+        return [];
+    }
     var result, N;
     if (typeof num_arrays !== "number" || num_arrays <= 0) {
         throw ("num_arrays must be a positive integer");
@@ -282,7 +288,7 @@ function xtract_array_deinterlace(data, num_arrays) {
 /* Array Manipulation */
 
 function xtract_get_number_of_frames(data, hop_size) {
-    if (typeof data !== "object" && data.length === undefined || data.length === 0) {
+    if (!xtract_assert_array(data)) {
         throw ("Invalid data parameter. Must be item with iterable list");
     }
     if (typeof hop_size !== "number" && hop_size <= 0) {
@@ -424,22 +430,23 @@ function xtract_frame_from_array(src, dst, index, frame_size, hop_size) {
     if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (typeof src !== "object" && src.length === undefined || src.length === 0) {
+    if (typeof src != "object" && (src.length === undefined || src.length === 0)) {
         throw ("Invalid data parameter. Must be item with iterable list");
     }
-    if (typeof dst !== "object" && dst.length === undefined || dst.length !== hop_size) {
-        throw ("dst must be an Array-like object equal in length to hop_size");
+    if (typeof dst !== "object" && (dst.length === undefined || dst.length !== frame_size)) {
+        throw ("dst must be an Array-like object equal in length to frame_size");
     }
     if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
         throw ("xtract_get_frame requires the hop_size to be a positive integer");
     }
-    var K = this.xtract_get_number_of_frames(hop_size);
+    var K = xtract_get_number_of_frames(src, hop_size);
     if (index < 0 || index >= K) {
         throw ("index number " + index + " out of bounds");
     }
     var n = 0;
-    while (n < dst.length && n < this.length && n < frame_size) {
-        dst[n] = this[n];
+    var offset = index * hop_size;
+    while (n < dst.length && n < src.length && n < frame_size) {
+        dst[n] = src[n + offset];
         n++;
     }
     while (n < dst.length) {
