@@ -837,6 +837,8 @@ function xtract_zcr(timeArray) {
 }
 
 function xtract_rolloff(spectrum, sampleRate, threshold) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof sampleRate !== "number" || typeof threshold !== "number") {
         console.log("xtract_rolloff requires sampleRate and threshold to be defined");
         return null;
@@ -860,6 +862,8 @@ function xtract_rolloff(spectrum, sampleRate, threshold) {
 }
 
 function xtract_loudness(barkBandsArray) {
+    if (!xtract_assert_array(barkBandsArray))
+        return 0;
     var result = 0;
     if (barkBandsArray.reduce) {
         result = barkBandsArray.reduce(function (a, b) {
@@ -874,6 +878,8 @@ function xtract_loudness(barkBandsArray) {
 }
 
 function xtract_flatness(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var count = 0,
         denormal_found = false,
         num = 1.0,
@@ -903,6 +909,8 @@ function xtract_flatness(spectrum) {
 }
 
 function xtract_flatness_db(spectrum, flatness) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof flatness !== "number") {
         flatness = xtract_flatness(spectrum);
     }
@@ -910,6 +918,8 @@ function xtract_flatness_db(spectrum, flatness) {
 }
 
 function xtract_tonality(spectrum, flatness_db) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     if (typeof flatness_db !== "number") {
         flatness_db = xtract_flatness_db(spectrum);
     }
@@ -917,6 +927,8 @@ function xtract_tonality(spectrum, flatness_db) {
 }
 
 function xtract_crest(data, max, mean) {
+    if (!xtract_assert_array(data))
+        return 0;
     if (typeof max !== "number") {
         max = xtract_array_max(data);
     }
@@ -936,19 +948,24 @@ function xtract_noisiness(h, p) {
 }
 
 function xtract_rms_amplitude(timeArray) {
+    if (!xtract_assert_array(timeArray))
+        return 0;
     var result = 0;
     if (timeArray.reduce) {
         result = timeArray.reduce(function (a, b) {
             return a + b * b;
         }, 0);
-    }
-    for (var n = 0; n < timeArray.length; n++) {
-        result += timeArray[n] * timeArray[n];
+    } else {
+        for (var n = 0; n < timeArray.length; n++) {
+            result += timeArray[n] * timeArray[n];
+        }
     }
     return Math.sqrt(result / timeArray.length);
 }
 
 function xtract_spectral_inharmonicity(peakSpectrum, f0) {
+    if (!xtract_assert_array(peakSpectrum))
+        return 0;
     if (typeof f0 !== "number") {
         console.error("spectral_inharmonicity requires f0 to be defined.");
         return null;
@@ -976,6 +993,8 @@ function xtract_power(magnitudeArray) {
 }
 
 function xtract_odd_even_ratio(harmonicSpectrum, f0) {
+    if (!xtract_assert_array(harmonicSpectrum))
+        return 0;
     if (typeof f0 !== "number") {
         console.error("spectral_inharmonicity requires f0 to be defined.");
         return null;
@@ -1008,6 +1027,8 @@ function xtract_odd_even_ratio(harmonicSpectrum, f0) {
 }
 
 function xtract_sharpness(barkBandsArray) {
+    if (!xtract_assert_array(barkBandsArray))
+        return 0;
     var N = barkBandsArray.length;
 
     var rv, sl = 0.0,
@@ -1023,6 +1044,8 @@ function xtract_sharpness(barkBandsArray) {
 }
 
 function xtract_spectral_slope(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var F = 0.0,
         FA = 0.0,
         A = 0.0,
@@ -1041,9 +1064,11 @@ function xtract_spectral_slope(spectrum) {
 }
 
 function xtract_lowest_value(data, threshold) {
+    if (!xtract_assert_array(data))
+        return 0;
     if (data.filter && data.reduce) {
         var interim;
-        if (typeof threshold !== "number") {
+        if (typeof threshold == "number") {
             interim = data.filter(function (a) {
                 return a > threshold;
             });
@@ -1069,9 +1094,11 @@ function xtract_lowest_value(data, threshold) {
 }
 
 function xtract_highest_value(data, threshold) {
+    if (!xtract_assert_array(data))
+        return 0;
     if (data.filter && data.reduce) {
         var interim;
-        if (typeof threshold !== "number") {
+        if (typeof threshold == "number") {
             interim = data.filter(function (a) {
                 return (a >= threshold);
             });
@@ -1097,10 +1124,14 @@ function xtract_highest_value(data, threshold) {
 }
 
 function xtract_sum(data) {
+    if (!xtract_assert_array(data))
+        return 0;
     return xtract_array_sum(data);
 }
 
 function xtract_nonzero_count(data) {
+    if (!xtract_assert_array(data))
+        return 0;
     var count = 0;
     if (data.reduce) {
         return data.reduce(function (a, b) {
@@ -1119,6 +1150,8 @@ function xtract_nonzero_count(data) {
 }
 
 function xtract_hps(spectrum) {
+    if (!xtract_assert_array(spectrum))
+        return 0;
     var peak_index = 0,
         position1_lwr = 0,
         largest1_lwr = 0,
@@ -1160,6 +1193,8 @@ function xtract_hps(spectrum) {
 }
 
 function xtract_f0(timeArray, sampleRate) {
+    if (!xtract_assert_array(timeArray))
+        return 0;
     if (typeof sampleRate !== "number") {
         sampleRate = 44100.0;
     }
@@ -1215,6 +1250,8 @@ function xtract_failsafe_f0(timeArray, sampleRate) {
 }
 
 function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
+    if (!xtract_assert_array(timeArray))
+        return 0;
     if (pitchtracker === undefined) {
         console.error("xtract_wavelet_f0 requires pitchtracker to be defined");
         return null;
@@ -1581,6 +1618,8 @@ function xtract_midicent(f0) {
 
 function xtract_spectral_fundamental(spectrum, sample_rate) {
     // Based on work by Motegi and Shimamura
+    if (!xtract_assert_array(spectrum))
+        return 0;
 
     function peak_picking(E, window) {
         var o = [],

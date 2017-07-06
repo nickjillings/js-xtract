@@ -55,6 +55,21 @@ var impulse = function () {
     return store;
 }();
 
+var sinef = function (f0, fs) {
+    if (fs === undefined || typeof fs != "number" || fs <= 0) {
+        fs = 44100.0;
+    }
+    if (f0 === undefined || typeof f0 != "number" || f0 <= 0) {
+        f0 = 1000.0;
+    }
+    var store = new Float64Array(1024),
+        ts = 1.0 / fs;
+    for (var n = 0; n < 1024; n++) {
+        store[n] = Math.sin(2.0 * Math.PI * f0 * (n * ts));
+    }
+    return store;
+}
+
 var sine_spectrum = sandbox.xtract_spectrum(sine, 44100, true, false);
 var impulse_spectrum = sandbox.xtract_spectrum(impulse, 44100, true, false);
 
@@ -414,5 +429,299 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_zcr(impulse));
             done();
         });
+    });
+    describe('xtract_rolloff', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_rolloff(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_rolloff([]));
+            done();
+        });
+        it('should equal to ~20k if array is of impulse', function (done) {
+            assert.equal(20000, Number(sandbox.xtract_rolloff(impulse_spectrum, 44100, 90).toPrecision(1)));
+            done();
+        });
+    });
+    describe('xtract_loudness', function () {
+        var bark_limits = sandbox.xtract_init_bark(1024, 44100);
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_loudness(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_loudness([]));
+            done();
+        });
+        it('should equal to 5.065870190241803 if array is of sine', function (done) {
+            var barks = sandbox.xtract_bark_coefficients(sine_spectrum, bark_limits);
+            assert.equal(5.065870190241803, sandbox.xtract_loudness(barks));
+            done();
+        });
+        it('should equal to 10.172043580560036 if array is of impulse', function (done) {
+            var barks = sandbox.xtract_bark_coefficients(impulse_spectrum, bark_limits);
+            assert.equal(10.172043580560036, sandbox.xtract_loudness(barks));
+            done();
+        });
+    });
+    describe('xtract_flatness', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_flatness(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_flatness([]));
+            done();
+        });
+        it('should equal to ~0 if array is of sine', function (done) {
+            assert.ok(sandbox.xtract_flatness(sine_spectrum) < 0.01);
+            done();
+        });
+        it('should equal to ~1 if array is of impulse', function (done) {
+            assert.ok(sandbox.xtract_flatness(impulse_spectrum) > 0.98);
+            done();
+        });
+    });
+    describe('xtract_flatness_db', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_flatness_db(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_flatness_db([]));
+            done();
+        });
+        it('should equal to ~-24dB if array is of sine', function (done) {
+            assert.equal(10.0 * Math.log10(sandbox.xtract_flatness(sine_spectrum)), sandbox.xtract_flatness_db(sine_spectrum));
+            done();
+        });
+        it('should equal to 0dB if array is of impulse', function (done) {
+            assert.equal(10.0 * Math.log10(sandbox.xtract_flatness(impulse_spectrum)), sandbox.xtract_flatness_db(impulse_spectrum));
+            done();
+        });
+    });
+    describe('xtract_tonality', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_tonality(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_tonality([]));
+            done();
+        });
+        it('should equal to 0.405840274557258 if array is spectrum of sine', function (done) {
+            assert.equal(0.405840274557258, sandbox.xtract_tonality(sine_spectrum));
+            done();
+        });
+        it('should equal to ~0 if array is spectrum of impulse', function (done) {
+            assert.ok(sandbox.xtract_tonality(impulse_spectrum) < 0.01);
+            done();
+        });
+    });
+    describe('xtract_crest', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_crest(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_crest([]));
+            done();
+        });
+        it('should equal to 506.746332627167 if array is spectrum of sine', function (done) {
+            assert.equal(506.746332627167, sandbox.xtract_crest(sine_spectrum.subarray(0, 513)));
+            done();
+        });
+        it('should equal to ~1 if array is spectrum of impulse', function (done) {
+            assert.equal(1, Number(sandbox.xtract_crest(impulse_spectrum.subarray(0, 513)).toPrecision(2)));
+            done();
+        });
+    });
+    describe('xtract_rms_amplitude', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_rms_amplitude(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_rms_amplitude([]));
+            done();
+        });
+        it('should equal to ~0.707 if array is of sine', function (done) {
+            assert.equal(0.707, Number(sandbox.xtract_rms_amplitude(sine).toPrecision(3)));
+            done();
+        });
+        it('should equal to SQRT(1/N) if array is of impulse', function (done) {
+            assert.equal(Math.sqrt(1 / impulse.length), sandbox.xtract_rms_amplitude(impulse));
+            done();
+        });
+    });
+    describe('xtract_spectral_inharmonicity', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_spectral_inharmonicity(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_spectral_inharmonicity([]));
+            done();
+        });
+    });
+    describe('xtract_odd_even_ratio', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_odd_even_ratio(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_odd_even_ratio([]));
+            done();
+        });
+    });
+    describe('xtract_sharpness', function () {
+        var bark_limits = sandbox.xtract_init_bark(1024, 44100);
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_sharpness(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_sharpness([]));
+            done();
+        });
+        it('should equal to 0.3903750243172459 if array is of sine', function (done) {
+            var barks = sandbox.xtract_bark_coefficients(sine_spectrum, bark_limits);
+            assert.equal(0.3903750243172459, sandbox.xtract_sharpness(barks));
+            done();
+        });
+        it('should equal to 1.2369119868301146 if array is of impulse', function (done) {
+            var barks = sandbox.xtract_bark_coefficients(impulse_spectrum, bark_limits);
+            assert.equal(1.2369119868301146, sandbox.xtract_sharpness(barks));
+            done();
+        });
+    });
+    describe('xtract_spectral_slope', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_spectral_slope(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_spectral_slope([]));
+            done();
+        });
+        it('should equal to ~0 if array is of sine', function (done) {
+            assert.ok(sandbox.xtract_spectral_slope(sine_spectrum) < 0.001);
+            done();
+        });
+        it('should equal to ~0 if array is of impulse', function (done) {
+            assert.ok(sandbox.xtract_spectral_slope(impulse_spectrum) < 0.001);
+            done();
+        });
+    });
+    describe('xtract_lowest_value', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_lowest_value(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_lowest_value([]));
+            done();
+        });
+        it('should equal to -1 if array is of sine', function (done) {
+            assert.equal(-1, Number(sandbox.xtract_lowest_value(sine).toPrecision(2)));
+            done();
+        });
+        it('should equal to 0 if array is of impulse', function (done) {
+            assert.equal(0, sandbox.xtract_lowest_value(impulse));
+            done();
+        });
+    });
+    describe('xtract_highest_value', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_highest_value(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_highest_value([]));
+            done();
+        });
+        it('should equal to 1 if array is of sine', function (done) {
+            assert.equal(1, Number(sandbox.xtract_highest_value(sine).toPrecision(2)));
+            done();
+        });
+        it('should equal to 1 if array is of impulse', function (done) {
+            assert.equal(1, sandbox.xtract_highest_value(impulse));
+            done();
+        });
+    });
+    describe('xtract_sum', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_sum(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_sum([]));
+            done();
+        });
+        it('should equal to ~0 if array is of sine', function (done) {
+            assert.ok(sandbox.xtract_sum(sine) < 0.001);
+            done();
+        });
+        it('should equal to 1 if array is of impulse', function (done) {
+            assert.equal(1, sandbox.xtract_sum(impulse));
+            done();
+        });
+    });
+    describe('xtract_nonzero_count', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_nonzero_count(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_nonzero_count([]));
+            done();
+        });
+        it('should equal to N-1 if array is of sine', function (done) {
+            assert.equal(sine.length - 1, sandbox.xtract_nonzero_count(sine));
+            done();
+        });
+        it('should equal to 1 if array is of impulse', function (done) {
+            assert.equal(1, sandbox.xtract_nonzero_count(impulse));
+            done();
+        });
+    });
+    describe('xtract_hps', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_hps(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_hps([]));
+            done();
+        });
+        it('should equal to 43.06640625 if array is of sine', function (done) {
+            assert.equal(43.06640625, sandbox.xtract_hps(sine_spectrum));
+            done();
+        });
+        it('should equal to 0 if array is of impulse', function (done) {
+            assert.equal(0, sandbox.xtract_hps(impulse_spectrum));
+            done();
+        });
+    });
+    describe('xtract_f0', function () {
+        it('should equal to 0 if array is undefined', function (done) {
+            assert.equal(0, sandbox.xtract_f0(undefined));
+            done();
+        });
+        it('should equal to 0 if array is empty', function (done) {
+            assert.equal(0, sandbox.xtract_f0([]));
+            done();
+        });
+        /*
+        it('should equal to 43.06640625 if array is of sine', function (done) {
+            assert.equal(43.06640625, sandbox.xtract_f0(sine, 44100));
+            done();
+        });
+        it('should equal to 0 if array is of impulse', function (done) {
+            assert.equal(0, sandbox.xtract_f0(impulse, 44100));
+            done();
+        });
+        */
     });
 });
