@@ -134,7 +134,7 @@ function xtract_is_denormal(num) {
 }
 
 function xtract_assert_array(array) {
-    return (typeof array == "object" && array.length != undefined && array.length > 0);
+    return (typeof array === "object" && array.length !== undefined && array.length > 0);
 }
 
 function xtract_array_sum(data) {
@@ -198,7 +198,7 @@ function xtract_array_max(data) {
 function xtract_array_scale(data, factor) {
     if (!xtract_assert_array(data))
         return 0;
-    if (typeof factor != "number") {
+    if (typeof factor !== "number") {
         return 0;
     }
     var i = 0,
@@ -226,7 +226,6 @@ function xtract_array_bound(data, min, max) {
     }
     if (min >= max) {
         throw ("Invalid boundaries! Minimum cannot be greater than maximum");
-        return [];
     }
     var result = new data.constructor(data.length);
     for (var n = 0; n < data.length; n++) {
@@ -430,7 +429,7 @@ function xtract_frame_from_array(src, dst, index, frame_size, hop_size) {
     if (hop_size === undefined) {
         hop_size = frame_size;
     }
-    if (typeof src != "object" && (src.length === undefined || src.length === 0)) {
+    if (typeof src !== "object" && (src.length === undefined || src.length === 0)) {
         throw ("Invalid data parameter. Must be item with iterable list");
     }
     if (typeof dst !== "object" && (dst.length === undefined || dst.length !== frame_size)) {
@@ -543,7 +542,7 @@ function xtract_skewness(array, mean, standard_deviation) {
     if (typeof standard_deviation !== "number") {
         standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
-    if (standard_deviation == 0) {
+    if (standard_deviation === 0) {
         return 0;
     }
     var result = 0.0;
@@ -569,7 +568,7 @@ function xtract_kurtosis(array, mean, standard_deviation) {
     if (typeof standard_deviation !== "number") {
         standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
-    if (standard_deviation == 0) {
+    if (standard_deviation === 0) {
         return 0;
     }
     var result = 0.0;
@@ -1093,7 +1092,7 @@ function xtract_lowest_value(data, threshold) {
         return 0;
     if (data.filter && data.reduce) {
         var interim;
-        if (typeof threshold == "number") {
+        if (typeof threshold === "number") {
             interim = data.filter(function (a) {
                 return a > threshold;
             });
@@ -1123,7 +1122,7 @@ function xtract_highest_value(data, threshold) {
         return 0;
     if (data.filter && data.reduce) {
         var interim;
-        if (typeof threshold == "number") {
+        if (typeof threshold === "number") {
             interim = data.filter(function (a) {
                 return (a >= threshold);
             });
@@ -1279,7 +1278,6 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         return 0;
     if (pitchtracker === undefined) {
         throw ("xtract_wavelet_f0 requires pitchtracker to be defined");
-        return null;
     }
     if (xtract_array_sum(timeArray) === 0) {
         return;
@@ -1812,16 +1810,13 @@ function xtract_mfcc(spectrum, mfcc) {
         return 0;
     if (typeof mfcc !== "object") {
         throw ("Invalid MFCC, must be MFCC object built using xtract_init_mfcc");
-        return null;
     }
     if (mfcc.n_filters === 0) {
         throw ("Invalid MFCC, object must be built using xtract_init_mfcc");
-        return null;
     }
     var K = spectrum.length >> 1;
     if (mfcc.filters[0].length !== K) {
         throw ("Lengths do not match");
-        return null;
     }
     var result = new Float64Array(mfcc.n_filters);
     for (var f = 0; f < mfcc.n_filters; f++) {
@@ -1935,8 +1930,7 @@ function xtract_bark_coefficients(spectrum, bark_limits) {
     if (!xtract_assert_array(spectrum))
         return 0;
     if (bark_limits === undefined) {
-        console.error("xtract_bark_coefficients requires compute limits from xtract_init_bark");
-        return null;
+        throw ("xtract_bark_coefficients requires compute limits from xtract_init_bark");
     }
     var N = spectrum.length >> 1;
     var bands = bark_limits.length;
@@ -1961,11 +1955,10 @@ function xtract_peak_spectrum(spectrum, q, threshold) {
         y3 = 0.0,
         p = 0.0;
     if (typeof q !== "number") {
-        console.error("xtract_peak_spectrum requires second argument to be sample_rate/N");
+        throw ("xtract_peak_spectrum requires second argument to be sample_rate/N");
     }
     if (threshold < 0 || threshold > 100) {
         threshold = 0;
-        console.log("peak_spectrum threshold must be between 0 and 100");
     }
     var result = new Float64Array(N);
     var ampsIn = spectrum.subarray(0, K);
@@ -2008,7 +2001,6 @@ function xtract_harmonic_spectrum(peakSpectrum, f0, threshold) {
     var n = K;
     if (f0 === undefined || threshold === undefined) {
         throw ("harmonic_spectrum requires f0 and threshold to be numbers and defined");
-        return null;
     }
     if (threshold > 1) {
         threshold /= 100.0;
@@ -2104,7 +2096,6 @@ function xtract_pcp(spectrum, M, fs) {
     if (typeof M !== "object") {
         if (typeof fs !== "number" || fs <= 0.0) {
             throw ("Cannot dynamically compute M if fs is undefined / not a valid sample rate");
-            return [];
         }
         M = xtract_init_pcp(N, fs);
     }
@@ -2182,7 +2173,7 @@ function xtract_onset(timeData, frameSize) {
 
     function complex_mul(cplx_pair_A, cplx_pair_B) {
         if (cplx_pair_A.length !== 2 || cplx_pair_B.length !== 2) {
-            console.error("Both arguments must be numeral arrays of length 2");
+            throw ("Both arguments must be numeral arrays of length 2");
         }
         var result = new cplx_pair_A.constructor(2);
         result[0] = cplx_pair_A[0] * cplx_pair_B[0] - cplx_pair_A[1] * cplx_pair_B[1];
