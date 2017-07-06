@@ -24,6 +24,7 @@
 /*
 Testing suite for js-xtract array manipulation function calls 
 */
+/* globals require, describe, it, module, Float64Array, Float32Array */
 
 var assert = require('assert');
 var vm = require("vm");
@@ -35,7 +36,7 @@ vm.createContext(sandbox);
 module.exports = function (path, context) {
     var data = fs.readFileSync(path);
     vm.runInNewContext(data, context, path);
-}
+};
 module.exports('./jsXtract.min.js', sandbox);
 
 var sine = function () {
@@ -68,7 +69,7 @@ var sinef = function (f0, fs) {
         store[n] = Math.sin(2.0 * Math.PI * f0 * (n * ts));
     }
     return store;
-}
+};
 
 var sine_spectrum = sandbox.xtract_spectrum(sine, 44100, true, false);
 var impulse_spectrum = sandbox.xtract_spectrum(impulse, 44100, true, false);
