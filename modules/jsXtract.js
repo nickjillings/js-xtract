@@ -157,6 +157,14 @@ function xtract_array_sum(data) {
     return sum;
 }
 
+function xtract_array_copy(src) {
+    var N = src.length,
+        dst = new src.constructor(N);
+    for (var n = 0; n < N; n++)
+        dst[n] = src[n];
+    return dst;
+}
+
 function xtract_array_min(data) {
     if (!xtract_assert_array(data))
         return Infinity;
@@ -1190,13 +1198,10 @@ function xtract_f0(timeArray, sampleRate) {
     if (typeof sampleRate !== "number") {
         sampleRate = 44100.0;
     }
-    var sub_arr = new Float64Array(timeArray.length);
+    var sub_arr = xtract_array_copy(timeArray);
     var N = sub_arr.length;
     var M = N / 2;
     var n;
-    for (n = 0; n < N; n++) {
-        sub_arr[n] = timeArray[n];
-    }
 
     var threshold_peak = 0.8,
         threshold_centre = 0.3,
@@ -1207,18 +1212,10 @@ function xtract_f0(timeArray, sampleRate) {
     threshold_peak *= array_max;
     threshold_centre *= array_max;
 
-    for (n = 0; n < sub_arr.length; n++) {
-        if (sub_arr[n] > threshold_peak) {
-            sub_arr[n] = threshold_peak;
-        } else if (sub_arr[n] < -threshold_peak) {
-            sub_arr[n] = -threshold_peak;
-        }
+    sub_arr = xtract_array_bound(sub_arr, -threshold_peak, threshold_peak);
 
-        if (sub_arr[n] < threshold_centre) {
-            sub_arr[n] = 0;
-        } else {
-            sub_arr[n] -= threshold_centre;
-        }
+    for (n = 0; n < sub_arr.length; n++) {
+        sub_arr[n] = Math.max(0, sub_arr[n] - threshold_centre);
     }
 
     for (n = 1; n < M; n++) {
@@ -1230,8 +1227,7 @@ function xtract_f0(timeArray, sampleRate) {
             err_tau_x += Math.abs(sub_arr[n] - sub_arr[n + tau]);
         }
         if (err_tau_x < err_tau_1) {
-            var f0 = sampleRate / (tau + (err_tau_x / err_tau_1));
-            return f0;
+            return sampleRate / (tau + (err_tau_x / err_tau_1));
         }
     }
     return -0;
