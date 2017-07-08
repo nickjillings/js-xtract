@@ -1,13 +1,9 @@
 engines:
   duplication:
     enabled: true
-    config:
-      languages:
-        javascript:
-            mass_threshold: 50
     checks:
       Similar code:
-        enabled: false
+        enabled: true
   eslint:
     enabled: true
     checks:
