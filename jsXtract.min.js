@@ -509,9 +509,9 @@ function xtract_average_deviation(array, mean) {
     return result / array.length;
 }
 
-function xtract_skewness(array, mean, standard_deviation) {
+function xtract_skewness_kurtosis(array, mean, standard_deviation) {
     if (!xtract_assert_array(array))
-        return 0;
+        return [0.0, 0.0];;
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
@@ -519,46 +519,33 @@ function xtract_skewness(array, mean, standard_deviation) {
         standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
     if (standard_deviation === 0) {
-        return 0;
+        return [0.0, 0.0];;
     }
-    var result = 0.0;
+    var result = [0.0, 0.0];
     if (array.reduce) {
         result = array.reduce(function (a, b) {
-            return a + Math.pow((b - mean) / standard_deviation, 3);
-        }, 0);
+            var interim = (b - mean) / standard_deviation;
+            a[0] += Math.pow(interim, 3);
+            a[1] += Math.pow(interim, 4);
+            return a;
+        }, result);
     } else {
         for (var n = 0; n < array.length; n++) {
-            result += Math.pow((array[n] - mean) / standard_deviation, 3);
+            result[0] += Math.pow((array[n] - mean) / standard_deviation, 3);
+            result[1] += Math.pow((array[n] - mean) / standard_deviation, 4);
         }
     }
-    result /= array.length;
+    result[0] /= array.length;
+    result[1] /= array.length;
     return result;
 }
 
+function xtract_skewness(array, mean, standard_deviation) {
+    return xtract_skewness_kurtosis(array, mean, standard_deviation)[0];
+}
+
 function xtract_kurtosis(array, mean, standard_deviation) {
-    if (!xtract_assert_array(array))
-        return 0;
-    if (typeof mean !== "number") {
-        mean = xtract_mean(array);
-    }
-    if (typeof standard_deviation !== "number") {
-        standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
-    }
-    if (standard_deviation === 0) {
-        return 0;
-    }
-    var result = 0.0;
-    if (array.reduce) {
-        result = array.reduce(function (a, b) {
-            return a + Math.pow((b - mean) / standard_deviation, 4);
-        }, 0);
-    } else {
-        for (var n = 0; n < array.length; n++) {
-            result += Math.pow((array[n] - mean) / standard_deviation, 4);
-        }
-    }
-    result /= array.length;
-    return result;
+    return xtract_skewness_kurtosis(array, mean, standard_deviation)[1];
 }
 
 function xtract_spectral_centroid(spectrum) {
