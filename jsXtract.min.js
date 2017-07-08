@@ -2190,25 +2190,36 @@ function xtract_resample(data, p, q, n) {
         return b;
     }
 
+    function r2c(x) {
+        var real = zp(x);
+        var imag = new Float64Array(real.length);
+        transform(real, imag);
+        return {
+            real: real,
+            imag: imag
+        };
+    }
+
+    function W(N) {
+        var w = new Float64Array(N);
+        for (i = 0; i < N; i++) {
+            var rad = (Math.PI * i) / (N);
+            w[i] = 0.35875 - 0.48829 * Math.cos(2 * rad) + 0.14128 * Math.cos(4 * rad) - 0.01168 * Math.cos(6 * rad);
+        }
+        return w;
+    }
+
     function overlap(X, b) {
         var i, f;
         var Y = new Float64Array(X.length);
         var N = b.length;
         var N2 = 2 * N;
-        var B = {
-            real: zp(b),
-            imag: new Float64Array(N * 2)
-        };
-        transform(B.real, B.imag);
+        var B = r2c(b);
         var Xi = xtract_get_data_frames(X, N, N, false);
         var Yi = xtract_get_data_frames(Y, N, N, false);
         var x_last = new Float64Array(N);
         var y_last = new Float64Array(N);
-        var w = new Float64Array(N2);
-        for (i = 0; i < N2; i++) {
-            var rad = (Math.PI * i) / (N2);
-            w[i] = 0.35875 - 0.48829 * Math.cos(2 * rad) + 0.14128 * Math.cos(4 * rad) - 0.01168 * Math.cos(6 * rad);
-        }
+        var w = W(N2);
         var xF = {
             real: new Float64Array(N2),
             imag: new Float64Array(N2)
