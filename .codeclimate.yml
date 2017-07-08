@@ -1,6 +1,10 @@
 engines:
   duplication:
     enabled: true
+    config:
+      languages:
+        javascript:
+            mass_threshold: 20
     checks:
       Similar code:
         enabled: true
