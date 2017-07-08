@@ -235,7 +235,7 @@ function xtract_array_bound(data, min, max) {
 }
 
 function xtract_array_interlace(data) {
-    if (data === undefined || data.length === undefined || data.length === 0) {
+    if (xtract_assert_array(data)) {
         return [];
     }
     var num_arrays = data.length,
