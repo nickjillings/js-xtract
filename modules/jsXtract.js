@@ -235,18 +235,15 @@ function xtract_array_bound(data, min, max) {
 }
 
 function xtract_array_interlace(data) {
-    if (data === undefined || data.length === undefined) {
+    if (data === undefined || data.length === undefined || data.length === 0) {
         return [];
     }
-    var num_arrays = data.length;
-    if (num_arrays === 0) {
-        return [];
-    }
-    var length = data[0].length;
-    for (var n = 0; n < num_arrays; n++) {
-        if (data[n].length !== length) {
-            throw ("All argument lengths must be the same");
-        }
+    var num_arrays = data.length,
+        length = data[0].length;
+    if (data.every(function (a) {
+            return a.length == length;
+        }) === false) {
+        throw ("All argument lengths must be the same");
     }
     var result = new data[0].constructor(num_arrays * length);
     for (var k = 0; k < length; k++) {
