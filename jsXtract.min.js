@@ -693,17 +693,18 @@ function xtract_irregularity_j(spectrum) {
     return num / den;
 }
 
-function xtract_tristimulus_1(spectrum, f0) {
+function xtract_tristimulus(spectrum, f0) {
+    var trist = [0.0, 0.0, 0.0];
     if (!xtract_assert_array(spectrum))
-        return 0;
+        return trist;
     if (typeof f0 !== "number") {
-        console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
-        return null;
+        throw ("xtract_tristimulus requires f0 to be defined and a number");
     }
     var h = 0,
         den = 0.0,
-        p1 = 0.0,
-        temp = 0.0;
+        p1 = p2 = p3 = p4 = p5 = 0.0,
+        temp = 0.0,
+        num = 0.0;
     var N = spectrum.length;
     var K = N >> 1;
     var amps = spectrum.subarray(0, K);
@@ -717,35 +718,6 @@ function xtract_tristimulus_1(spectrum, f0) {
             if (h === 1) {
                 p1 += temp;
             }
-        }
-    }
-
-    if (den === 0.0 || p1 === 0.0) {
-        return 0.0;
-    } else {
-        return p1 / den;
-    }
-}
-
-function xtract_tristimulus_2(spectrum, f0) {
-    if (!xtract_assert_array(spectrum))
-        return 0;
-    if (typeof f0 !== "number") {
-        console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
-        return null;
-    }
-    var den, p2, p3, p4, ps, temp, h = 0;
-    den = p2 = p3 = p4 = ps = temp = 0.0;
-    var N = spectrum.length;
-    var K = N >> 1;
-    var amps = spectrum.subarray(0, K);
-    var freqs = spectrum.subarray(K);
-
-    for (var i = 0; i < K; i++) {
-        temp = amps[i];
-        if (temp !== 0) {
-            den += temp;
-            h = Math.floor(freqs[i] / f0 + 0.5);
             switch (h) {
                 case 2:
                     p2 += temp;
@@ -759,47 +731,37 @@ function xtract_tristimulus_2(spectrum, f0) {
                 default:
                     break;
             }
-        }
-    }
-    ps = p2 + p3 + p4;
-    if (den === 0.0 || ps === 0.0) {
-        return 0.0;
-    } else {
-        return ps / den;
-    }
-}
-
-function xtract_tristimulus_3(spectrum, f0) {
-    if (!xtract_assert_array(spectrum))
-        return 0;
-    if (typeof f0 !== "number") {
-        console.error("xtract_tristimulus_1 requires f0 to be defined and a number");
-        return null;
-    }
-    var den = 0.0,
-        num = 0.0,
-        temp = 0.0,
-        h = 0;
-    var N = spectrum.length;
-    var K = N >> 1;
-    var amps = spectrum.subarray(0, K);
-    var freqs = spectrum.subarray(K);
-
-    for (var i = 0; i < K; i++) {
-        temp = amps[i];
-        if (temp !== 0.0) {
-            den += temp;
-            h = Math.floor(freqs[i] / f0 + 0.5);
             if (h >= 5) {
                 num += temp;
             }
         }
     }
-    if (den === 0.0 || num === 0.0) {
-        return 0.0;
-    } else {
-        return num / den;
+
+    p2 += p3 + p4;
+    if (den !== 0.0) {
+        if (p1 !== 0.0) {
+            trist[0] = p1 / den;
+        }
+        if (p2 !== 0.0) {
+            trist[1] = p2 / den;
+        }
+        if (num !== 0.0) {
+            trist[2] = num / den;
+        }
     }
+    return trist;
+}
+
+function xtract_tristimulus_1(spectrum, f0) {
+    return xtract_tristimulus(spectrum, f0)[0];
+}
+
+function xtract_tristimulus_2(spectrum, f0) {
+    return xtract_tristimulus(spectrum, f0)[1];
+}
+
+function xtract_tristimulus_3(spectrum, f0) {
+    return xtract_tristimulus(spectrum, f0)[2];
 }
 
 function xtract_smoothness(spectrum) {
