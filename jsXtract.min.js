@@ -511,7 +511,7 @@ function xtract_average_deviation(array, mean) {
 
 function xtract_skewness_kurtosis(array, mean, standard_deviation) {
     if (!xtract_assert_array(array))
-        return [0.0, 0.0];;
+        return [0.0, 0.0];
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
@@ -519,7 +519,7 @@ function xtract_skewness_kurtosis(array, mean, standard_deviation) {
         standard_deviation = xtract_standard_deviation(array, xtract_variance(array, mean));
     }
     if (standard_deviation === 0) {
-        return [0.0, 0.0];;
+        return [0.0, 0.0];
     }
     var result = [0.0, 0.0];
     if (array.reduce) {
