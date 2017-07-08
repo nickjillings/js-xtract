@@ -138,7 +138,7 @@ function xtract_assert_array(array) {
 }
 
 function xtract_assert_positive_integer(number) {
-    return (typeof number === "number" && number >= 0 && number == Math.round(number));
+    return (typeof number === "number" && number >= 0 && number === Math.round(number));
 }
 
 function xtract_array_sum(data) {
@@ -253,7 +253,7 @@ function xtract_array_interlace(data) {
     var num_arrays = data.length,
         length = data[0].length;
     if (data.every(function (a) {
-            return a.length == length;
+            return a.length === length;
         }) === false) {
         throw ("All argument lengths must be the same");
     }

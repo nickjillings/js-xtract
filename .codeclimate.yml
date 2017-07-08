@@ -4,7 +4,7 @@ engines:
     config:
       languages:
         javascript:
-            mass_threshold: 20
+            mass_threshold: 150
     checks:
       Similar code:
         enabled: true
