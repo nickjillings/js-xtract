@@ -137,6 +137,10 @@ function xtract_assert_array(array) {
     return (typeof array === "object" && array.length !== undefined && array.length > 0);
 }
 
+function xtract_assert_positive_integer(number) {
+    return (typeof number === "number" && number >= 0 && number == Math.round(number));
+}
+
 function xtract_array_sum(data) {
     if (!xtract_assert_array(data))
         return 0;
@@ -259,17 +263,13 @@ function xtract_array_deinterlace(data, num_arrays) {
         return [];
     }
     var result, N;
-    if (typeof num_arrays !== "number" || num_arrays <= 0) {
+    if (!xtract_assert_positive_integer(num_arrays)) {
         throw ("num_arrays must be a positive integer");
-    }
-    if (num_arrays === 1) {
+    } else if (num_arrays === 1) {
         return data;
     }
     result = [];
     N = data.length / num_arrays;
-    if (N !== Math.round(N)) {
-        throw ("Cannot safely divide data into " + num_arrays + " sub arrays");
-    }
     for (var n = 0; n < num_arrays; n++) {
         result[n] = new data.constructor(N);
     }
