@@ -273,8 +273,6 @@ function xtract_array_deinterlace(data, num_arrays) {
     var result, N;
     if (!xtract_assert_positive_integer(num_arrays)) {
         throw ("num_arrays must be a positive integer");
-    } else if (num_arrays === 1) {
-        return data;
     }
     result = [];
     N = data.length / num_arrays;

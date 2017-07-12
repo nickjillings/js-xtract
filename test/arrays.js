@@ -249,6 +249,14 @@ describe("Array Manipulation", function () {
             assert.equal(0, ret.length);
             done();
         });
+        it("should return [1,2,3] if data is [1,2,3]", function (done) {
+            var ret = sandbox.xtract_array_deinterlace([1,2,3], 1);
+            assert.equal("object", typeof ret);
+            assert.equal(1, ret[0]);
+            assert.equal(2, ret[1]);
+            assert.equal(3, ret[2]);
+            done();
+        });
         it("should return [[1],[2],[3]] if data is [[1,2,3]]", function (done) {
             var ret = sandbox.xtract_array_deinterlace([1, 2, 3], 3);
             assert.equal(1, ret[0][0]);
