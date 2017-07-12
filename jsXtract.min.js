@@ -273,8 +273,6 @@ function xtract_array_deinterlace(data, num_arrays) {
     var result, N;
     if (!xtract_assert_positive_integer(num_arrays)) {
         throw ("num_arrays must be a positive integer");
-    } else if (num_arrays === 1) {
-        return data;
     }
     result = [];
     N = data.length / num_arrays;
@@ -522,18 +520,9 @@ function xtract_skewness_kurtosis(array, mean, standard_deviation) {
         return [0.0, 0.0];
     }
     var result = [0.0, 0.0];
-    if (array.reduce) {
-        result = array.reduce(function (a, b) {
-            var interim = (b - mean) / standard_deviation;
-            a[0] += Math.pow(interim, 3);
-            a[1] += Math.pow(interim, 4);
-            return a;
-        }, result);
-    } else {
-        for (var n = 0; n < array.length; n++) {
-            result[0] += Math.pow((array[n] - mean) / standard_deviation, 3);
-            result[1] += Math.pow((array[n] - mean) / standard_deviation, 4);
-        }
+    for (var n = 0; n < array.length; n++) {
+        result[0] += Math.pow((array[n] - mean) / standard_deviation, 3);
+        result[1] += Math.pow((array[n] - mean) / standard_deviation, 4);
     }
     result[0] /= array.length;
     result[1] /= array.length;
@@ -689,7 +678,7 @@ function xtract_tristimulus(spectrum, f0) {
     }
     var h = 0,
         den = 0.0,
-        p1 = p2 = p3 = p4 = p5 = 0.0,
+        p = [0, 0, 0, 0, 0],
         temp = 0.0,
         num = 0.0;
     var N = spectrum.length;
@@ -702,39 +691,14 @@ function xtract_tristimulus(spectrum, f0) {
         if (temp !== 0) {
             den += temp;
             h = Math.floor(freqs[i] / f0 + 0.5);
-            if (h === 1) {
-                p1 += temp;
-            }
-            switch (h) {
-                case 2:
-                    p2 += temp;
-                    break;
-                case 3:
-                    p3 += temp;
-                    break;
-                case 4:
-                    p4 += temp;
-                    break;
-                default:
-                    break;
-            }
-            if (h >= 5) {
-                num += temp;
-            }
+            p[h - 1] += temp
         }
     }
 
-    p2 += p3 + p4;
     if (den !== 0.0) {
-        if (p1 !== 0.0) {
-            trist[0] = p1 / den;
-        }
-        if (p2 !== 0.0) {
-            trist[1] = p2 / den;
-        }
-        if (num !== 0.0) {
-            trist[2] = num / den;
-        }
+        trist[0] = p[0] / den;
+        trist[1] = (p[1] + p[2] + p[3]) / den;
+        trist[2] = p[4] / den;
     }
     return trist;
 }
@@ -760,15 +724,14 @@ function xtract_smoothness(spectrum) {
         temp = 0;
     var N = spectrum.length;
     var K = N >> 1;
-    prev = spectrum[0] <= 0 ? 1e-5 : spectrum[0];
-    current = spectrum[1] <= 0 ? 1e-5 : spectrum[1];
+    prev = Math.max(0, spectrum[0]);
+    current = Math.max(0, spectrum[1]);
     for (var n = 1; n < K - 1; n++) {
-        if (n > 1) {
-            prev = current;
-            current = next;
-        }
-        next = spectrum[n + 1] <= 0 ? 1e-5 : spectrum[n + 1];
+        next = Math.max(0, spectrum[n + 1]);
+        //next = spectrum[n + 1] <= 0 ? 1e-5 : spectrum[n + 1];
         temp += Math.abs(20.0 * Math.log(current) - (20.0 * Math.log(prev) + 20.0 * Math.log(current) + 20.0 * Math.log(next)) / 3.0);
+        prev = current
+        current = next
     }
     return temp;
 }

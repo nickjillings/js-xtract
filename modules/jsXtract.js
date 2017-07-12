@@ -678,7 +678,7 @@ function xtract_tristimulus(spectrum, f0) {
     }
     var h = 0,
         den = 0.0,
-        p1 = p2 = p3 = p4 = p5 = 0.0,
+        p = [0, 0, 0, 0, 0],
         temp = 0.0,
         num = 0.0;
     var N = spectrum.length;
@@ -691,39 +691,14 @@ function xtract_tristimulus(spectrum, f0) {
         if (temp !== 0) {
             den += temp;
             h = Math.floor(freqs[i] / f0 + 0.5);
-            if (h === 1) {
-                p1 += temp;
-            }
-            switch (h) {
-                case 2:
-                    p2 += temp;
-                    break;
-                case 3:
-                    p3 += temp;
-                    break;
-                case 4:
-                    p4 += temp;
-                    break;
-                default:
-                    break;
-            }
-            if (h >= 5) {
-                num += temp;
-            }
+            p[h - 1] += temp
         }
     }
 
-    p2 += p3 + p4;
     if (den !== 0.0) {
-        if (p1 !== 0.0) {
-            trist[0] = p1 / den;
-        }
-        if (p2 !== 0.0) {
-            trist[1] = p2 / den;
-        }
-        if (num !== 0.0) {
-            trist[2] = num / den;
-        }
+        trist[0] = p[0] / den;
+        trist[1] = (p[1] + p[2] + p[3]) / den;
+        trist[2] = p[4] / den;
     }
     return trist;
 }
@@ -749,15 +724,14 @@ function xtract_smoothness(spectrum) {
         temp = 0;
     var N = spectrum.length;
     var K = N >> 1;
-    prev = spectrum[0] <= 0 ? 1e-5 : spectrum[0];
-    current = spectrum[1] <= 0 ? 1e-5 : spectrum[1];
+    prev = Math.max(0, spectrum[0]);
+    current = Math.max(0, spectrum[1]);
     for (var n = 1; n < K - 1; n++) {
-        if (n > 1) {
-            prev = current;
-            current = next;
-        }
-        next = spectrum[n + 1] <= 0 ? 1e-5 : spectrum[n + 1];
+        next = Math.max(0, spectrum[n + 1]);
+        //next = spectrum[n + 1] <= 0 ? 1e-5 : spectrum[n + 1];
         temp += Math.abs(20.0 * Math.log(current) - (20.0 * Math.log(prev) + 20.0 * Math.log(current) + 20.0 * Math.log(next)) / 3.0);
+        prev = current
+        current = next
     }
     return temp;
 }
