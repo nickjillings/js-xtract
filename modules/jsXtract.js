@@ -520,18 +520,9 @@ function xtract_skewness_kurtosis(array, mean, standard_deviation) {
         return [0.0, 0.0];
     }
     var result = [0.0, 0.0];
-    if (array.reduce) {
-        result = array.reduce(function (a, b) {
-            var interim = (b - mean) / standard_deviation;
-            a[0] += Math.pow(interim, 3);
-            a[1] += Math.pow(interim, 4);
-            return a;
-        }, result);
-    } else {
-        for (var n = 0; n < array.length; n++) {
-            result[0] += Math.pow((array[n] - mean) / standard_deviation, 3);
-            result[1] += Math.pow((array[n] - mean) / standard_deviation, 4);
-        }
+    for (var n = 0; n < array.length; n++) {
+        result[0] += Math.pow((array[n] - mean) / standard_deviation, 3);
+        result[1] += Math.pow((array[n] - mean) / standard_deviation, 4);
     }
     result[0] /= array.length;
     result[1] /= array.length;
