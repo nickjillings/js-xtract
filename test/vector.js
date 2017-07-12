@@ -195,7 +195,7 @@ describe("Vector", function () {
             done();
         });
         it("should return array if array is data", function (done) {
-            var ret = sandbox.xtract_dct(sine_spectrum);
+            var ret = sandbox.xtract_dct(sine.subarray(0,128));
             assert.equal("object", typeof ret);
             assert.ok(ret.length);
             assert.ok(ret.length > 0);
@@ -212,7 +212,7 @@ describe("Vector", function () {
             done();
         });
         it("should return array if array is data", function (done) {
-            var ret = sandbox.xtract_dct_2(sine_spectrum);
+            var ret = sandbox.xtract_dct_2(sine.subarray(0,128));
             assert.equal("object", typeof ret);
             assert.ok(ret.length);
             assert.ok(ret.length > 0);
