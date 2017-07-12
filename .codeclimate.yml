@@ -22,3 +22,4 @@ ratings:
 exclude_paths:
 - "jsXtract.min.js"
 - "modules/chroma/*.json"
+- "test/*"
