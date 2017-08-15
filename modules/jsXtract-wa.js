@@ -109,18 +109,17 @@ if (typeof AnalyserNode !== "undefined") {
 if (typeof AudioBuffer !== "undefined") {
 
     AudioBuffer.prototype.xtract_get_data_frames = function (frame_size, hop_size) {
-        if (typeof frame_size !== "number") {
-            throw ("xtract_get_data_frames requires the frame_size to be defined");
-        }
-        if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
-            throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
-        }
         if (hop_size === undefined) {
             hop_size = frame_size;
         }
-        if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
-            throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
-        }
+        (function () {
+            if (!xtract_assert_positive_integer(frame_size)) {
+                throw ("xtract_get_data_frames requires the frame_size to be defined, positive integer");
+            }
+            if (!xtract_assert_positive_integer(hop_size)) {
+                throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+            }
+        })();
         this.frames = [];
         var N = this.length;
         var K = this.xtract_get_number_of_frames(hop_size);
@@ -142,39 +141,29 @@ if (typeof AudioBuffer !== "undefined") {
         return xtract_get_number_of_frames(this, hop_size);
     };
 
-    AudioBuffer.prototype.xtract_get_frame = function (dst, channel, index, frame_size, hop_size) {
-        if (typeof dst !== "object" || dst.constructor !== Float32Array) {
-            throw ("dst must be a Float32Array object equal in length to hop_size");
-        }
-        if (typeof channel !== "number" || channel !== Math.floor(channel)) {
-            throw ("xtract_get_frame requires the channel to be an integer value");
-        }
-        if (typeof index !== "number" || index !== Math.floor(index)) {
-            throw ("xtract_get_frame requires the index to be an integer value");
-        }
-        if (typeof frame_size !== "number") {
-            throw ("xtract_get_frame requires the frame_size to be defined");
-        }
-        if (frame_size <= 0 || frame_size !== Math.floor(frame_size)) {
-            throw ("xtract_get_frame requires the frame_size to be a positive integer");
-        }
-        if (hop_size === undefined) {
-            hop_size = frame_size;
-        }
-        if (dst.length !== hop_size) {
-            throw ("dst must be a Float32Array object equal in length to hop_size");
-        }
-        if (hop_size <= 0 || hop_size !== Math.floor(hop_size)) {
-            throw ("xtract_get_frame requires the hop_size to be a positive integer");
-        }
+    AudioBuffer.prototype.xtract_get_frame = function (dst, channel, index, frame_size) {
+        (function () {
+            if (typeof dst !== "object" || dst.constructor !== Float32Array) {
+                throw ("dst must be a Float32Array object equal in length to hop_size");
+            }
+            if (!xtract_assert_positive_integer(channel)) {
+                throw ("xtract_get_frame requires the channel to be an integer value");
+            }
+            if (!xtract_assert_positive_integer(index)) {
+                throw ("xtract_get_frame requires the index to be an integer value");
+            }
+            if (!xtract_assert_positive_integer(frame_size)) {
+                throw ("xtract_get_frame requires the frame_size to be defined, positive integer");
+            }
+        })();
         if (channel < 0 || channel > this.numberOfChannels) {
             throw ("channel number " + channel + " out of bounds");
         }
-        var K = this.xtract_get_number_of_frames(hop_size);
+        var K = this.xtract_get_number_of_frames(frame_size);
         if (index < 0 || index >= K) {
             throw ("index number " + index + " out of bounds");
         }
-        return this.copyFromChannel(dst, channel, hop_size * index);
+        return this.copyFromChannel(dst, channel, frame_size * index);
     };
 
     AudioBuffer.prototype.xtract_process_frame_data = function () {
