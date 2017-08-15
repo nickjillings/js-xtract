@@ -1238,71 +1238,14 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         return nbSam;
     }
 
-    var _minmax = {
-        index: undefined,
-        next: undefined
-    };
-    //_dywapitch_computeWaveletPitch(samples, startsample, samplecount)
-    var samples = timeArray,
-        startsample = 0,
-        samplecount = timeArray.length;
-    var pitchF = 0.0;
-    var i, j, si, si1;
-
-    samplecount = _floor_power2(samplecount);
-    var sam = new Float64Array(samplecount);
-    for (i = 0; i < samplecount; i++) {
-        sam[i] = samples[i];
-    }
-
-    var curSamNb = samplecount;
-
-    var distances = new Int32Array(samplecount);
-    var mins = new Int32Array(samplecount);
-    var maxs = new Int32Array(samplecount);
-    var nbMins, nbMaxs;
-
-    var maxFLWTlevels = 6;
-    var maxF = 3000;
-    var differenceLevelsN = 3;
-    var maximaThresholdRatio = 0.75;
-
-    var ampltitudeThreshold;
-    var theDC = 0.0;
-    var maxValue = 0.0;
-    var minValue = 0.0;
-    for (i = 0; i < samplecount; i++) {
-        si = sam[i];
-        theDC = theDC + si;
-        if (si > maxValue) {
-            maxValue = si;
-        }
-        if (si < minValue) {
-            minValue = si;
-        }
-    }
-    theDC = theDC / samplecount;
-    maxValue = maxValue - theDC;
-    minValue = minValue - theDC;
-    var amplitudeMax = (maxValue > -minValue ? maxValue : -minValue);
-
-    ampltitudeThreshold = amplitudeMax * maximaThresholdRatio;
-
-    var curLevel = 0;
-    var curModeDistance = -1;
-    var delta;
-
-    var cont = true;
-
-    while (cont) {
-        delta = Math.floor(44100 / (_2power(curLevel) * maxF));
+    function bodyLoop() {
+        delta = Math.floor(44100 / (_2power(curLevel) * 3000));
         if (curSamNb < 2) {
             cont = false;
-            break;
+            return;
         }
-
         var dv, previousDV = -1000;
-        nbMins = nbMaxs = 0;
+        var nbMins = nbMaxs = 0;
         var lastMinIndex = -1000000;
         var lastmaxIndex = -1000000;
         var findMax = 0;
@@ -1352,16 +1295,14 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
 
         if (nbMins === 0 && nbMaxs === 0) {
             cont = false;
-            break;
+            return;
         }
 
         var d;
         //memset(distances, 0, samplecount*sizeof(int));
-        for (i = 0; i < samplecount; i++) {
-            distances[i] = 0.0;
-        }
+        var distances = new Int32Array(samplecount);
         for (i = 0; i < nbMins; i++) {
-            for (j = 1; j < differenceLevelsN; j++) {
+            for (j = 1; j < 3; j++) {
                 if (i + j < nbMins) {
                     d = _iabs(mins[i] - mins[i + j]);
                     distances[d] = distances[d] + 1;
@@ -1369,7 +1310,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
             }
         }
         for (i = 0; i < nbMaxs; i++) {
-            for (j = 1; j < differenceLevelsN; j++) {
+            for (j = 1; j < 3; j++) {
                 if (i + j < nbMaxs) {
                     d = _iabs(maxs[i] - maxs[i + j]);
                     //asLog("dywapitch i=%ld j=%ld d=%ld\n", i, j, d);
@@ -1420,7 +1361,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
                 // two consecutive similar mode distances : ok !
                 pitchF = 44100 / (_2power(curLevel - 1) * curModeDistance);
                 cont = false;
-                break;
+                return;
             }
             //if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"not"
         }
@@ -1429,18 +1370,18 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         curModeDistance = distAvg;
 
         curLevel = curLevel + 1;
-        if (curLevel >= maxFLWTlevels) {
+        if (curLevel >= 6) {
             // put "max levels reached, exiting"
             //asLog("dywapitch max levels reached, exiting\n");
             cont = false;
-            break;
+            return;
         }
 
         // downsample
         if (curSamNb < 2) {
             //asLog("dywapitch not enough samples, exiting\n");
             cont = false;
-            break;
+            return;
         }
         for (i = 0; i < curSamNb / 2; i++) {
             sam[i] = (sam[2 * i] + sam[2 * i + 1]) / 2.0;
@@ -1448,8 +1389,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         curSamNb /= 2;
     }
 
-    //_dywapitch_dynamicprocess(pitchtracker, pitch)
-    return (function (pitchtracker, pitch) {
+    function _dywapitch_dynamicprocess(pitchtracker, pitch) {
         if (pitch === 0.0) {
             return -1.0;
         }
@@ -1514,7 +1454,70 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
             pitch = 0.0;
         }
         return pitch;
-    })(pitchtracker, pitchF);
+    }
+
+    var _minmax = {
+        index: undefined,
+        next: undefined
+    };
+    //_dywapitch_computeWaveletPitch(samples, startsample, samplecount)
+    var samples = timeArray,
+        startsample = 0,
+        samplecount = timeArray.length;
+    var pitchF = 0.0;
+    var i, j, si, si1;
+
+    samplecount = _floor_power2(samplecount);
+    var sam = new Float64Array(samplecount);
+    for (i = 0; i < samplecount; i++) {
+        sam[i] = samples[i];
+    }
+
+    var curSamNb = samplecount;
+
+    var mins = new Int32Array(samplecount);
+    var maxs = new Int32Array(samplecount);
+
+    //var maxFLWTlevels = 6;
+    //var maxF = 3000;
+    //var differenceLevelsN = 3;
+    //var maximaThresholdRatio = 0.75;
+    var theDC = getTheDC(sam, samplecount);
+
+    function getTheDC(sam, samplecount) {
+        return xtract_mean(sam.subarray(samplecount));
+    }
+
+    function getamplitudeMax(sam, samplecount) {
+        var si, i;
+        var minValue = maxValue = 0.0;
+        for (i = 0; i < samplecount; i++) {
+            si = sam[i];
+            if (si > maxValue) {
+                maxValue = si;
+            }
+            if (si < minValue) {
+                minValue = si;
+            }
+        }
+        maxValue = maxValue - theDC;
+        minValue = minValue - theDC;
+        return (maxValue > -minValue ? maxValue : -minValue);
+    }
+    var ampltitudeThreshold = getamplitudeMax(sam, samplecount) * 0.75;
+
+    var curLevel = 0;
+    var curModeDistance = -1;
+    var delta;
+
+    var cont = true;
+
+    while (cont) {
+        bodyLoop();
+    }
+
+    //_dywapitch_dynamicprocess(pitchtracker, pitch)
+    return _dywapitch_dynamicprocess(pitchtracker, pitchF);
 }
 
 function xtract_midicent(f0) {
