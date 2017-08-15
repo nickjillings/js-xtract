@@ -1115,6 +1115,14 @@ function xtract_hps(spectrum) {
 }
 
 function xtract_f0(timeArray, sampleRate) {
+    function calc_err_tau_x(sub_arr, M, tau) {
+        var err_tau = 0.0,
+            n;
+        for (n = 1; n < M; n++) {
+            err_tau += Math.abs(sub_arr[n] - sub_arr[n + tau]);
+        }
+        return err_tau;
+    }
     if (!xtract_assert_array(timeArray))
         return 0;
     if (typeof sampleRate !== "number") {
@@ -1127,7 +1135,6 @@ function xtract_f0(timeArray, sampleRate) {
 
     var threshold_peak = 0.8,
         threshold_centre = 0.3,
-        err_tau_1 = 0,
         array_max = 0;
 
     array_max = xtract_array_max(sub_arr);
@@ -1136,18 +1143,13 @@ function xtract_f0(timeArray, sampleRate) {
 
     sub_arr = xtract_array_bound(sub_arr, -threshold_peak, threshold_peak);
 
-    for (n = 0; n < sub_arr.length; n++) {
-        sub_arr[n] = Math.max(0, sub_arr[n] - threshold_centre);
-    }
+    sub_arr.forEach(function (v, i, a) {
+        a[i] = Math.max(0, v - threshold_centre);
+    });
 
-    for (n = 1; n < M; n++) {
-        err_tau_1 += Math.abs(sub_arr[n] - sub_arr[n + 1]);
-    }
+    var err_tau_1 = calc_err_tau_x(sub_arr, M, 1);
     for (var tau = 2; tau < M; tau++) {
-        var err_tau_x = 0;
-        for (n = 1; n < M; n++) {
-            err_tau_x += Math.abs(sub_arr[n] - sub_arr[n + tau]);
-        }
+        var err_tau_x = calc_err_tau_x(sub_arr, M, tau);
         if (err_tau_x < err_tau_1) {
             return sampleRate / (tau + (err_tau_x / err_tau_1));
         }
