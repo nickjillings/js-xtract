@@ -300,17 +300,22 @@ function xtract_get_number_of_frames(data, hop_size) {
 }
 
 function xtract_get_data_frames(data, frame_size, hop_size, copy) {
-    if (!xtract_assert_array(data)) {
-        throw ("Invalid data parameter. Must be item with iterable list");
-    }
-    if (!xtract_assert_positive_integer(frame_size)) {
-        throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
-    }
     if (hop_size === undefined) {
         hop_size = frame_size;
-    } else if (!xtract_assert_positive_integer(hop_size)) {
-        throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
     }
+    (function (data, frame_size, hop_size) {
+        if (!xtract_assert_array(data)) {
+            throw ("Invalid data parameter. Must be item with iterable list");
+        }
+        if (!xtract_assert_positive_integer(frame_size)) {
+            throw ("xtract_get_data_frames requires the frame_size to be a positive integer");
+        }
+        if (!xtract_assert_positive_integer(hop_size)) {
+            throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+        }
+        return true;
+    })(data, frame_size, hop_size);
+
     var frames = [];
     var N = data.length;
     var K = Math.ceil(N / hop_size);
