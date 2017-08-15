@@ -64,8 +64,10 @@ function transformRadix2(real, imag) {
         return;
     var levels = -1;
     for (i = 0; i < 32; i++) {
-        if (1 << i === n)
+        if (1 << i === n) {
             levels = i; // Equal to log2(n)
+            break;
+        }
     }
     if (levels === -1)
         throw "Length is not a power of 2";
@@ -90,20 +92,22 @@ function transformRadix2(real, imag) {
     }
 
     // Cooley-Tukey decimation-in-time radix-2 FFT
-    for (var size = 2; size <= n; size *= 2) {
-        var halfsize = size / 2;
-        var tablestep = n / size;
-        for (i = 0; i < n; i += size) {
-            for (j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
-                var tpre = real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k];
-                var tpim = -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k];
-                real[j + halfsize] = real[j] - tpre;
-                imag[j + halfsize] = imag[j] - tpim;
-                real[j] += tpre;
-                imag[j] += tpim;
+    (function (real, imag, n) {
+        for (var size = 2; size <= n; size *= 2) {
+            var halfsize = size / 2;
+            var tablestep = n / size;
+            for (i = 0; i < n; i += size) {
+                for (j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
+                    var tpre = real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k];
+                    var tpim = -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k];
+                    real[j + halfsize] = real[j] - tpre;
+                    imag[j + halfsize] = imag[j] - tpim;
+                    real[j] += tpre;
+                    imag[j] += tpim;
+                }
             }
         }
-    }
+    })(real, imag, n);
 
     // Returns the integer whose value is the reverse of the lowest 'bits' bits of the integer 'x'.
     function reverseBits(x, bits) {
@@ -133,37 +137,36 @@ function transformBluestein(real, imag) {
         m *= 2;
 
     // Trignometric tables
-    var cosTable = new Array(n);
-    var sinTable = new Array(n);
-    for (i = 0; i < n; i++) {
-        j = i * i % (n * 2); // This is more accurate than j = i * i
-        cosTable[i] = Math.cos(Math.PI * j / n);
-        sinTable[i] = Math.sin(Math.PI * j / n);
-    }
+    var cosTable = new Float64Array(n);
+    var sinTable = new Float64Array(n);
+    (function (cosTable, sinTable) {
+        for (i = 0; i < n; i++) {
+            j = i * i % (n * 2); // This is more accurate than j = i * i
+            cosTable[i] = Math.cos(Math.PI * j / n);
+            sinTable[i] = Math.sin(Math.PI * j / n);
+        }
+    })(cosTable, sinTable);
 
     // Temporary vectors and preprocessing
-    var areal = new Array(m);
-    var aimag = new Array(m);
+    var areal = new Float64Array(m);
+    var aimag = new Float64Array(m);
+
     for (i = 0; i < n; i++) {
         areal[i] = real[i] * cosTable[i] + imag[i] * sinTable[i];
         aimag[i] = -real[i] * sinTable[i] + imag[i] * cosTable[i];
     }
-    for (i = n; i < m; i++)
-        areal[i] = aimag[i] = 0;
-    var breal = new Array(m);
-    var bimag = new Array(m);
+    var breal = new Float64Array(m);
+    var bimag = new Float64Array(m);
     breal[0] = cosTable[0];
     bimag[0] = sinTable[0];
     for (i = 1; i < n; i++) {
         breal[i] = breal[m - i] = cosTable[i];
         bimag[i] = bimag[m - i] = sinTable[i];
     }
-    for (i = n; i <= m - n; i++)
-        breal[i] = bimag[i] = 0;
 
     // Convolution
-    var creal = new Array(m);
-    var cimag = new Array(m);
+    var creal = new Float64Array(m);
+    var cimag = new Float64Array(m);
     convolveComplex(areal, aimag, breal, bimag, creal, cimag);
 
     // Postprocessing
