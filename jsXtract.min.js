@@ -1065,13 +1065,27 @@ function xtract_nonzero_count(data) {
 }
 
 function xtract_hps(spectrum) {
+    function get_peak_index(M, amps) {
+        var peak_index = 0,
+            peak = 0,
+            i;
+        var tempProduct = new Float64Array(M);
+        tempProduct.forEach(function (e, i, a) {
+            a[i] = amps[i] * amps[i * 2] * amps[i * 3];
+        });
+        tempProduct.forEach(function (v, i) {
+            if (v > peak) {
+                peak = v;
+                peak_index = i;
+            }
+        });
+        return peak_index;
+    }
     if (!xtract_assert_array(spectrum))
         return 0;
     var peak_index = 0,
         position1_lwr = 0,
         largest1_lwr = 0,
-        tempProduct = 0,
-        peak = 0,
         ratio1 = 0;
     var N = spectrum.length;
     var K = N >> 1;
@@ -1080,17 +1094,10 @@ function xtract_hps(spectrum) {
     var M = Math.ceil(K / 3.0);
     var i;
     if (M <= 1) {
-        console.error("Input Data is too short for HPS");
-        return null;
+        throw ("Input Data is too short for HPS");
     }
 
-    for (i = 0; i < M; ++i) {
-        tempProduct = amps[i] * amps[i * 2] * amps[i * 3];
-        if (tempProduct > peak) {
-            peak = tempProduct;
-            peak_index = i;
-        }
-    }
+    peak_index = get_peak_index(M, amps);
 
     for (i = 0; i < K; i++) {
         if (amps[i] > largest1_lwr && i !== peak_index) {
@@ -1686,28 +1693,27 @@ function xtract_complex_spectrum(array, sample_rate, withDC) {
 function xtract_mfcc(spectrum, mfcc) {
     if (!xtract_assert_array(spectrum))
         return 0;
-    if (typeof mfcc !== "object") {
-        throw ("Invalid MFCC, must be MFCC object built using xtract_init_mfcc");
-    }
-    if (mfcc.n_filters === 0) {
-        throw ("Invalid MFCC, object must be built using xtract_init_mfcc");
-    }
     var K = spectrum.length >> 1;
-    if (mfcc.filters[0].length !== K) {
-        throw ("Lengths do not match");
-    }
+    (function (mfcc) {
+        if (typeof mfcc !== "object") {
+            throw ("Invalid MFCC, must be MFCC object built using xtract_init_mfcc");
+        }
+        if (mfcc.n_filters === 0) {
+            throw ("Invalid MFCC, object must be built using xtract_init_mfcc");
+        }
+        if (mfcc.filters[0].length !== K) {
+            throw ("Lengths do not match");
+        }
+    })(mfcc);
     var result = new Float64Array(mfcc.n_filters);
-    for (var f = 0; f < mfcc.n_filters; f++) {
-        result[f] = 0.0;
+    result.forEach(function (v, f, r) {
+        r[f] = 0.0;
         var filter = mfcc.filters[f];
         for (var n = 0; n < filter.length; n++) {
-            result[f] += spectrum[n] * filter[n];
+            r[f] += spectrum[n] * filter[n];
         }
-        if (result[f] < 2e-42) {
-            result[f] = 2e-42;
-        }
-        result[f] = Math.log(result[f]);
-    }
+        r[f] = Math.log(Math.max(r[f], 2e-42));
+    });;
     return xtract_dct(result);
 }
 
