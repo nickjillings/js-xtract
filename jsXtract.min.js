@@ -1238,26 +1238,53 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         return nbSam;
     }
 
+    function copy_array(array, N) {
+        if (!xtract_assert_positive_integer(N)) {
+            N = array.length;
+        }
+        var dst = new array.constructor(N);
+        var i;
+        for (i = 0; i < N; i++) {
+            dst[i] = array[i];
+        }
+        return dst;
+    }
+
+    function getAmplitudeMax(sam, samplecount, theDC) {
+        var maxValue = minValue = 0.0;
+        var i;
+        for (i = 0; i < samplecount; i++) {
+            si = sam[i];
+            if (si > maxValue) {
+                maxValue = si;
+            }
+            if (si < minValue) {
+                minValue = si;
+            }
+        }
+        maxValue = maxValue - theDC;
+        minValue = minValue - theDC;
+        return (maxValue > -minValue ? maxValue : -minValue);
+    }
+
+    function getDC(sam, samplecount) {
+        return xtract_mean(sam.subarray(0, samplecount));
+    }
+
     var _minmax = {
         index: undefined,
         next: undefined
     };
     //_dywapitch_computeWaveletPitch(samples, startsample, samplecount)
-    var samples = timeArray,
-        startsample = 0,
-        samplecount = timeArray.length;
+    var samplecount = timeArray.length;
     var pitchF = 0.0;
     var i, j, si, si1;
 
     samplecount = _floor_power2(samplecount);
-    var sam = new Float64Array(samplecount);
-    for (i = 0; i < samplecount; i++) {
-        sam[i] = samples[i];
-    }
+    var sam = copy_array(timeArray, samplecount);
 
     var curSamNb = samplecount;
 
-    var distances = new Int32Array(samplecount);
     var mins = new Int32Array(samplecount);
     var maxs = new Int32Array(samplecount);
     var nbMins, nbMaxs;
@@ -1267,26 +1294,10 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
     var differenceLevelsN = 3;
     var maximaThresholdRatio = 0.75;
 
-    var ampltitudeThreshold;
-    var theDC = 0.0;
-    var maxValue = 0.0;
-    var minValue = 0.0;
-    for (i = 0; i < samplecount; i++) {
-        si = sam[i];
-        theDC = theDC + si;
-        if (si > maxValue) {
-            maxValue = si;
-        }
-        if (si < minValue) {
-            minValue = si;
-        }
-    }
-    theDC = theDC / samplecount;
-    maxValue = maxValue - theDC;
-    minValue = minValue - theDC;
-    var amplitudeMax = (maxValue > -minValue ? maxValue : -minValue);
+    var theDC = getDC(sam, samplecount);
+    var amplitudeMax = getAmplitudeMax(sam, samplecount, theDC);
 
-    ampltitudeThreshold = amplitudeMax * maximaThresholdRatio;
+    var ampltitudeThreshold = amplitudeMax * maximaThresholdRatio;
 
     var curLevel = 0;
     var curModeDistance = -1;
@@ -1298,118 +1309,122 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         delta = Math.floor(44100 / (_2power(curLevel) * maxF));
         if (curSamNb < 2) {
             cont = false;
-            break;
         }
+        cont = (function () {
+            var dv, previousDV = -1000;
+            nbMins = nbMaxs = 0;
+            var lastMinIndex = -1000000;
+            var lastmaxIndex = -1000000;
+            var findMax = 0;
+            var findMin = 0;
 
-        var dv, previousDV = -1000;
-        nbMins = nbMaxs = 0;
-        var lastMinIndex = -1000000;
-        var lastmaxIndex = -1000000;
-        var findMax = 0;
-        var findMin = 0;
+            for (i = 2; i < curSamNb; i++) {
+                si = sam[i] - theDC;
+                si1 = sam[i - 1] - theDC;
 
-        for (i = 2; i < curSamNb; i++) {
-            si = sam[i] - theDC;
-            si1 = sam[i - 1] - theDC;
+                if (si1 <= 0 && si > 0) {
+                    findMax = 1;
+                }
+                if (si1 >= 0 && si < 0) {
+                    findMin = 1;
+                }
 
-            if (si1 <= 0 && si > 0) {
-                findMax = 1;
-            }
-            if (si1 >= 0 && si < 0) {
-                findMin = 1;
-            }
+                // min or max ?
+                dv = si - si1;
 
-            // min or max ?
-            dv = si - si1;
+                if (previousDV > -1000) {
 
-            if (previousDV > -1000) {
+                    if (findMin && previousDV < 0 && dv >= 0) {
+                        // minimum
+                        if (Math.abs(si) >= ampltitudeThreshold) {
+                            if (i > lastMinIndex + delta) {
+                                mins[nbMins++] = i;
+                                lastMinIndex = i;
+                                findMin = 0;
+                            }
+                        }
+                    }
 
-                if (findMin && previousDV < 0 && dv >= 0) {
-                    // minimum
-                    if (Math.abs(si) >= ampltitudeThreshold) {
-                        if (i > lastMinIndex + delta) {
-                            mins[nbMins++] = i;
-                            lastMinIndex = i;
-                            findMin = 0;
+                    if (findMax && previousDV > 0 && dv <= 0) {
+                        // maximum
+                        if (Math.abs(si) >= ampltitudeThreshold) {
+                            if (i > lastmaxIndex + delta) {
+                                maxs[nbMaxs++] = i;
+                                lastmaxIndex = i;
+                                findMax = 0;
+                            }
                         }
                     }
                 }
 
-                if (findMax && previousDV > 0 && dv <= 0) {
-                    // maximum
-                    if (Math.abs(si) >= ampltitudeThreshold) {
-                        if (i > lastmaxIndex + delta) {
-                            maxs[nbMaxs++] = i;
-                            lastmaxIndex = i;
-                            findMax = 0;
-                        }
+                previousDV = dv;
+            }
+
+            if (nbMins === 0 && nbMaxs === 0) {
+                return false;
+            }
+            return true;
+        })();
+        if (cont == false) {
+            break;
+        }
+        var distances = (function () {
+            var d;
+            //memset(distances, 0, samplecount*sizeof(int));
+            var distances = new Int32Array(samplecount);
+            for (i = 0; i < nbMins; i++) {
+                for (j = 1; j < differenceLevelsN; j++) {
+                    if (i + j < nbMins) {
+                        d = _iabs(mins[i] - mins[i + j]);
+                        distances[d] = distances[d] + 1;
                     }
                 }
             }
-
-            previousDV = dv;
-        }
-
-        if (nbMins === 0 && nbMaxs === 0) {
-            cont = false;
-            break;
-        }
-
-        var d;
-        //memset(distances, 0, samplecount*sizeof(int));
-        for (i = 0; i < samplecount; i++) {
-            distances[i] = 0.0;
-        }
-        for (i = 0; i < nbMins; i++) {
-            for (j = 1; j < differenceLevelsN; j++) {
-                if (i + j < nbMins) {
-                    d = _iabs(mins[i] - mins[i + j]);
-                    distances[d] = distances[d] + 1;
+            for (i = 0; i < nbMaxs; i++) {
+                for (j = 1; j < differenceLevelsN; j++) {
+                    if (i + j < nbMaxs) {
+                        d = _iabs(maxs[i] - maxs[i + j]);
+                        //asLog("dywapitch i=%ld j=%ld d=%ld\n", i, j, d);
+                        distances[d] = distances[d] + 1;
+                    }
                 }
             }
-        }
-        for (i = 0; i < nbMaxs; i++) {
-            for (j = 1; j < differenceLevelsN; j++) {
-                if (i + j < nbMaxs) {
-                    d = _iabs(maxs[i] - maxs[i + j]);
-                    //asLog("dywapitch i=%ld j=%ld d=%ld\n", i, j, d);
-                    distances[d] = distances[d] + 1;
+            return distances;
+        })();
+        var distAvg = (function () {
+            var bestDistance = -1;
+            var bestValue = -1;
+            for (i = 0; i < curSamNb; i++) {
+                var summed = 0;
+                for (j = -delta; j <= delta; j++) {
+                    if (i + j >= 0 && i + j < curSamNb)
+                        summed += distances[i + j];
                 }
-            }
-        }
+                //asLog("dywapitch i=%ld summed=%ld bestDistance=%ld\n", i, summed, bestDistance);
+                if (summed === bestValue) {
+                    if (i === 2 * bestDistance)
+                        bestDistance = i;
 
-        var bestDistance = -1;
-        var bestValue = -1;
-        for (i = 0; i < curSamNb; i++) {
-            var summed = 0;
-            for (j = -delta; j <= delta; j++) {
-                if (i + j >= 0 && i + j < curSamNb)
-                    summed += distances[i + j];
-            }
-            //asLog("dywapitch i=%ld summed=%ld bestDistance=%ld\n", i, summed, bestDistance);
-            if (summed === bestValue) {
-                if (i === 2 * bestDistance)
+                } else if (summed > bestValue) {
+                    bestValue = summed;
                     bestDistance = i;
-
-            } else if (summed > bestValue) {
-                bestValue = summed;
-                bestDistance = i;
-            }
-        }
-
-        var distAvg = 0.0;
-        var nbDists = 0;
-        for (j = -delta; j <= delta; j++) {
-            if (bestDistance + j >= 0 && bestDistance + j < samplecount) {
-                var nbDist = distances[bestDistance + j];
-                if (nbDist > 0) {
-                    nbDists += nbDist;
-                    distAvg += (bestDistance + j) * nbDist;
                 }
             }
-        }
-        // this is our mode distance !
-        distAvg /= nbDists;
+
+            var distAvg = 0.0;
+            var nbDists = 0;
+            for (j = -delta; j <= delta; j++) {
+                if (bestDistance + j >= 0 && bestDistance + j < samplecount) {
+                    var nbDist = distances[bestDistance + j];
+                    if (nbDist > 0) {
+                        nbDists += nbDist;
+                        distAvg += (bestDistance + j) * nbDist;
+                    }
+                }
+            }
+            // this is our mode distance !
+            return distAvg / nbDists;
+        })();
 
         // continue the levels ?
         if (curModeDistance > -1.0) {
@@ -1429,17 +1444,21 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
         curModeDistance = distAvg;
 
         curLevel = curLevel + 1;
-        if (curLevel >= maxFLWTlevels) {
-            // put "max levels reached, exiting"
-            //asLog("dywapitch max levels reached, exiting\n");
-            cont = false;
-            break;
-        }
+        cont = (function () {
+            if (curLevel >= maxFLWTlevels) {
+                // put "max levels reached, exiting"
+                //asLog("dywapitch max levels reached, exiting\n");
+                return false;
+            }
 
-        // downsample
-        if (curSamNb < 2) {
-            //asLog("dywapitch not enough samples, exiting\n");
-            cont = false;
+            // downsample
+            if (curSamNb < 2) {
+                //asLog("dywapitch not enough samples, exiting\n");
+                return false;
+            }
+            return true;
+        })();
+        if (cont === false) {
             break;
         }
         for (i = 0; i < curSamNb / 2; i++) {
