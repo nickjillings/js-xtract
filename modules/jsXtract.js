@@ -2391,17 +2391,18 @@ function xtract_init_wavelet() {
 }
 
 function xtract_init_pcp(N, fs, f_ref) {
-    if (typeof fs !== "number" || typeof N !== "number") {
-        throw ('The Sample Rate and sample count have to be defined: xtract_init_pcp(N, fs, f_ref)');
-    }
-    if (N <= 0 || N !== Math.floor(N)) {
-        throw ("The sample count, N, must be a positive integer: xtract_init_pcp(N, fs, f_ref)");
-    }
-    if (fs <= 0.0) {
-        throw ('The Sample Rate must be a positive number: xtract_init_pcp(N, fs, f_ref)');
-    }
+    (function (N, fs) {
+        if (typeof fs !== "number" || typeof N !== "number") {
+            throw ('The Sample Rate and sample count have to be defined: xtract_init_pcp(N, fs, f_ref)');
+        }
+        if (N <= 0 || N !== Math.floor(N)) {
+            throw ("The sample count, N, must be a positive integer: xtract_init_pcp(N, fs, f_ref)");
+        }
+        if (fs <= 0.0) {
+            throw ('The Sample Rate must be a positive number: xtract_init_pcp(N, fs, f_ref)');
+        }
+    })(N, fs);
     if (typeof f_ref !== "number" || f_ref <= 0.0 || f_ref >= fs / 2) {
-        //("Assuming f_ref to be 48.9994294977Hz");
         f_ref = 48.9994294977;
     }
 
