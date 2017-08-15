@@ -914,10 +914,11 @@ function xtract_power(magnitudeArray) {
 function xtract_odd_even_ratio(harmonicSpectrum, f0) {
     if (!xtract_assert_array(harmonicSpectrum))
         return 0;
-    if (typeof f0 !== "number") {
-        console.error("spectral_inharmonicity requires f0 to be defined.");
-        return null;
-    }
+    (function (f0) {
+        if (typeof f0 !== "number") {
+            throw ("spectral_inharmonicity requires f0 to be defined.");
+        }
+    })(f0);
     var h = 0,
         odd = 0.0,
         even = 0.0,
@@ -940,9 +941,8 @@ function xtract_odd_even_ratio(harmonicSpectrum, f0) {
 
     if (odd === 0.0 || even === 0.0) {
         return 0.0;
-    } else {
-        return odd / even;
     }
+    return odd / even;
 }
 
 function xtract_sharpness(barkBandsArray) {
@@ -983,25 +983,13 @@ function xtract_spectral_slope(spectrum) {
 }
 
 function xtract_lowest_value(data, threshold) {
-    if (!xtract_assert_array(data))
-        return 0;
-    if (data.filter && data.reduce) {
-        var interim;
-        if (typeof threshold === "number") {
-            interim = data.filter(function (a) {
-                return a > threshold;
-            });
-            if (interim.length === 0) {
-                return +Infinity;
-            }
-        } else {
-            interim = data;
-        }
-        return xtract_array_min(interim);
-    } else {
-        if (typeof threshold !== "number") {
-            threshold = -Infinity;
-        }
+    function fast(data, threshold) {
+        return data.reduce(function (a, b) {
+            return Math.min(a, b);
+        }, +Infinity)
+    }
+
+    function slow(data, threshold) {
         var result = +Infinity;
         for (var n = 0; n < data.length; n++) {
             if (data[n] > threshold) {
@@ -1010,35 +998,43 @@ function xtract_lowest_value(data, threshold) {
         }
         return result;
     }
+    if (!xtract_assert_array(data))
+        return 0;
+    if (typeof threshold !== "number") {
+        threshold = -Infinity;
+    }
+    if (data.reduce) {
+        return fast(data, threshold);
+    } else {
+        return slow(data, threshold);
+    }
 }
 
 function xtract_highest_value(data, threshold) {
-    if (!xtract_assert_array(data))
-        return 0;
-    if (data.filter && data.reduce) {
-        var interim;
-        if (typeof threshold === "number") {
-            interim = data.filter(function (a) {
-                return (a >= threshold);
-            });
-            if (interim.length === 0) {
-                return +Infinity;
-            }
-        } else {
-            interim = data;
-        }
-        return xtract_array_max(interim);
-    } else {
-        if (typeof threshold !== "number") {
-            threshold = -Infinity;
-        }
-        var result = +Infinity;
+    function fast(data, threshold) {
+        return data.reduce(function (a, b) {
+            return Math.max(a, b);
+        }, -Infinity)
+    }
+
+    function slow(data, threshold) {
+        var result = -Infinity;
         for (var n = 0; n < data.length; n++) {
-            if (data[n] >= threshold) {
+            if (data[n] > threshold) {
                 result = Math.max(result, data[n]);
             }
         }
         return result;
+    }
+    if (!xtract_assert_array(data))
+        return 0;
+    if (typeof threshold !== "number") {
+        threshold = +Infinity;
+    }
+    if (data.reduce) {
+        return fast(data, threshold);
+    } else {
+        return slow(data, threshold);
     }
 }
 
@@ -1613,18 +1609,17 @@ function xtract_energy(array, sample_rate, window_ms) {
 }
 
 function xtract_spectrum(array, sample_rate, withDC, normalise) {
-    if (!xtract_assert_array(array))
+    (function (array, sample_rate) {
+        if (typeof sample_rate !== "number") {
+            throw ("Sample Rate must be defined");
+        }
+    })
+    if (!xtract_assert_array(array)) {
         return 0;
-    if (typeof sample_rate !== "number") {
-        console.error("Sample Rate must be defined");
-        return null;
     }
-    if (withDC === undefined) {
-        withDC = false;
-    }
-    if (normalise === undefined) {
-        normalise = false;
-    }
+    withDC = (withDC === true);
+    normalise = (normalise === true);
+
     var N = array.length;
     var result, align = 0;
     var amps;
@@ -1639,9 +1634,9 @@ function xtract_spectrum(array, sample_rate, withDC, normalise) {
     freqs = result.subarray(result.length / 2);
     var reals = new Float64Array(N);
     var imags = new Float64Array(N);
-    for (var i = 0; i < N; i++) {
-        reals[i] = array[i];
-    }
+    array.forEach(function (v, i) {
+        reals[i] = v;
+    });
     transform(reals, imags);
     for (var k = align; k <= result.length / 2; k++) {
         amps[k - align] = Math.sqrt((reals[k] * reals[k]) + (imags[k] * imags[k])) / array.length;
