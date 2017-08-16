@@ -574,11 +574,11 @@ function xtract_spectral_mean(spectrum) {
     return result;
 }
 
-function xtract_spectral_variance(spectrum, spectral_mean) {
+function xtract_spectral_variance(spectrum, spectral_centroid) {
     if (!xtract_assert_array(spectrum))
         return 0;
-    if (typeof spectral_mean !== "number") {
-        spectral_mean = xtract_spectral_centroid(spectrum);
+    if (typeof spectral_centroid !== "number") {
+        spectral_centroid = xtract_spectral_centroid(spectrum);
     }
     var A = 0,
         result = 0;
@@ -589,7 +589,7 @@ function xtract_spectral_variance(spectrum, spectral_mean) {
     amps = xtract_array_scale(amps, 1 / xtract_array_sum(amps))
     A = xtract_array_sum(amps);
     while (n--) {
-        result += Math.pow(freqs[n] - spectral_mean, 2) * (amps[n] / A);
+        result += Math.pow(freqs[n] - spectral_centroid, 2) * (amps[n] / A);
     }
     return result;
 }

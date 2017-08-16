@@ -125,7 +125,7 @@ var SpectrumData = function (N, sampleRate, parent) {
         "spectral_variance": {
             'value': function () {
                 if (this.result.spectral_variance === undefined) {
-                    this.result.spectral_variance = xtract_spectral_variance(this.data, this.spectral_mean());
+                    this.result.spectral_variance = xtract_spectral_variance(this.data, this.spectral_centroid());
                 }
                 return this.result.spectral_variance;
             }
