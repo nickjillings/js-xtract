@@ -67,7 +67,7 @@ function transformRadix2(real, imag) {
         throw "Length is not a power of 2";
     var cosTable = new Float64Array(n / 2);
     var sinTable = new Float64Array(n / 2);
-    calculateCosSineTables(cosTable, sineTable);
+    calculateCosSineTables(cosTable, sinTable);
 
     // Bit-reversed addressing permutation
     bitReverseMap(real, imag);
