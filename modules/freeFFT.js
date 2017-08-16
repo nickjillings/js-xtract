@@ -55,8 +55,6 @@ function inverseTransform(real, imag) {
  * The vector's length must be a power of 2. Uses the Cooley-Tukey decimation-in-time radix-2 algorithm.
  */
 
-function getCosSinTable()
-
 function transformRadix2(real, imag) {
     // Initialization
     if (real.length !== imag.length)
