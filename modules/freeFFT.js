@@ -54,60 +54,30 @@ function inverseTransform(real, imag) {
  * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
  * The vector's length must be a power of 2. Uses the Cooley-Tukey decimation-in-time radix-2 algorithm.
  */
+
+function getCosSinTable()
+
 function transformRadix2(real, imag) {
     // Initialization
-    var i, j, k;
     if (real.length !== imag.length)
         throw "Mismatched lengths";
     var n = real.length;
     if (n === 1) // Trivial transform
         return;
-    var levels = -1;
-    for (i = 0; i < 32; i++) {
-        if (1 << i === n) {
-            levels = i; // Equal to log2(n)
-            break;
-        }
-    }
+    var levels = calculateNumberLevels(n);
     if (levels === -1)
         throw "Length is not a power of 2";
-    var cosTable = new Array(n / 2);
-    var sinTable = new Array(n / 2);
-    for (i = 0; i < n / 2; i++) {
-        cosTable[i] = Math.cos(2 * Math.PI * i / n);
-        sinTable[i] = Math.sin(2 * Math.PI * i / n);
-    }
+    var cosTable = new Float64Array(n / 2);
+    var sinTable = new Float64Array(n / 2);
+    calculateCosSineTables(cosTable, sineTable);
 
     // Bit-reversed addressing permutation
-    for (i = 0; i < n; i++) {
-        j = reverseBits(i, levels);
-        if (j > i) {
-            var temp = real[i];
-            real[i] = real[j];
-            real[j] = temp;
-            temp = imag[i];
-            imag[i] = imag[j];
-            imag[j] = temp;
-        }
-    }
+    bitReverseMap(real, imag);
 
     // Cooley-Tukey decimation-in-time radix-2 FFT
-    (function (real, imag, n) {
-        for (var size = 2; size <= n; size *= 2) {
-            var halfsize = size / 2;
-            var tablestep = n / size;
-            for (i = 0; i < n; i += size) {
-                for (j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
-                    var tpre = real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k];
-                    var tpim = -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k];
-                    real[j + halfsize] = real[j] - tpre;
-                    imag[j + halfsize] = imag[j] - tpim;
-                    real[j] += tpre;
-                    imag[j] += tpim;
-                }
-            }
-        }
-    })(real, imag, n);
+    for (var size = 2; size <= n; size *= 2) {
+        cooleyTukey(real, imag, sinTable, cosTable, size);
+    }
 
     // Returns the integer whose value is the reverse of the lowest 'bits' bits of the integer 'x'.
     function reverseBits(x, bits) {
@@ -117,6 +87,57 @@ function transformRadix2(real, imag) {
             x >>>= 1;
         }
         return y;
+    }
+
+    function cooleyTukey(real, imag, sinTable, cosTable, size) {
+        var i, j, k;
+        var n = real.length;
+        var halfsize = size / 2;
+        var tablestep = n / size;
+        for (i = 0; i < n; i += size) {
+            for (j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
+                var tpre = real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k];
+                var tpim = -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k];
+                real[j + halfsize] = real[j] - tpre;
+                imag[j + halfsize] = imag[j] - tpim;
+                real[j] += tpre;
+                imag[j] += tpim;
+            }
+        }
+    }
+
+    function calculateNumberLevels(N) {
+        var i;
+        for (i = 0; i < 32; i++) {
+            if (1 << i === N) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function bitReverseMap(real, imag) {
+        var i, j, temp;
+        for (i = 0; i < n; i++) {
+            j = reverseBits(i, levels);
+            if (j > i) {
+                temp = real[i];
+                real[i] = real[j];
+                real[j] = temp;
+                temp = imag[i];
+                imag[i] = imag[j];
+                imag[j] = temp;
+            }
+        }
+    }
+
+    function calculateCosSineTables(cosTable, sinTable) {
+        var n = cosTable.length,
+            i;
+        for (i = 0; i < n; i++) {
+            cosTable[i] = Math.cos(Math.PI * i / n);
+            sinTable[i] = Math.sin(Math.PI * i / n);
+        }
     }
 }
 
