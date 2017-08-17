@@ -10,8 +10,6 @@ engines:
         enabled: true
   eslint:
     enabled: true
-    checks:
-      complexity: ["error", 10]
   fixme:
     enabled: true
 ratings:
