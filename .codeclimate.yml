@@ -11,9 +11,7 @@ engines:
   eslint:
     enabled: true
     checks:
-      complexity:
-        enabled: true
-        error: 10
+      complexity: ["error", 10]
   fixme:
     enabled: true
 ratings:
