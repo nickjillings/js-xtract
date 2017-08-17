@@ -1399,7 +1399,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) { // eslint-disa
         curSamNb /= 2;
     }
 
-    function _dywapitch_dynamicprocess(pitchtracker, pitch) {
+    function _dywapitch_dynamicprocess(pitchtracker, pitch) { // eslint-disable-line complexity
         if (pitch === 0.0) {
             return -1.0;
         }
