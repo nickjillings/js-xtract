@@ -1161,7 +1161,7 @@ function xtract_failsafe_f0(timeArray, sampleRate) {
     return xtract_f0(timeArray, sampleRate);
 }
 
-function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) {
+function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) { // eslint-disable-line max-statements
     if (!xtract_assert_array(timeArray))
         return 0;
     if (pitchtracker === undefined) {
