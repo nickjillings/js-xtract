@@ -36,7 +36,7 @@ var TimeData = function (N, sampleRate, parent) {
     }
 
     _Fs = sampleRate;
-    _dct = this.createDctCoefficients(_length);
+    _dct = undefined;
     _wavelet = xtract_init_wavelet();
 
     this.zeroData = function () {
@@ -246,6 +246,9 @@ var TimeData = function (N, sampleRate, parent) {
         },
         "dct": {
             'value': function () {
+                if (_dct === undefined) {
+                    _dct = this.createDctCoefficients(_length);
+                }
                 if (this.result.dct === undefined) {
                     this.result.dct = xtract_dct_2(this.data, _dct);
                 }
