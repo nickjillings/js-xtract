@@ -101,11 +101,11 @@ describe("Vector", function () {
     });
     describe("xtract_spectrum", function () {
         it("should return 0 if array is undefined", function (done) {
-            assert.equal(0, sandbox.xtract_spectrum(undefined));
+            assert.equal(0, sandbox.xtract_spectrum(undefined, 44100));
             done();
         });
         it("should return 0 if array is empty", function (done) {
-            assert.equal(0, sandbox.xtract_spectrum([]));
+            assert.equal(0, sandbox.xtract_spectrum([], 44100));
             done();
         });
         it("should return array if array is data", function (done) {

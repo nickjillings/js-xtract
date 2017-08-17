@@ -12,8 +12,7 @@ engines:
     enabled: true
     checks:
       complexity:
-        enabled: true
-        max: 20
+        error: 10
   fixme:
     enabled: true
 ratings:

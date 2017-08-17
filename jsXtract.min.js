@@ -1230,7 +1230,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) { // eslint-disa
         var lastmaxIndex = -1000000;
         var findMax = 0;
         var findMin = 0;
-        (function () {
+        (function () { // eslint-disable-line complexity
             for (i = 2; i < curSamNb; i++) {
                 si = sam[i] - theDC;
                 si1 = sam[i - 1] - theDC;
@@ -1611,7 +1611,7 @@ function xtract_spectrum(array, sample_rate, withDC, normalise) {
         if (typeof sample_rate !== "number") {
             throw ("Sample Rate must be defined");
         }
-    })
+    })(array, sample_rate);
     if (!xtract_assert_array(array)) {
         return 0;
     }
@@ -1704,7 +1704,7 @@ function xtract_mfcc(spectrum, mfcc) {
             r[f] += spectrum[n] * filter[n];
         }
         r[f] = Math.log(Math.max(r[f], 2e-42));
-    });;
+    });
     return xtract_dct(result);
 }
 
@@ -1912,25 +1912,27 @@ function xtract_lpc(autocorr) {
         return lpc;
     }
 
-    for (i = 0; i < L; i++) {
-        r = -autocorr[i + 1];
-        for (j = 0; j < i; j++) {
-            r -= lpc[j] * autocorr[i - j];
-        }
-        r /= error;
-        ref[i] = r;
+    (function () {
+        for (i = 0; i < L; i++) {
+            r = -autocorr[i + 1];
+            for (j = 0; j < i; j++) {
+                r -= lpc[j] * autocorr[i - j];
+            }
+            r /= error;
+            ref[i] = r;
 
-        lpc[i] = r;
-        for (j = 0; j < (i >> 1); j++) {
-            var tmp = lpc[j];
-            lpc[j] += r * lpc[i - 1 - j];
-            lpc[i - 1 - j] += r * tmp;
+            lpc[i] = r;
+            for (j = 0; j < (i >> 1); j++) {
+                var tmp = lpc[j];
+                lpc[j] += r * lpc[i - 1 - j];
+                lpc[i - 1 - j] += r * tmp;
+            }
+            if (i % 2) {
+                lpc[j] += lpc[j] * r;
+            }
+            error *= 1.0 - r * r;
         }
-        if (i % 2) {
-            lpc[j] += lpc[j] * r;
-        }
-        error *= 1.0 - r * r;
-    }
+    })();
     return lpc;
 }
 
@@ -1946,21 +1948,24 @@ function xtract_lpcc(lpc, Q) {
     cep_length = Q;
 
     var result = new Float64Array(cep_length);
-    for (n = 1; n < Q && n < cep_length; n++) {
-        sum = 0;
-        for (k = 1; k < n; k++) {
-            sum += k * result[k - 1] * lpc[n - k];
+    (function () {
+        for (n = 1; n < Q && n < cep_length; n++) {
+            sum = 0;
+            for (k = 1; k < n; k++) {
+                sum += k * result[k - 1] * lpc[n - k];
+            }
+            result[n - 1] = lpc[n] + sum / n;
         }
-        result[n - 1] = lpc[n] + sum / n;
-    }
-
-    for (n = order + 1; n <= cep_length; n++) {
-        sum = 0.0;
-        for (k = n - (order - 1); k < n; k++) {
-            sum += k * result[k - 1] * lpc[n - k];
+    })();
+    (function () {
+        for (n = order + 1; n <= cep_length; n++) {
+            sum = 0.0;
+            for (k = n - (order - 1); k < n; k++) {
+                sum += k * result[k - 1] * lpc[n - k];
+            }
+            result[n - 1] = sum / n;
         }
-        result[n - 1] = sum / n;
-    }
+    })();
     return result;
 }
 
@@ -2426,7 +2431,7 @@ function xtract_apply_window(X, W) {
         if (!xtract_assert_array(X) || !xtract_assert_array(W)) {
             throw ("Both X and W must be defined");
         }
-        if (X.length != W.length) {
+        if (X.length !== W.length) {
             throw ("Both X and W must be the same lengths");
         }
     })(X, W);
