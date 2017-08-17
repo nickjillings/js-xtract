@@ -551,7 +551,7 @@ function xtract_spectral_centroid(spectrum) {
     var n = N >> 1;
     var amps = spectrum.subarray(0, n);
     var freqs = spectrum.subarray(n);
-    var A_d = xtract_array_sum(amps) / n;
+    var A_d = xtract_array_sum(amps);
     if (A_d === 0.0) {
         return 0.0;
     }
@@ -559,8 +559,7 @@ function xtract_spectral_centroid(spectrum) {
     while (n--) {
         sum += freqs[n] * (amps[n] / A_d);
     }
-    var result = sum / (N >> 1);
-    return result;
+    return sum;
 }
 
 function xtract_spectral_mean(spectrum) {
@@ -586,10 +585,9 @@ function xtract_spectral_variance(spectrum, spectral_centroid) {
     var n = N >> 1;
     var amps = spectrum.subarray(0, n);
     var freqs = spectrum.subarray(n, N);
-    amps = xtract_array_scale(amps, 1 / xtract_array_sum(amps))
-    A = xtract_array_sum(amps);
+    var A_d = xtract_array_sum(amps);
     while (n--) {
-        result += Math.pow(freqs[n] - spectral_centroid, 2) * (amps[n] / A);
+        result += Math.pow(freqs[n] - spectral_centroid, 2) * (amps[n] / A_d);
     }
     return result;
 }
@@ -607,43 +605,51 @@ function xtract_spectral_standard_deviation(spectrum, spectral_variance) {
     return Math.sqrt(spectral_variance);
 }
 
-function xtract_spectral_skewness(spectrum, spectral_mean, spectral_standard_deviation) {
+function xtract_spectral_skewness(spectrum, spectral_centroid, spectral_standard_deviation) {
     if (!xtract_assert_array(spectrum))
         return 0;
     if (typeof spectral_mean !== "number") {
-        spectral_mean = xtract_spectral_mean(spectrum);
+        spectral_centroid = xtract_spectral_centroid(spectrum);
     }
     if (typeof spectral_standard_deviation !== "number") {
-        spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum, xtract_spectral_variance(spectrum, spectral_mean));
+        spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum, xtract_spectral_variance(spectrum, spectral_centroid));
+    }
+    if (spectral_standard_deviation === 0) {
+        return 0;
     }
     var result = 0;
     var N = spectrum.length;
     var K = N >> 1;
     var amps = spectrum.subarray(0, K);
     var freqs = spectrum.subarray(K);
+    var A_d = xtract_array_sum(amps);
     for (var n = 0; n < K; n++) {
-        result += Math.pow(freqs[n] - spectral_mean, 3) * amps[n];
+        result += Math.pow(freqs[n] - spectral_centroid, 3) * (amps[n] / A_d);
     }
     result /= Math.pow(spectral_standard_deviation, 3);
     return result;
 }
 
-function xtract_spectral_kurtosis(spectrum, spectral_mean, spectral_standard_deviation) {
+function xtract_spectral_kurtosis(spectrum, spectral_centroid, spectral_standard_deviation) {
     if (!xtract_assert_array(spectrum))
         return 0;
-    if (typeof spectral_mean !== "number") {
-        spectral_mean = xtract_spectral_mean(spectrum);
+    if (typeof spectral_centroid !== "number") {
+        spectral_centroid = xtract_spectral_centroid(spectrum);
     }
     if (typeof spectral_standard_deviation !== "number") {
-        spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum, xtract_spectral_variance(spectrum, spectral_mean));
+        spectral_standard_deviation = xtract_spectral_standard_deviation(spectrum, xtract_spectral_variance(spectrum, spectral_centroid));
+    }
+    if (spectral_standard_deviation === 0) {
+        return Infinity;
     }
     var result = 0;
     var N = spectrum.length;
     var K = N >> 1;
     var amps = spectrum.subarray(0, K);
     var freqs = spectrum.subarray(K);
+    var A_d = xtract_array_sum(amps);
     for (var n = 0; n < K; n++) {
-        result += Math.pow(freqs[n] - spectral_mean, 4) * amps[n];
+        result += Math.pow(freqs[n] - spectral_centroid, 4) * (amps[n] / A_d);
     }
     return result / Math.pow(spectral_standard_deviation, 4);
 }
@@ -656,7 +662,7 @@ function xtract_irregularity_k(spectrum) {
     var K = N >> 1;
     var amps = spectrum.subarray(0, K);
     for (var n = 1; n < K - 1; n++) {
-        result += Math.abs(amps[n] - (amps[n - 1] + amps[n] + amps[n + 1]) / 3);
+        result += Math.abs(Math.log10(amps[n]) - Math.log10(amps[n - 1] + amps[n] + amps[n + 1]) / 3);
     }
     return result;
 }
@@ -731,11 +737,10 @@ function xtract_smoothness(spectrum) {
         temp = 0;
     var N = spectrum.length;
     var K = N >> 1;
-    prev = Math.max(0, spectrum[0]);
-    current = Math.max(0, spectrum[1]);
+    prev = Math.max(1e-5, spectrum[0]);
+    current = Math.max(1e-5, spectrum[1]);
     for (var n = 1; n < K - 1; n++) {
-        next = Math.max(0, spectrum[n + 1]);
-        //next = spectrum[n + 1] <= 0 ? 1e-5 : spectrum[n + 1];
+        next = Math.max(1e-5, spectrum[n + 1]);
         temp += Math.abs(20.0 * Math.log(current) - (20.0 * Math.log(prev) + 20.0 * Math.log(current) + 20.0 * Math.log(next)) / 3.0);
         prev = current
         current = next
@@ -808,15 +813,10 @@ function xtract_flatness(spectrum) {
     var K = N >> 1;
     var amps = spectrum.subarray(0, K);
     for (var n = 0; n < K; n++) {
-        if (amps[n] !== 0.0) {
-            if (xtract_is_denormal(num)) {
-                denormal_found = true;
-                break;
-            }
-            num *= amps[n];
-            den += amps[n];
-            count++;
-        }
+        temp = Math.max(1e-32, amps[n])
+        num *= temp;
+        den += temp;
+        count++;
     }
     if (count === 0) {
         return 0;
@@ -2431,4 +2431,87 @@ function xtract_init_bark(N, sampleRate, bands) {
         band_limits[bands] = (edges[bands] / sampleRate) * N;
     }
     return band_limits;
+}
+
+// Window functions
+
+function xtract_apply_window(X, W) {
+    (function (X, W) {
+        if (!xtract_assert_array(X) || !xtract_assert_array(W)) {
+            throw ("Both X and W must be defined");
+        }
+        if (X.length != W.length) {
+            throw ("Both X and W must be the same lengths");
+        }
+    })(X, W);
+    var N = X.length;
+    var Y = new Float64Array(N);
+    var n;
+    for (n = 0; n < N; n++) {
+        Y[n] = X[n] * W[n];
+    }
+    return Y;
+}
+
+function xtract_create_window(N, type) {
+    function welch(N) {
+        var W = new Float64Array(N);
+        var n;
+        var N12 = (N - 1) / 2;
+        for (n = 0; n < N; n++) {
+            W[n] = 1.0 - Math.pow((n - N12) / N12, 2);
+        }
+        return W;
+    }
+
+    function sine(N) {
+        var w = new Float64Array(N),
+            n;
+        var arga = (Math.PI * n) / (N - 1);
+        for (n = 0; n < N; n++) {
+            w[n] = Math.sin(arga);
+        }
+        return w;
+    }
+
+    function hann(N) {
+        var w = new Float64Array(N),
+            n;
+        for (n = 0; n < N; n++) {
+            w[n] = 0.5 - (1 - Math.cos((Math.PI * 2 * n) / (N - 1)));
+        }
+        return w;
+    }
+
+    function hamming(N) {
+        var w = new Float64Array(N),
+            alpha = 25 / 46,
+            beta = 21 / 46,
+            n;
+        for (n = 0; n < N; n++) {
+            w[n] = alpha - beta * Math.cos((Math.PI * 2 * n) / (N - 1));
+        }
+        return w;
+    }
+    (function (N, type) {
+        if (!xtract_assert_positive_integer(N)) {
+            throw ("N must be a defined, positive integer");
+        }
+        if (typeof type !== "string" || type.length === 0) {
+            throw ("Type must be defined");
+        }
+    })(N, type);
+    type = type.toLowerCase();
+    switch (type) {
+        case "hamming":
+            return hamming(N);
+        case "welch":
+            return welch(N);
+        case "sine":
+            return sine(N);
+        case "hann":
+            return hann(N);
+        default:
+            throw ("Window function\"" + type + "\" not defined");
+    }
 }

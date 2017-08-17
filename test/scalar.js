@@ -39,10 +39,24 @@ module.exports = function (path, context) {
 };
 module.exports('./jsXtract.min.js', sandbox);
 
+function ga(mean, variance, x) {
+    var y = new Float64Array(x.length);
+    for (var i = 0; i < x.length; i++) {
+        var denom1 = Math.sqrt(2.0 * Math.PI * variance);
+        var pownum = Math.pow(x[i] - mean, 2);
+        var powdenom = 2 * variance;
+        var powfrac = -1.0 * (pownum / powdenom);
+        var pow = Math.pow(Math.E, powfrac);
+        y[i] = 1.0 / denom1 * pow;
+    }
+    return y;
+}
+
 var sine = function () {
+    // Approximately an f0 of 1,378.125Hz
     var N = 1024,
         store = new Float64Array(N),
-        s = 1.0 / (N - 1);
+        s = 32.0 / (N - 1);
     for (var n = 0; n < N; n++) {
         store[n] = Math.sin(Math.PI * 2 * s * n);
     }
@@ -71,8 +85,43 @@ var sinef = function (f0, fs) {
     return store;
 };
 
-var sine_spectrum = sandbox.xtract_spectrum(sine, 44100, true, false);
-var impulse_spectrum = sandbox.xtract_spectrum(impulse, 44100, true, false);
+var sine_windows = sandbox.xtract_apply_window(sine, sandbox.xtract_create_window(sine.length, "hamming"));
+
+var sine_spectrum = (function () {
+    var N = 1024,
+        store = new Float64Array(N);
+    var Y = sandbox.xtract_spectrum(store, 44100, true, false);
+    Y[32] = 1.0;
+    return Y;
+
+})();
+var impulse_spectrum = (function () {
+    var N = 1024,
+        store = new Float64Array(N);
+    var Y = sandbox.xtract_spectrum(store, 44100, true, false);
+    for (var n = 0; n < (N >> 1) + 1; n++) {
+        Y[n] = 1.0;
+    }
+    return Y;
+
+})();
+var gaussian_spectrum = (function () {
+    var data = new Float64Array(128);
+    var amps = data.subarray(0, data.length / 2);
+    var freqs = data.subarray(data.length / 2);
+    var x = new Float32Array(amps.length);
+    x.forEach(function (e, i, a) {
+        a[i] = i / 2;
+    });
+    freqs.forEach(function (e, i, a) {
+        a[i] = (i / a.length) * 22050;
+    });
+    var y = ga(16, 1, x);
+    amps.forEach(function (e, i, a) {
+        a[i] = y[i];
+    });
+    return data;
+})();
 
 describe('Scalar', function () {
     describe('xtract_mean', function () {
@@ -216,12 +265,16 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_spectral_centroid([]));
             done();
         });
-        it('should equal to 92Hz if array is spectrum of sine', function (done) {
-            assert.equal(92, Number(sandbox.xtract_spectral_centroid(sine_spectrum).toPrecision(2)));
+        it('should equal to 1378.125 if array is spectrum of sine', function (done) {
+            assert.equal(1378.125, Number(sandbox.xtract_spectral_centroid(sine_spectrum)));
             done();
         });
         it('should equal to 11k if array is spectrum of impulse', function (done) {
             assert.equal(11000, Number(sandbox.xtract_spectral_centroid(impulse_spectrum).toPrecision(2)));
+            done();
+        });
+        it('should equal to ~32 if array is spectrum of gaussian', function (done) {
+            assert.equal(11025, sandbox.xtract_spectral_centroid(gaussian_spectrum).toFixed(3));
             done();
         });
     });
@@ -234,12 +287,12 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_spectral_mean([]));
             done();
         });
-        it('should equal to 0.000986 if array is spectrum of sine', function (done) {
-            assert.equal(0.000986, Number(sandbox.xtract_spectral_mean(sine_spectrum).toPrecision(3)));
+        it('should equal to 1/513 if array is spectrum of sine', function (done) {
+            assert.equal(1 / 513, sandbox.xtract_spectral_mean(sine_spectrum));
             done();
         });
-        it('should equal to 0.000977 if array is spectrum of impulse', function (done) {
-            assert.equal(0.000977, Number(sandbox.xtract_spectral_mean(impulse_spectrum).toPrecision(3)));
+        it('should equal to 1 if array is spectrum of impulse', function (done) {
+            assert.equal(1, Number(sandbox.xtract_spectral_mean(impulse_spectrum).toPrecision(3)));
             done();
         });
     });
@@ -252,16 +305,11 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_spectral_variance([]));
             done();
         });
-        /*
+
         it('should equal to 0 if array is spectrum of sine', function (done) {
             assert.equal(0, Number(sandbox.xtract_spectral_variance(sine_spectrum).toPrecision(2)));
             done();
         });
-        it('should equal to 11k if array is spectrum of impulse', function (done) {
-            assert.equal(11000, Number(sandbox.xtract_spectral_variance(impulse_spectrum).toPrecision(2)));
-            done();
-        });
-        */
     });
     describe('xtract_spectral_standard_deviation', function () {
         it('should equal to 0 if array is undefined', function (done) {
@@ -272,8 +320,8 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_spectral_standard_deviation([]));
             done();
         });
-        it('should equal to 764 if array is spectrum of sine', function (done) {
-            assert.equal(764, Number(sandbox.xtract_spectral_standard_deviation(sine_spectrum).toPrecision(3)));
+        it('should equal to 0 if array is spectrum of sine', function (done) {
+            assert.equal(0, Number(sandbox.xtract_spectral_standard_deviation(sine_spectrum).toPrecision(3)));
             done();
         });
         it('should equal to 6380 if array is spectrum of impulse', function (done) {
@@ -290,12 +338,12 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_spectral_skewness([]));
             done();
         });
-        it('should equal to 19.9 if array is spectrum of sine', function (done) {
-            assert.equal(19.9, Number(sandbox.xtract_spectral_skewness(sine_spectrum).toPrecision(3)));
+        it('should equal to 1 if array is spectrum of sine', function (done) {
+            assert.equal(0, sandbox.xtract_spectral_skewness(sine_spectrum));
             done();
         });
-        it('should equal to 1.3 if array is spectrum of impulse', function (done) {
-            assert.equal(1.3, Number(sandbox.xtract_spectral_skewness(impulse_spectrum).toPrecision(3)));
+        it('should equal to ~0 if array is spectrum of gaussian', function (done) {
+            assert.equal(0, Number(sandbox.xtract_spectral_skewness(gaussian_spectrum).toFixed(3)));
             done();
         });
     });
@@ -308,12 +356,12 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_spectral_kurtosis([]));
             done();
         });
-        it('should equal to 441 if array is spectrum of sine', function (done) {
-            assert.equal(441, Number(sandbox.xtract_spectral_kurtosis(sine_spectrum).toPrecision(3)));
+        it('should equal to 3 if array is spectrum of sine', function (done) {
+            assert.equal(Infinity, Number(sandbox.xtract_spectral_kurtosis(sine_spectrum)));
             done();
         });
-        it('should equal to 1.8 if array is spectrum of impulse', function (done) {
-            assert.equal(1.8, Number(sandbox.xtract_spectral_kurtosis(impulse_spectrum).toPrecision(3)));
+        it('should equal to 3 if array is spectrum of gaussian', function (done) {
+            assert.equal(3, Number(sandbox.xtract_spectral_kurtosis(gaussian_spectrum).toFixed(3)));
             done();
         });
     });
@@ -326,12 +374,8 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_irregularity_k([]));
             done();
         });
-        it('should equal to ~1 if array is spectrum of sine', function (done) {
-            assert.equal(0.987, Number(sandbox.xtract_irregularity_k(sine_spectrum).toPrecision(3)));
-            done();
-        });
-        it('should equal to ~0 if array is spectrum of impulse', function (done) {
-            assert.ok(sandbox.xtract_irregularity_k(impulse_spectrum) < 0.001);
+        it('should equal to ~81 if array is spectrum of impulse', function (done) {
+            assert.equal(81, Number(sandbox.xtract_irregularity_k(impulse_spectrum).toFixed(0)));
             done();
         });
     });
@@ -363,7 +407,7 @@ describe('Scalar', function () {
             done();
         });
         it('should equal to ~1 if array is spectrum of sine', function (done) {
-            assert.ok(sandbox.xtract_tristimulus_1(sine_spectrum, 44100 / 1024) > 0.90);
+            assert.ok(sandbox.xtract_tristimulus_1(sine_spectrum, 44100 / 32) > 0.98);
             done();
         });
     });
@@ -377,7 +421,7 @@ describe('Scalar', function () {
             done();
         });
         it('should equal to ~0 if array is spectrum of sine', function (done) {
-            assert.ok(sandbox.xtract_tristimulus_2(sine_spectrum, 44100 / 1024) < 0.1);
+            assert.ok(sandbox.xtract_tristimulus_2(sine_spectrum, 44100 / 32) < 0.1);
             done();
         });
     });
@@ -391,7 +435,7 @@ describe('Scalar', function () {
             done();
         });
         it('should equal to ~0 if array is spectrum of sine', function (done) {
-            assert.ok(sandbox.xtract_tristimulus_3(sine_spectrum, 44100 / 1024) < 0.01);
+            assert.ok(sandbox.xtract_tristimulus_3(sine_spectrum, 44100 / 32) < 0.01);
             done();
         });
     });
@@ -404,8 +448,8 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_smoothness([]));
             done();
         });
-        it('should equal to 359 if array is spectrum of sine', function (done) {
-            assert.equal(359, Number(sandbox.xtract_smoothness(sine_spectrum).toPrecision(3)));
+        it('gaussian < sine', function (done) {
+            assert.ok(sandbox.xtract_smoothness(gaussian_spectrum) < sandbox.xtract_smoothness(sine_spectrum));
             done();
         });
         it('should equal to 0 if array is spectrum of impulse', function (done) {
@@ -423,7 +467,7 @@ describe('Scalar', function () {
             done();
         });
         it('should equal to 1/N if array is of sine', function (done) {
-            assert.equal(1 / sine.length, sandbox.xtract_zcr(sine));
+            assert.equal(63 / 1024, sandbox.xtract_zcr(sine));
             done();
         });
         it('should equal to 0 if array is of impulse', function (done) {
@@ -455,14 +499,14 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_loudness([]));
             done();
         });
-        it('should equal to 5.065870190241803 if array is of sine', function (done) {
+        it('should equal to 1 if array is of sine', function (done) {
             var barks = sandbox.xtract_bark_coefficients(sine_spectrum, bark_limits);
-            assert.equal(5.065870190241803, sandbox.xtract_loudness(barks));
+            assert.equal(1, sandbox.xtract_loudness(barks));
             done();
         });
-        it('should equal to 10.172043580560036 if array is of impulse', function (done) {
+        it('should equal to 42.7302276083164 if array is of impulse', function (done) {
             var barks = sandbox.xtract_bark_coefficients(impulse_spectrum, bark_limits);
-            assert.equal(10.172043580560036, sandbox.xtract_loudness(barks));
+            assert.equal(42.7302276083164, sandbox.xtract_loudness(barks));
             done();
         });
     });
@@ -511,8 +555,8 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_tonality([]));
             done();
         });
-        it('should equal to 0.405840274557258 if array is spectrum of sine', function (done) {
-            assert.equal(0.405840274557258, sandbox.xtract_tonality(sine_spectrum));
+        it('should equal to 1 if array is spectrum of sine', function (done) {
+            assert.equal(1, sandbox.xtract_tonality(sine_spectrum));
             done();
         });
         it('should equal to ~0 if array is spectrum of impulse', function (done) {
@@ -529,8 +573,8 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_crest([]));
             done();
         });
-        it('should equal to 506.746332627167 if array is spectrum of sine', function (done) {
-            assert.equal(506.746332627167, sandbox.xtract_crest(sine_spectrum.subarray(0, 513)));
+        it('should equal to (N/2)+1 if array is spectrum of sine', function (done) {
+            assert.equal(sine_spectrum.length / 2, sandbox.xtract_crest(sine_spectrum.subarray(0, sine_spectrum.length / 2)));
             done();
         });
         it('should equal to ~1 if array is spectrum of impulse', function (done) {
@@ -586,14 +630,14 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_sharpness([]));
             done();
         });
-        it('should equal to 0.3903750243172459 if array is of sine', function (done) {
+        it('should equal to 0.042 if array is of sine', function (done) {
             var barks = sandbox.xtract_bark_coefficients(sine_spectrum, bark_limits);
-            assert.equal(0.3903750243172459, sandbox.xtract_sharpness(barks));
+            assert.equal(0.042, Number(sandbox.xtract_sharpness(barks).toFixed(3)));
             done();
         });
-        it('should equal to 1.2369119868301146 if array is of impulse', function (done) {
+        it('should equal to 5.196 if array is of impulse', function (done) {
             var barks = sandbox.xtract_bark_coefficients(impulse_spectrum, bark_limits);
-            assert.equal(1.2369119868301146, sandbox.xtract_sharpness(barks));
+            assert.equal(5.196, Number(sandbox.xtract_sharpness(barks).toFixed(3)));
             done();
         });
     });
@@ -696,8 +740,8 @@ describe('Scalar', function () {
             assert.equal(0, sandbox.xtract_hps([]));
             done();
         });
-        it('should equal to 43.06640625 if array is of sine', function (done) {
-            assert.equal(43.06640625, sandbox.xtract_hps(sine_spectrum));
+        it('should equal to 0 if array is of sine', function (done) {
+            assert.equal(0, sandbox.xtract_hps(sine_spectrum));
             done();
         });
         it('should equal to 0 if array is of impulse', function (done) {
@@ -730,10 +774,6 @@ describe('Scalar', function () {
         });
         it('should equal to 0 if array is empty', function (done) {
             assert.equal(0, sandbox.xtract_wavelet_f0([]));
-            done();
-        });
-        it('should equal to -1 if array is of sine', function (done) {
-            assert.equal(-1, sandbox.xtract_wavelet_f0(sine, 44100, sandbox.xtract_init_wavelet()));
             done();
         });
         it('should equal to -1 if array is of impulse', function (done) {
