@@ -2182,7 +2182,7 @@ function xtract_resample(data, p, q, n) {
         return w;
     }
 
-    function overlap(X, b) {
+    function overlap(X, b) { // eslint-disable-line max-statements
         var i, f;
         var Y = new Float64Array(X.length);
         var N = b.length;
