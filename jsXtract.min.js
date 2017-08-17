@@ -982,60 +982,38 @@ function xtract_spectral_slope(spectrum) {
     return (1.0 / A) * (M * FA - F * A) / (M * FXTRACT_SQ - F * F);
 }
 
-function xtract_lowest_value(data, threshold) {
-    function fast(data, threshold) {
-        return data.reduce(function (a, b) {
-            return Math.min(a, b);
-        }, +Infinity)
-    }
-
-    function slow(data, threshold) {
-        var result = +Infinity;
-        for (var n = 0; n < data.length; n++) {
-            if (data[n] > threshold) {
-                result = Math.min(result, data[n]);
-            }
+function xtract_lowhigh(data, threshold) {
+    var r = {
+        min: null,
+        max: null
+    };
+    for (var n = 0; n < data.length; n++) {
+        if (data[n] > threshold) {
+            r.min = Math.min(r.min, data[n]);
         }
-        return result;
+        if (data[n] < threshold) {
+            r.max = Math.max(r.max, data[n]);
+        }
     }
+    return r;
+}
+
+function xtract_lowest_value(data, threshold) {
     if (!xtract_assert_array(data))
         return 0;
     if (typeof threshold !== "number") {
         threshold = -Infinity;
     }
-    if (data.reduce) {
-        return fast(data, threshold);
-    } else {
-        return slow(data, threshold);
-    }
+    return xtract_lowhigh(data, threshold).min;
 }
 
 function xtract_highest_value(data, threshold) {
-    function fast(data, threshold) {
-        return data.reduce(function (a, b) {
-            return Math.max(a, b);
-        }, -Infinity)
-    }
-
-    function slow(data, threshold) {
-        var result = -Infinity;
-        for (var n = 0; n < data.length; n++) {
-            if (data[n] > threshold) {
-                result = Math.max(result, data[n]);
-            }
-        }
-        return result;
-    }
     if (!xtract_assert_array(data))
         return 0;
     if (typeof threshold !== "number") {
         threshold = +Infinity;
     }
-    if (data.reduce) {
-        return fast(data, threshold);
-    } else {
-        return slow(data, threshold);
-    }
+    return xtract_lowhigh(data, threshold).max;
 }
 
 function xtract_sum(data) {
