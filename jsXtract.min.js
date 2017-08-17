@@ -1240,8 +1240,7 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) { // eslint-disa
         return nbSam;
     }
 
-    function bodyLoop() { // eslint-disable-line max-statements 
-        // eslint-disable-line complexity
+    function bodyLoop() { // eslint-disable-line max-statements eslint-disable-line complexity
         delta = Math.floor(44100 / (_2power(curLevel) * 3000));
         if (curSamNb < 2) {
             cont = false;
