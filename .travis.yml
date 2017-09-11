@@ -8,6 +8,6 @@ before_script:
   - npm install nyc
 script:
   - npm test
-  - nyc test
+  - nyc mocha
   - codecov
   
