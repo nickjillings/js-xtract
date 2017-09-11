@@ -1,13 +1,13 @@
 {
-  "name": "JSAP",
-  "description": "JSAP",
-  "author": "Nick Jillings",
-  "version": "0.0.1",
-  "devDependencies": {
-    "jshint": "^2.6.0",
-    "nyc": "^11.2.1"
-  },
-  "scripts": {
-    "test": "mocha"
-  }
+    "name": "JSAP",
+    "description": "JSAP",
+    "author": "Nick Jillings",
+    "version": "0.0.1",
+    "devDependencies": {
+        "mocha": "^3.5.3",
+        "nyc": "^11.2.1"
+    },
+    "scripts": {
+        "test": "nyc mocha --timeout=3000"
+    }
 }

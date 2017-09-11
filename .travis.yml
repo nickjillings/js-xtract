@@ -2,12 +2,8 @@ language: node_js
 node_js:
   - 6
 before_script:
-  - npm install jshint
-  - npm install mocha
   - npm install -g codecov
-  - npm install nyc
 script:
   - npm test
-  - nyc mocha
   - codecov
   
