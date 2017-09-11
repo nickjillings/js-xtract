@@ -24,6 +24,6 @@
     },
     "scripts": {
         "test": "cross-env nyc mocha --timeout=3000",
-        "report-coverage": "nyc report --reporter=lcov > coverage.lcov && codecov",
+        "report-coverage": "nyc report --reporter=lcov > coverage.lcov && codecov"
     }
 }
