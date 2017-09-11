@@ -1,29 +1,29 @@
 {
-    "name": "JSAP",
-    "description": "JSAP",
-    "author": "Nick Jillings",
-    "version": "0.0.1",
-    "devDependencies": {
-        "cross-env": "^5.0.5",
-        "mocha": "^3.5.3",
-        "nyc": "^11.2.1"
-    },
-    "nyc": {
-        "check-coverage": true,
-        "include": [
-"*.js"
-],
-        "sourceMap": true,
-        "instrument": true,
-        "require": [
-"babel-register"
-],
-        "register": "babel-register",
-        "all": true,
-        "check-coverage": true
-    },
-    "scripts": {
-        "test": "cross-env nyc mocha --timeout=3000",
-        "report-coverage": "nyc report --reporter=lcov > coverage.lcov && codecov"
-    }
+  "name": "JSAP",
+  "description": "JSAP",
+  "author": "Nick Jillings",
+  "version": "0.0.1",
+  "devDependencies": {
+    "babel-register": "^6.26.0",
+    "cross-env": "^5.0.5",
+    "mocha": "^3.5.3",
+    "nyc": "^11.2.1"
+  },
+  "nyc": {
+    "check-coverage": true,
+    "include": [
+      "*.js"
+    ],
+    "sourceMap": true,
+    "instrument": true,
+    "require": [
+      "babel-register"
+    ],
+    "register": "babel-register",
+    "all": true
+  },
+  "scripts": {
+    "test": "cross-env nyc mocha --timeout=3000",
+    "report-coverage": "nyc report --reporter=lcov > coverage.lcov && codecov"
+  }
 }
