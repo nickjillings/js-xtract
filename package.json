@@ -4,10 +4,11 @@
     "author": "Nick Jillings",
     "version": "0.0.1",
     "devDependencies": {
+        "cross-env": "^5.0.5",
         "mocha": "^3.5.3",
         "nyc": "^11.2.1"
     },
     "scripts": {
-        "test": "nyc mocha --timeout=3000"
+        "test": "cross-env nyc mocha --timeout=3000"
     }
 }

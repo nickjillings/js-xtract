@@ -37,7 +37,7 @@ module.exports = function (path, context) {
     var data = fs.readFileSync(path);
     vm.runInNewContext(data, context, path);
 };
-module.exports('./jsXtract.min.js', sandbox);
+module.exports('jsXtract.min.js', sandbox);
 
 function ga(mean, variance, x) {
     var y = new Float64Array(x.length);
