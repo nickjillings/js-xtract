@@ -8,7 +8,22 @@
         "mocha": "^3.5.3",
         "nyc": "^11.2.1"
     },
+    "nyc": {
+        "check-coverage": true,
+        "include": [
+"*.js"
+],
+        "sourceMap": true,
+        "instrument": true,
+        "require": [
+"babel-register"
+],
+        "register": "babel-register",
+        "all": true,
+        "check-coverage": true
+    },
     "scripts": {
-        "test": "cross-env nyc mocha --timeout=3000"
+        "test": "cross-env nyc mocha --timeout=3000",
+        "report-coverage": "nyc report --reporter=lcov > coverage.lcov && codecov",
     }
 }

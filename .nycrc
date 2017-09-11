@@ -8,6 +8,7 @@
 "require": [
 "babel-register"
 ],
+"register": "babel-register",
 "all": true,
 "check-coverage": true
 }
