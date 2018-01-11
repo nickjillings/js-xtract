@@ -1,4 +1,4 @@
-concatOnSave = false;
+concatOnSave = true;
 output = jsXtract.min.js;
 minify = false;
 

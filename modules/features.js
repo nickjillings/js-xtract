@@ -398,6 +398,40 @@ SpectrumData.prototype.features = [
     }],
         returns: "array"
 }, {
+        name: "Chroma",
+        function: "chroma",
+        sub_features: [],
+        parameters: [{
+            name: "nbins",
+            unit: "",
+            type: "number",
+            minimum: 2,
+            maximum: undefined,
+            default: 12
+    }, {
+            name: "A440",
+            unit: "",
+            type: "number",
+            minimum: 220,
+            maximum: 880,
+            default: 440
+    }, {
+            name: "f_ctr",
+            unit: "",
+            type: "number",
+            minimum: undefined,
+            maximum: undefined,
+            default: 1000
+    }, {
+            name: "octwidth",
+            unit: "",
+            type: "number",
+            minimum: undefined,
+            maximum: undefined,
+            default: 1
+    }],
+        returns: "array"
+}, {
         name: "DCT",
         function: "dct",
         sub_features: [],

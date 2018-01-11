@@ -15,7 +15,7 @@ var SpectrumData = function (N, sampleRate, parent) {
     var _length = N;
     var _Fs = sampleRate;
     var _f0;
-    var _mfcc, _bark, _dct;
+    var _mfcc, _bark, _dct, _chroma;
 
     function computeFrequencies() {
         for (var i = 0; i < N; i++) {
@@ -75,6 +75,25 @@ var SpectrumData = function (N, sampleRate, parent) {
                 }
                 _bark = this.createBarkCoefficients(_length, _Fs, numBands);
                 return _bark;
+            }
+        },
+        "init_chroma": {
+            "value": function (nbins, A440, f_ctr, octwidth) {
+                if (typeof nbins !== "number" || nbins <= 1) {
+                    nbins = 12;
+                }
+                if (typeof A440 !== "number" || A440 <= 27.5) {
+                       A440 = 440;
+                }    
+                if (typeof f_ctr !== "number") {
+                       f_ctr = 1000;
+                }    
+                if (typeof octwidth !== "number") {
+                       octwidth = 1;
+                }
+                _chroma = this.createChromaCoefficients(_length, _Fs, nbins, A440, f_ctr, octwidth);
+                this.result.chroma = undefined;
+                return _chroma;
             }
         },
         "length": {
@@ -345,6 +364,17 @@ var SpectrumData = function (N, sampleRate, parent) {
                 return this.result.bark_coefficients;
             }
         },
+        "chroma": {
+            'value': function (nbins, A440, f_ctr, octwidth) {
+                if(this.result.chroma === undefined) {
+                    if (_chroma === undefined) {
+                        _chroma = this.init_chroma(nbins, A440, f_ctr, octwidth);
+                    }
+                    this.result.chroma = xtract_chroma(this.data, _chroma);                    
+                }
+                return this.result.chroma;
+            }
+        },        
         "peak_spectrum": {
             'value': function (threshold) {
                 if (this.result.peak_spectrum === undefined) {

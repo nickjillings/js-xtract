@@ -102,7 +102,28 @@ var jsXtract = (function () {
         }
     };
     
-//    var chroma_map = {}
+    
+    var chroma_map = {
+        parent: this,
+        store: [],
+        createCoefficients: function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
+            var search = {
+                N: N,
+                sampleRate: sampleRate,
+                nbins: nbins,
+                A440: A440,
+                f_ctr: f_ctr,
+                octwidth: octwidth
+            };
+            var match = searchMapProperties(this.store, search);
+            if (!match) {
+                match = search;
+                match.data = xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth);
+                this.store.push(match);
+            }
+            return match.data;
+        }
+    };
 
     var pub_obj = {};
     Object.defineProperties(pub_obj, {
@@ -123,8 +144,12 @@ var jsXtract = (function () {
                 }
                 return bark_map.createCoefficients(N, sampleRate, numBands);
             }
+        },
+        "createChromaCoefficients": {
+            "value": function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
+                return chroma_map.createCoefficients(N, sampleRate, nbins, A440, f_ctr, octwidth);
+            }            
         }
-//        "createChromaFilters": {}
     });
     return pub_obj;
 })();
@@ -2460,7 +2485,7 @@ function xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth) {
            octwidth = 1;
     }        
     var A0 = 27.5; // A0 in Hz 
-    N2 =  N/2+1; // ignore freq values returned by xtract_spectrum - this relies on dc-offset being kept
+    N2 =  N; // ignore freq values returned by xtract_spectrum - this relies on dc-offset being kept
     var ctroct = Math.log(f_ctr/A0) / Math.LN2; // f_ctr in octaves    
     var chromaFilters ={
         wts: [],
