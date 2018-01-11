@@ -11,4 +11,3 @@ minify = false;
 -modules/HarmonicSpectrumData.js;
 -modules/features.js;
 -modules/jsXtract-wa.js;
--modules/chroma/FB.js;
