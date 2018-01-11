@@ -101,6 +101,8 @@ var jsXtract = (function () {
             return match.data;
         }
     };
+    
+//    var chroma_map = {}
 
     var pub_obj = {};
     Object.defineProperties(pub_obj, {
@@ -122,9 +124,12 @@ var jsXtract = (function () {
                 return bark_map.createCoefficients(N, sampleRate, numBands);
             }
         }
+//        "createChromaFilters": {}
     });
     return pub_obj;
 })();
+
+
 
 function xtract_is_denormal(num) {
     if (Math.abs(num) <= 2.2250738585072014e-308) {
