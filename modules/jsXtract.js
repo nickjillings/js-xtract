@@ -101,6 +101,29 @@ var jsXtract = (function () {
             return match.data;
         }
     };
+    
+    
+    var chroma_map = {
+        parent: this,
+        store: [],
+        createCoefficients: function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
+            var search = {
+                N: N,
+                sampleRate: sampleRate,
+                nbins: nbins,
+                A440: A440,
+                f_ctr: f_ctr,
+                octwidth: octwidth
+            };
+            var match = searchMapProperties(this.store, search);
+            if (!match) {
+                match = search;
+                match.data = xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth);
+                this.store.push(match);
+            }
+            return match.data;
+        }
+    };
 
     var pub_obj = {};
     Object.defineProperties(pub_obj, {
@@ -121,10 +144,17 @@ var jsXtract = (function () {
                 }
                 return bark_map.createCoefficients(N, sampleRate, numBands);
             }
+        },
+        "createChromaCoefficients": {
+            "value": function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
+                return chroma_map.createCoefficients(N, sampleRate, nbins, A440, f_ctr, octwidth);
+            }            
         }
     });
     return pub_obj;
 })();
+
+
 
 function xtract_is_denormal(num) {
     if (Math.abs(num) <= 2.2250738585072014e-308) {
@@ -1801,6 +1831,22 @@ function xtract_asdf(array) {
     return result;
 }
 
+
+//{
+//        name: "Bark Coefficients",
+//        function: "bark_coefficients",
+//        sub_features: [],
+//        parameters: [{
+//            name: "Band Count",
+//            unit: "",
+//            type: "number",
+//            minimum: 0,
+//            maximum: 26,
+//            default: 26
+//    }],
+//        returns: "array"
+//},
+
 function xtract_bark_coefficients(spectrum, bark_limits) {
     if (!xtract_assert_array(spectrum))
         return 0;
@@ -2424,6 +2470,86 @@ function xtract_init_bark(N, sampleRate, bands) {
     return band_limits;
 }
 
+function xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth) {  
+    /*run arg checks here... (if(nbins=='undefined')*/
+    if (typeof nbins !== "number" || nbins <= 1) {
+        nbins = 12;
+    }
+    if (typeof A440 !== "number" || A440 <= 27.5) {
+           A440 = 440;
+    }    
+    if (typeof f_ctr !== "number") {
+           f_ctr = 1000;
+    }    
+    if (typeof octwidth !== "number") {
+           octwidth = 1;
+    }        
+    var A0 = 27.5; // A0 in Hz 
+    N2 =  N; // ignore freq values returned by xtract_spectrum - this relies on dc-offset being kept
+    var ctroct = Math.log(f_ctr/A0) / Math.LN2; // f_ctr in octaves    
+    var chromaFilters ={
+        wts: [],
+        nfft: N2,
+        nbins: nbins, 
+    };    
+    var fftfrqbins = new Float64Array(N2);
+    var binwidthbins = new Float64Array(N2);        
+    // Convert a frequency in Hz into a real number counting the octaves above A0. So hz2octs(440) = 4.0
+    var hz2octs = function(freq) {
+        return Math.log(freq/(A440/16))/Math.LN2;
+    }    
+    for(var i=1; i<N2; i++) {
+        fftfrqbins[i] = nbins * hz2octs( i / N*sampleRate);    
+    } 
+    fftfrqbins[0] = fftfrqbins[1]-1.5*nbins; //DC offset bin         
+    for(var i=0; i<N2-1; i++) {
+        var diffVal = fftfrqbins[i+1] - fftfrqbins[i];
+        if (diffVal >= 1) {
+            binwidthbins[i] = diffVal;
+        }            
+        else {
+            binwidthbins[i] = 1;
+        }            
+    }
+    binwidthbins[N2-1] = 1            
+    var nbins2 = Math.round(nbins/2.0)
+    var wts = [];
+    for(var i=0; i<nbins; i++) {    
+        wts[i] = [];
+        for(var j=0; j<N2; j++) {               
+            var tmpF = fftfrqbins[j] - i
+            var tmpB = binwidthbins[j]
+            var remF = ((tmpF + nbins2 + 10*nbins) % nbins) - nbins2;                          
+            wts[i][j] = Math.exp(-0.5 * Math.pow((2 * remF / tmpB), 2));
+        }
+    }
+    const sum = xs => xs.reduce((x,y) => x + y, 0)
+    const head = ([x,...xs]) => x
+    const tail = ([x,...xs]) => xs
+    const transpose = ([xs, ...xxs]) => {
+    const aux = ([x,...xs]) =>
+        x === undefined
+          ? transpose (xxs)
+          : [ [x, ...xxs.map(head)], ...transpose ([xs, ...xxs.map(tail)])]
+      return xs === undefined ? [] : aux(xs)
+    }    
+    wtsColumnSums = transpose(wts).map(sum)
+    for(var i=0; i<nbins; i++) {
+        for(var j=0; j<N2; j++) {
+            wts[i][j] *= 1/wtsColumnSums[j];
+        }
+    }     
+    if (octwidth > 0) {        
+      for(var i=0; i<nbins; i++) {
+        for(var j=0; j<N2; j++) {
+                wts[i][j] *= Math.exp(-0.5*(Math.pow ( ((fftfrqbins[j]/nbins - ctroct)/octwidth), 2)))
+            }                
+        }
+    }           
+    chromaFilters.wts = wts;    
+    return chromaFilters;    
+ }  
+
 // Window functions
 
 function xtract_apply_window(X, W) {
@@ -2505,4 +2631,25 @@ function xtract_create_window(N, type) {
         default:
             throw ("Window function\"" + type + "\" not defined");
     }
+}
+
+function xtract_chroma(spectrum, chromaFilters) {
+    if (!xtract_assert_array(spectrum)) {
+        return 0;        
+    }    
+    if (chromaFilters.wts === undefined) {
+        throw ("xtract_chroma requires chroma filters from xtract_init_chroma");
+    }
+    if(chromaFilters.nfft !== spectrum.length/2) {
+        throw ("the FFT lengths of the spectrum ("+spectrum.length/2+") and chroma filterbank ("+chromaFilters.nfft+") do not match");
+    }
+    var result = new Float64Array(chromaFilters.nbins);
+    for (var i = 0; i < chromaFilters.nbins; i++) {
+        var sum = 0;
+        for (var j = 0; j < chromaFilters.nfft; j++) {
+            sum += chromaFilters.wts[i][j] * spectrum[j]                        
+        }
+        result[i] = sum;
+    }
+    return result;
 }

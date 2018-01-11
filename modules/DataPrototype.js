@@ -165,3 +165,12 @@ DataProto.prototype.createBarkCoefficients = function (N, sampleRate, numBands) 
     numBands = Number(numBands);
     return jsXtract.createBarkCoefficients(N, sampleRate, numBands);
 };
+DataProto.prototype.createChromaCoefficients = function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
+    N = Number(N);
+    sampleRate = Number(sampleRate);
+    nbins = Number(nbins);
+    A440 = Number(A440);
+    f_ctr = Number(f_ctr);
+    octwidth = Number(octwidth);
+    return jsXtract.createChromaCoefficients(N, sampleRate, nbins, A440, f_ctr, octwidth);
+};
