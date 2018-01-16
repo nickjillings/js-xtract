@@ -101,8 +101,8 @@ var jsXtract = (function () {
             return match.data;
         }
     };
-    
-    
+
+
     var chroma_map = {
         parent: this,
         store: [],
@@ -148,7 +148,7 @@ var jsXtract = (function () {
         "createChromaCoefficients": {
             "value": function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
                 return chroma_map.createCoefficients(N, sampleRate, nbins, A440, f_ctr, octwidth);
-            }            
+            }
         }
     });
     return pub_obj;
@@ -734,7 +734,7 @@ function xtract_tristimulus(spectrum, f0) {
         if (temp !== 0) {
             den += temp;
             h = Math.floor(freqs[i] / f0 + 0.5);
-            p[h - 1] += temp
+            p[h - 1] += temp;
         }
     }
 
@@ -772,8 +772,8 @@ function xtract_smoothness(spectrum) {
     for (var n = 1; n < K - 1; n++) {
         next = Math.max(1e-5, spectrum[n + 1]);
         temp += Math.abs(20.0 * Math.log(current) - (20.0 * Math.log(prev) + 20.0 * Math.log(current) + 20.0 * Math.log(next)) / 3.0);
-        prev = current
-        current = next
+        prev = current;
+        current = next;
     }
     return temp;
 }
@@ -843,7 +843,7 @@ function xtract_flatness(spectrum) {
     var K = N >> 1;
     var amps = spectrum.subarray(0, K);
     for (var n = 0; n < K; n++) {
-        temp = Math.max(1e-32, amps[n])
+        temp = Math.max(1e-32, amps[n]);
         num *= temp;
         den += temp;
         count++;
@@ -1255,7 +1255,8 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) { // eslint-disa
             return;
         }
         var dv, previousDV = -1000;
-        var nbMins = nbMaxs = 0;
+        var nbMins = 0,
+            nbMaxs = 0;
         var lastMinIndex = -1000000;
         var lastmaxIndex = -1000000;
         var findMax = 0;
@@ -1508,7 +1509,8 @@ function xtract_wavelet_f0(timeArray, sampleRate, pitchtracker) { // eslint-disa
 
     function getamplitudeMax(sam, samplecount) {
         var si, i;
-        var minValue = maxValue = 0.0;
+        var minValue = 0.0,
+            maxValue = 0.0;
         for (i = 0; i < samplecount; i++) {
             si = sam[i];
             if (si > maxValue) {
@@ -2114,6 +2116,7 @@ function xtract_onset(timeData, frameSize) {
     var X = get_X(frames, frameSize);
 
     var E = new timeData.constructor(N);
+    var n;
     for (var k = 0; k < K; k++) {
         var phase_prev = angle(X[0].subarray(2 * k, 2 * k + 2));
         var phase_delta = angle(X[0].subarray(2 * k, 2 * k + 2));
@@ -2220,7 +2223,8 @@ function xtract_resample(data, p, q, n) {
     }
 
     function W(N) {
-        var w = new Float64Array(N);
+        var w = new Float64Array(N),
+            i;
         for (i = 0; i < N; i++) {
             var rad = (Math.PI * i) / (N);
             w[i] = 0.35875 - 0.48829 * Math.cos(2 * rad) + 0.14128 * Math.cos(4 * rad) - 0.01168 * Math.cos(6 * rad);
@@ -2470,85 +2474,84 @@ function xtract_init_bark(N, sampleRate, bands) {
     return band_limits;
 }
 
-function xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth) {  
+function xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth) {
     /*run arg checks here... (if(nbins=='undefined')*/
     if (typeof nbins !== "number" || nbins <= 1) {
         nbins = 12;
     }
     if (typeof A440 !== "number" || A440 <= 27.5) {
-           A440 = 440;
-    }    
+        A440 = 440;
+    }
     if (typeof f_ctr !== "number") {
-           f_ctr = 1000;
-    }    
+        f_ctr = 1000;
+    }
     if (typeof octwidth !== "number") {
-           octwidth = 1;
-    }        
+        octwidth = 1;
+    }
     var A0 = 27.5; // A0 in Hz 
-    N2 =  N; // ignore freq values returned by xtract_spectrum - this relies on dc-offset being kept
-    var ctroct = Math.log(f_ctr/A0) / Math.LN2; // f_ctr in octaves    
-    var chromaFilters ={
+    var N2 = N; // ignore freq values returned by xtract_spectrum - this relies on dc-offset being kept
+    var ctroct = Math.log(f_ctr / A0) / Math.LN2; // f_ctr in octaves    
+    var chromaFilters = {
         wts: [],
         nfft: N2,
-        nbins: nbins, 
-    };    
+        nbins: nbins,
+    };
     var fftfrqbins = new Float64Array(N2);
-    var binwidthbins = new Float64Array(N2);        
+    var binwidthbins = new Float64Array(N2);
     // Convert a frequency in Hz into a real number counting the octaves above A0. So hz2octs(440) = 4.0
-    var hz2octs = function(freq) {
-        return Math.log(freq/(A440/16))/Math.LN2;
-    }    
-    for(var i=1; i<N2; i++) {
-        fftfrqbins[i] = nbins * hz2octs( i / N*sampleRate);    
-    } 
-    fftfrqbins[0] = fftfrqbins[1]-1.5*nbins; //DC offset bin         
-    for(var i=0; i<N2-1; i++) {
-        var diffVal = fftfrqbins[i+1] - fftfrqbins[i];
+    var hz2octs = function (freq) {
+        return Math.log(freq / (A440 / 16)) / Math.LN2;
+    };
+    var i, j;
+    for (i = 1; i < N2; i++) {
+        fftfrqbins[i] = nbins * hz2octs(i / N * sampleRate);
+    }
+    fftfrqbins[0] = fftfrqbins[1] - 1.5 * nbins; //DC offset bin         
+    for (i = 0; i < N2 - 1; i++) {
+        var diffVal = fftfrqbins[i + 1] - fftfrqbins[i];
         if (diffVal >= 1) {
             binwidthbins[i] = diffVal;
-        }            
-        else {
+        } else {
             binwidthbins[i] = 1;
-        }            
+        }
     }
-    binwidthbins[N2-1] = 1            
-    var nbins2 = Math.round(nbins/2.0)
+    binwidthbins[N2 - 1] = 1;
+    var nbins2 = Math.round(nbins / 2.0);
     var wts = [];
-    for(var i=0; i<nbins; i++) {    
+    for (i = 0; i < nbins; i++) {
         wts[i] = [];
-        for(var j=0; j<N2; j++) {               
-            var tmpF = fftfrqbins[j] - i
-            var tmpB = binwidthbins[j]
-            var remF = ((tmpF + nbins2 + 10*nbins) % nbins) - nbins2;                          
+        for (j = 0; j < N2; j++) {
+            var tmpF = fftfrqbins[j] - i;
+            var tmpB = binwidthbins[j];
+            var remF = ((tmpF + nbins2 + 10 * nbins) % nbins) - nbins2;
             wts[i][j] = Math.exp(-0.5 * Math.pow((2 * remF / tmpB), 2));
         }
     }
-    const sum = xs => xs.reduce((x,y) => x + y, 0)
-    const head = ([x,...xs]) => x
-    const tail = ([x,...xs]) => xs
+    const sum = xs => xs.reduce((x, y) => x + y, 0);
+    const head = ([x, ...xs]) => x;
+    const tail = ([x, ...xs]) => xs;
     const transpose = ([xs, ...xxs]) => {
-    const aux = ([x,...xs]) =>
-        x === undefined
-          ? transpose (xxs)
-          : [ [x, ...xxs.map(head)], ...transpose ([xs, ...xxs.map(tail)])]
-      return xs === undefined ? [] : aux(xs)
-    }    
-    wtsColumnSums = transpose(wts).map(sum)
-    for(var i=0; i<nbins; i++) {
-        for(var j=0; j<N2; j++) {
-            wts[i][j] *= 1/wtsColumnSums[j];
+        const aux = ([x, ...xs]) =>
+            x === undefined ?
+            transpose(xxs) : [[x, ...xxs.map(head)], ...transpose([xs, ...xxs.map(tail)])];
+        return xs === undefined ? [] : aux(xs);
+    };
+    var wtsColumnSums = transpose(wts).map(sum);
+    for (i = 0; i < nbins; i++) {
+        for (j = 0; j < N2; j++) {
+            wts[i][j] *= 1 / wtsColumnSums[j];
         }
-    }     
-    if (octwidth > 0) {        
-      for(var i=0; i<nbins; i++) {
-        for(var j=0; j<N2; j++) {
-                wts[i][j] *= Math.exp(-0.5*(Math.pow ( ((fftfrqbins[j]/nbins - ctroct)/octwidth), 2)))
-            }                
+    }
+    if (octwidth > 0) {
+        for (i = 0; i < nbins; i++) {
+            for (j = 0; j < N2; j++) {
+                wts[i][j] *= Math.exp(-0.5 * (Math.pow(((fftfrqbins[j] / nbins - ctroct) / octwidth), 2)));
+            }
         }
-    }           
-    chromaFilters.wts = wts;    
-    return chromaFilters;    
- }  
+    }
+    chromaFilters.wts = wts;
+    return chromaFilters;
+}
 
 // Window functions
 
@@ -2635,19 +2638,19 @@ function xtract_create_window(N, type) {
 
 function xtract_chroma(spectrum, chromaFilters) {
     if (!xtract_assert_array(spectrum)) {
-        return 0;        
-    }    
+        return 0;
+    }
     if (chromaFilters.wts === undefined) {
         throw ("xtract_chroma requires chroma filters from xtract_init_chroma");
     }
-    if(chromaFilters.nfft !== spectrum.length/2) {
-        throw ("the FFT lengths of the spectrum ("+spectrum.length/2+") and chroma filterbank ("+chromaFilters.nfft+") do not match");
+    if (chromaFilters.nfft !== spectrum.length / 2) {
+        throw ("the FFT lengths of the spectrum (" + spectrum.length / 2 + ") and chroma filterbank (" + chromaFilters.nfft + ") do not match");
     }
     var result = new Float64Array(chromaFilters.nbins);
     for (var i = 0; i < chromaFilters.nbins; i++) {
         var sum = 0;
         for (var j = 0; j < chromaFilters.nfft; j++) {
-            sum += chromaFilters.wts[i][j] * spectrum[j]                        
+            sum += chromaFilters.wts[i][j] * spectrum[j];
         }
         result[i] = sum;
     }
