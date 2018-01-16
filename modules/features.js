@@ -1,4 +1,5 @@
 /*globals Float32Array, Float64Array */
+/*globals TimeData, SpectrumData, PeakSpectrumData, HarmonicSpectrumData */
 TimeData.prototype.features = [
     {
         name: "Minimum",

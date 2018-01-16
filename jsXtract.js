@@ -2677,3 +2677,1896 @@ function xtract_chroma(spectrum, chromaFilters) {
     }
     return result;
 }
+
+/* 
+ * Free FFT and convolution (JavaScript)
+ * 
+ * Copyright (c) 2014 Project Nayuki
+ * https://www.nayuki.io/page/free-small-fft-in-multiple-languages
+ * 
+ * (MIT License)
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * - The above copyright notice and this permission notice shall be included in
+ *   all copies or substantial portions of the Software.
+ * - The Software is provided "as is", without warranty of any kind, express or
+ *   implied, including but not limited to the warranties of merchantability,
+ *   fitness for a particular purpose and noninfringement. In no event shall the
+ *   authors or copyright holders be liable for any claim, damages or other
+ *   liability, whether in an action of contract, tort or otherwise, arising from,
+ *   out of or in connection with the Software or the use or other dealings in the
+ *   Software.
+ */
+
+
+/* 
+ * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
+ * The vector can have any length. This is a wrapper function.
+ */
+function transform(real, imag) {
+    if (real.length !== imag.length)
+        throw "Mismatched lengths";
+
+    var n = real.length;
+    if (n === 0)
+        return;
+    else if ((n & (n - 1)) === 0) // Is power of 2
+        transformRadix2(real, imag);
+    else // More complicated algorithm for arbitrary sizes
+        transformBluestein(real, imag);
+}
+
+
+/* 
+ * Computes the inverse discrete Fourier transform (IDFT) of the given complex vector, storing the result back into the vector.
+ * The vector can have any length. This is a wrapper function. This transform does not perform scaling, so the inverse is not a true inverse.
+ */
+function inverseTransform(real, imag) {
+    transform(imag, real);
+}
+
+
+/* 
+ * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
+ * The vector's length must be a power of 2. Uses the Cooley-Tukey decimation-in-time radix-2 algorithm.
+ */
+
+function transformRadix2(real, imag) {
+    // Initialization
+    if (real.length !== imag.length)
+        throw "Mismatched lengths";
+    var n = real.length;
+    if (n === 1) // Trivial transform
+        return;
+    var levels = calculateNumberLevels(n);
+    if (levels === -1)
+        throw "Length is not a power of 2";
+    var cosTable = new Float64Array(n / 2);
+    var sinTable = new Float64Array(n / 2);
+    calculateCosSineTables(cosTable, sinTable);
+
+    // Bit-reversed addressing permutation
+    bitReverseMap(real, imag);
+
+    // Cooley-Tukey decimation-in-time radix-2 FFT
+    for (var size = 2; size <= n; size *= 2) {
+        cooleyTukey(real, imag, sinTable, cosTable, size);
+    }
+
+    // Returns the integer whose value is the reverse of the lowest 'bits' bits of the integer 'x'.
+    function reverseBits(x, bits) {
+        var y = 0;
+        for (var i = 0; i < bits; i++) {
+            y = (y << 1) | (x & 1);
+            x >>>= 1;
+        }
+        return y;
+    }
+
+    function cooleyTukey(real, imag, sinTable, cosTable, size) {
+        var i, j, k;
+        var n = real.length;
+        var halfsize = size / 2;
+        var tablestep = n / size;
+        for (i = 0; i < n; i += size) {
+            for (j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
+                var tpre = real[j + halfsize] * cosTable[k] + imag[j + halfsize] * sinTable[k];
+                var tpim = -real[j + halfsize] * sinTable[k] + imag[j + halfsize] * cosTable[k];
+                real[j + halfsize] = real[j] - tpre;
+                imag[j + halfsize] = imag[j] - tpim;
+                real[j] += tpre;
+                imag[j] += tpim;
+            }
+        }
+    }
+
+    function calculateNumberLevels(N) {
+        var i;
+        for (i = 0; i < 32; i++) {
+            if (1 << i === N) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function bitReverseMap(real, imag) {
+        var i, j, temp;
+        for (i = 0; i < n; i++) {
+            j = reverseBits(i, levels);
+            if (j > i) {
+                temp = real[i];
+                real[i] = real[j];
+                real[j] = temp;
+                temp = imag[i];
+                imag[i] = imag[j];
+                imag[j] = temp;
+            }
+        }
+    }
+
+    function calculateCosSineTables(cosTable, sinTable) {
+        var n = cosTable.length,
+            i;
+        for (i = 0; i < n; i++) {
+            cosTable[i] = Math.cos(Math.PI * i / n);
+            sinTable[i] = Math.sin(Math.PI * i / n);
+        }
+    }
+}
+
+
+/* 
+ * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
+ * The vector can have any length. This requires the convolution function, which in turn requires the radix-2 FFT function.
+ * Uses Bluestein's chirp z-transform algorithm.
+ */
+function transformBluestein(real, imag) {
+    // Find a power-of-2 convolution length m such that m >= n * 2 + 1
+    if (real.length !== imag.length)
+        throw "Mismatched lengths";
+    var i, j;
+    var n = real.length;
+    var m = 1;
+    while (m < n * 2 + 1)
+        m *= 2;
+
+    // Trignometric tables
+    var cosTable = new Float64Array(n);
+    var sinTable = new Float64Array(n);
+    (function (cosTable, sinTable) {
+        for (i = 0; i < n; i++) {
+            j = i * i % (n * 2); // This is more accurate than j = i * i
+            cosTable[i] = Math.cos(Math.PI * j / n);
+            sinTable[i] = Math.sin(Math.PI * j / n);
+        }
+    })(cosTable, sinTable);
+
+    // Temporary vectors and preprocessing
+    var areal = new Float64Array(m);
+    var aimag = new Float64Array(m);
+
+    for (i = 0; i < n; i++) {
+        areal[i] = real[i] * cosTable[i] + imag[i] * sinTable[i];
+        aimag[i] = -real[i] * sinTable[i] + imag[i] * cosTable[i];
+    }
+    var breal = new Float64Array(m);
+    var bimag = new Float64Array(m);
+    breal[0] = cosTable[0];
+    bimag[0] = sinTable[0];
+    for (i = 1; i < n; i++) {
+        breal[i] = breal[m - i] = cosTable[i];
+        bimag[i] = bimag[m - i] = sinTable[i];
+    }
+
+    // Convolution
+    var creal = new Float64Array(m);
+    var cimag = new Float64Array(m);
+    convolveComplex(areal, aimag, breal, bimag, creal, cimag);
+
+    // Postprocessing
+    for (i = 0; i < n; i++) {
+        real[i] = creal[i] * cosTable[i] + cimag[i] * sinTable[i];
+        imag[i] = -creal[i] * sinTable[i] + cimag[i] * cosTable[i];
+    }
+}
+
+
+/* 
+ * Computes the circular convolution of the given real vectors. Each vector's length must be the same.
+ */
+function convolveReal(x, y, out) {
+    if (x.length !== y.length || x.length !== out.length)
+        throw "Mismatched lengths";
+    var zeros = new Array(x.length);
+    for (var i = 0; i < zeros.length; i++)
+        zeros[i] = 0;
+    convolveComplex(x, zeros, y, zeros.slice(), out, zeros.slice());
+}
+
+
+/* 
+ * Computes the circular convolution of the given complex vectors. Each vector's length must be the same.
+ */
+function convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag) {
+    (function () {
+        if (xreal.length !== ximag.length || xreal.length !== yreal.length || yreal.length !== yimag.length || xreal.length !== outreal.length || outreal.length !== outimag.length)
+            throw "Mismatched lengths";
+    })();
+    var i;
+    var n = xreal.length;
+    xreal = xreal.slice();
+    ximag = ximag.slice();
+    yreal = yreal.slice();
+    yimag = yimag.slice();
+
+    transform(xreal, ximag);
+    transform(yreal, yimag);
+    for (i = 0; i < n; i++) {
+        var temp = xreal[i] * yreal[i] - ximag[i] * yimag[i];
+        ximag[i] = ximag[i] * yreal[i] + xreal[i] * yimag[i];
+        xreal[i] = temp;
+    }
+    inverseTransform(xreal, ximag);
+    for (i = 0; i < n; i++) { // Scaling (because this FFT implementation omits it)
+        outreal[i] = xreal[i] / n;
+        outimag[i] = ximag[i] / n;
+    }
+}
+
+/*globals Float32Array, Float64Array */
+/*globals jsXtract, xtract_array_to_JSON, xtract_init_dct, xtract_init_mfcc, xtract_init_bark */
+
+// Create the Singleton
+var DataProto = function (N, sampleRate) {
+    var _result = {},
+        _data = new Float64Array(N);
+    this.clearResult = function () {
+        _result = {};
+    };
+
+    Object.defineProperties(this, {
+        "result": {
+            'get': function () {
+                return _result;
+            },
+            'set': function () {}
+        },
+        "data": {
+            'value': _data
+        },
+        "getData": {
+            'value': function () {
+                return _data;
+            }
+        }
+    });
+
+    this.zeroDataRange = function (start, end) {
+        if (_data.fill) {
+            _data.fill(0, start, end);
+        } else {
+            for (var n = start; n < end; n++) {
+                _data[n] = 0;
+            }
+        }
+        this.clearResult();
+    };
+
+    this.copyDataFrom = function (src, N, offset) {
+        if (typeof src !== "object" || src.length === undefined) {
+            throw ("copyDataFrom requires src to be an Array or TypedArray");
+        }
+        if (offset === undefined) {
+            offset = 0;
+        }
+        if (N === undefined) {
+            N = Math.min(src.length, _data.length);
+        }
+        N = Math.min(N + offset, _data.length);
+        for (var n = 0; n < N; n++) {
+            _data[n + offset] = src[n];
+        }
+        this.clearResult();
+    };
+
+    this.duplicate = function () {
+        var copy = this.prototype.constructor(N, sampleRate);
+        copy.copyDataFrom(_data);
+    };
+
+    this.toJSON = function () {
+        function lchar(str) {
+            var lastchar = str[str.length - 1];
+            if (lastchar !== '{' && lastchar !== ',') {
+                str = str + ', ';
+            }
+            return str;
+        }
+
+        function getJSONString(p, n) {
+            var str = "";
+            if (typeof p === "number" && isFinite(p)) {
+                str = '"' + n + '": ' + p;
+            } else if (typeof p === "object") {
+                if (p.toJSON) {
+                    str = '"' + n + '": ' + p.toJSON(p);
+                } else if (p.length) {
+                    str = '"' + n + '": ' + xtract_array_to_JSON(p);
+                } else {
+                    str = '"' + n + '": ' + this.toJSON(p);
+                }
+            } else {
+                str = '"' + n + '": "' + p.toString() + '"';
+            }
+            return str;
+        }
+        var json = '{';
+        for (var property in _result) {
+            if (_result.hasOwnProperty(property)) {
+                json = lchar(json);
+                json = json + getJSONString(_result[property], property);
+            }
+        }
+        return json + '}';
+    };
+
+    function recursiveDelta(a, b) {
+        //a and b are objects of Time/Spectrum/PeakS/HarmonicS Data
+        //a and b are the .result object
+        var param, delta = {};
+        for (param in a) {
+            if (b[param]) {
+                if (typeof a[param] === "number") {
+                    delta[param] = a[param] - b[param];
+                } else {
+                    delta[param] = deltaObject(a, b, param);
+                }
+            }
+        }
+        return delta;
+    }
+
+    function deltaObject(a, b, param) {
+        if (a.result && b.result) {
+            return recursiveDelta(a[param].result, b[param].result);
+        } else if (a.length && b.length) {
+            return deltaArray(a[param], b[param]);
+        }
+        return undefined;
+    }
+
+    function deltaArray(a, b) {
+        var d;
+        if (a.length === b.length) {
+            d = new Float64Array(a.length);
+        } else {
+            d = [];
+        }
+        var n = 0;
+        while (n < a.length && n < b.length) {
+            d[n] = a[n] - b[n];
+            n++;
+        }
+        return d;
+    }
+
+    this.computeDelta = function (compare) {
+        this.result.delta = recursiveDelta(this.result, compare.result);
+        return this.result.delta;
+    };
+
+    this.computeDeltaDelta = function (compare) {
+        if (!compare.result.delta || !this.result.delta) {
+            throw ("Cannot compute delta-delta without both objects having deltas");
+        }
+        this.result.delta.delta = recursiveDelta(this.result.delta, compare.result.delta);
+        return this.result.delta.delta;
+    };
+};
+DataProto.prototype.createDctCoefficients = function (N) {
+    return jsXtract.createDctCoefficients(Number(N));
+};
+DataProto.prototype.createMfccCoefficients = function (N, nyquist, style, freq_min, freq_max, freq_bands) {
+    N = Number(N);
+    nyquist = Number(nyquist);
+    freq_min = Number(freq_min);
+    freq_max = Number(freq_max);
+    freq_bands = Number(freq_bands);
+    return jsXtract.createMfccCoefficients(N, nyquist, style, freq_min, freq_max, freq_bands);
+};
+DataProto.prototype.createBarkCoefficients = function (N, sampleRate, numBands) {
+    N = Number(N);
+    sampleRate = Number(sampleRate);
+    numBands = Number(numBands);
+    return jsXtract.createBarkCoefficients(N, sampleRate, numBands);
+};
+DataProto.prototype.createChromaCoefficients = function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
+    N = Number(N);
+    sampleRate = Number(sampleRate);
+    nbins = Number(nbins);
+    A440 = Number(A440);
+    f_ctr = Number(f_ctr);
+    octwidth = Number(octwidth);
+    return jsXtract.createChromaCoefficients(N, sampleRate, nbins, A440, f_ctr, octwidth);
+};
+
+// Prototype for Time Domain based data
+/*globals console, Float32Array, Float64Array */
+var TimeData = function (N, sampleRate, parent) {
+    if (sampleRate <= 0) {
+        sampleRate = undefined;
+        console.log("Invalid parameter for 'sampleRate' for TimeData");
+    }
+
+    var _length, _Fs, _wavelet, _dct;
+
+    if (typeof N === "object") {
+        var src, src_data;
+        if (N.constructor === TimeData) {
+            src = src.getData();
+            _length = src.length;
+            DataProto.call(this, _length);
+            N = _length;
+            this.copyDataFrom(src, N, 0);
+        } else if (N.constructor === Float32Array || N.constructor === Float64Array) {
+            src = N;
+            N = _length = src.length;
+            DataProto.call(this, _length);
+            this.copyDataFrom(src, N, 0);
+        } else {
+            throw ("TimeData: Invalid object passed as first argument.");
+        }
+
+    } else if (typeof N === "number") {
+        if (N <= 0 || N !== Math.floor(N)) {
+            throw ("TimeData: Invalid number passed as first argument.");
+        }
+        _length = N;
+        DataProto.call(this, N, sampleRate);
+    } else {
+        throw ("TimeData: Constructor has invalid operators!");
+    }
+
+    _Fs = sampleRate;
+    _dct = undefined;
+    _wavelet = xtract_init_wavelet();
+
+    this.zeroData = function () {
+        this.zeroDataRange(0, N);
+    };
+
+    Object.defineProperties(this, {
+        "features": {
+            'values': this.constructor.prototype.features
+        },
+        "sampleRate": {
+            'get': function () {
+                return _Fs;
+            },
+            'set': function (sampleRate) {
+                if (_Fs === undefined) {
+                    _Fs = sampleRate;
+                } else {
+                    throw ("Cannot set one-time variable");
+                }
+            }
+        },
+        "length": {
+            'value': _length,
+            'writable': false,
+            'enumerable': true
+        },
+        "getFrames": {
+            'value': function (frameSize, hopSize) {
+                if (typeof frameSize !== "number" || frameSize <= 0 || frameSize !== Math.floor(frameSize)) {
+                    throw ("frameSize must be a defined, positive integer");
+                }
+                if (typeof hopSize !== "number") {
+                    hopSize = frameSize;
+                }
+                var num_frames = Math.ceil(_length / frameSize);
+                var result_frames = [];
+                for (var i = 0; i < num_frames; i++) {
+                    var frame = new TimeData(hopSize, _Fs);
+                    frame.copyDataFrom(this.data.subarray(frameSize * i, frameSize * i + hopSize));
+                    result_frames.push(frame);
+                }
+                return result_frames;
+            }
+        },
+        "minimum": {
+            'value': function () {
+                if (this.result.minimum === undefined) {
+                    this.result.minimum = xtract_array_min(this.data);
+                }
+                return this.result.minimum;
+            }
+        },
+        "maximum": {
+            'value': function () {
+                if (this.result.maximum === undefined) {
+                    this.result.maximum = xtract_array_max(this.data);
+                }
+                return this.result.maximum;
+            }
+        },
+        "sum": {
+            'value': function () {
+                if (this.result.sum === undefined) {
+                    this.result.sum = xtract_array_sum(this.data);
+                }
+                return this.result.sum;
+            }
+        },
+        "mean": {
+            'value': function () {
+                if (this.result.mean === undefined) {
+                    this.result.mean = xtract_mean(this.data);
+                }
+                return this.result.mean;
+            }
+        },
+        "temporal_centroid": {
+            'value': function (window_ms) {
+                if (this.result.temporal_centroid === undefined) {
+                    this.energy(window_ms);
+                    this.result.temporal_centroid = xtract_temporal_centroid(this.result.energy.data, _Fs, window_ms);
+                }
+                return this.result.temporal_centroid;
+            }
+        },
+        "variance": {
+            'value': function () {
+                if (this.result.variance === undefined) {
+                    this.result.variance = xtract_variance(this.data, this.mean());
+                }
+                return this.result.variance;
+            }
+        },
+        "standard_deviation": {
+            'value': function () {
+                if (this.result.standard_deviation === undefined) {
+                    this.result.standard_deviation = xtract_standard_deviation(this.data, this.variance());
+                }
+                return this.result.standard_deviation;
+            }
+        },
+        "average_deviation": {
+            'value': function () {
+                if (this.result.average_deviation === undefined) {
+                    this.result.average_deviation = xtract_average_deviation(this.data, this.mean());
+                }
+                return this.result.average_deviation;
+            }
+        },
+        "skewness": {
+            'value': function () {
+                if (this.result.skewness === undefined) {
+                    this.result.skewness = xtract_skewness(this.data, this.mean(), this.standard_deviation());
+                }
+                return this.result.skewness;
+            }
+        },
+        "kurtosis": {
+            'value': function () {
+                if (this.result.kurtosis === undefined) {
+                    this.result.kurtosis = xtract_kurtosis(this.data, this.mean(), this.standard_deviation());
+                }
+                return this.result.kurtosis;
+            }
+        },
+        "zcr": {
+            'value': function () {
+                if (this.result.zcr === undefined) {
+                    this.result.zcr = xtract_zcr(this.data);
+                }
+                return this.result.zcr;
+            }
+        },
+        "crest_factor": {
+            'value': function () {
+                if (this.result.crest_factor === undefined) {
+                    this.result.crest_factor = xtract_crest(this.data, this.maximum(), this.mean());
+                }
+                return this.result.crest_factor;
+            }
+        },
+        "rms_amplitude": {
+            'value': function () {
+                if (this.result.rms_amplitude === undefined) {
+                    this.result.rms_amplitude = xtract_rms_amplitude(this.data);
+                }
+                return this.result.rms_amplitude;
+            }
+        },
+        "lowest_value": {
+            'value': function (threshold) {
+                if (this.result.lowest_value === undefined) {
+                    this.result.lowest_value = xtract_lowest_value(this.data, threshold);
+                }
+                return this.result.lowest_value;
+            }
+        },
+        "highest_value": {
+            'value': function (threshold) {
+                if (this.result.highest_value === undefined) {
+                    this.result.highest_value = xtract_highest_value(this.data, threshold);
+                }
+                return this.result.highest_value;
+            }
+        },
+        "nonzero_count": {
+            'value': function () {
+                if (this.result.nonzero_count === undefined) {
+                    this.result.nonzero_count = xtract_nonzero_count(this.data);
+                }
+                return this.result.nonzero_count;
+            }
+
+        },
+        "f0": {
+            'value': function () {
+                if (_wavelet === undefined) {
+                    _wavelet = this.init_wavelet();
+                }
+                if (this.result.f0 === undefined) {
+                    this.result.f0 = xtract_wavelet_f0(this.data, _Fs, _wavelet);
+                }
+                return this.result.f0;
+            }
+        },
+        "energy": {
+            'value': function (window_ms) {
+                if (this.result.energy === undefined || this.result.energy.window_ms !== window_ms) {
+                    this.result.energy = {
+                        'data': xtract_energy(this.data, _Fs, window_ms),
+                        'window_ms': window_ms
+                    };
+                }
+                return this.result.energy;
+            }
+        },
+        "spectrum": {
+            'value': function () {
+                if (this.result.spectrum === undefined) {
+                    var _spec = xtract_spectrum(this.data, _Fs, true, false);
+                    this.result.spectrum = new SpectrumData(_spec.length / 2, _Fs);
+                    this.result.spectrum.copyDataFrom(_spec);
+                    return this.result.spectrum;
+                }
+            }
+        },
+        "dct": {
+            'value': function () {
+                if (_dct === undefined) {
+                    _dct = this.createDctCoefficients(_length);
+                }
+                if (this.result.dct === undefined) {
+                    this.result.dct = xtract_dct_2(this.data, _dct);
+                }
+                return this.result.dct;
+            }
+        },
+        "autocorrelation": {
+            'value': function () {
+                if (this.result.autocorrelation === undefined) {
+                    this.result.autocorrelation = xtract_autocorrelation(this.data);
+                }
+                return this.result.autocorrelation;
+            }
+        },
+        "amdf": {
+            'value': function () {
+                if (this.result.amdf === undefined) {
+                    this.result.amdf = xtract_amdf(this.data);
+                }
+                return this.result.amdf;
+            }
+        },
+        "asdf": {
+            'value': function () {
+                if (this.result.asdf === undefined) {
+                    this.result.asdf = xtract_asdf(this.data);
+                }
+                return this.result.asdf;
+            }
+        },
+        "yin": {
+            'value': function () {
+                if (this.result.yin === undefined) {
+                    this.result.yin = xtract_yin(this.data);
+                }
+                return this.result.yin;
+            }
+        },
+        "onset": {
+            'value': function (frameSize) {
+                if (this.result.onset === undefined || this.result.onset.frameSize !== frameSize) {
+                    this.result.onset = {
+                        'data': xtract_onset(this.data, frameSize),
+                        'frameSize': frameSize
+                    };
+                }
+                return this.result.onset;
+            }
+        },
+        "resample": {
+            'value': function (targetSampleRate) {
+                if (_Fs === undefined) {
+                    throw ("Source sampleRate must be defined");
+                }
+                if (typeof targetSampleRate !== "number" || targetSampleRate <= 0) {
+                    throw ("Target sampleRate must be a positive number");
+                }
+                var resampled = xtract_resample(this.data, targetSampleRate, _Fs);
+                var reply = new TimeData(resampled.length, targetSampleRate);
+                reply.copyDataFrom(resampled);
+                this.result.resample = reply;
+                return reply;
+            }
+        }
+    });
+    //TODO:
+    /*
+    Object.defineProperty(this, "pitch", {
+        'value': function () {
+            if (_Fs === undefined) {
+                throw ("Sample rate must be defined");
+            }
+            if (this.result.pitch === undefined) {
+                this.result.pitch = xtract_pitch_FB(this.data, _Fs);
+            }
+            return this.result.pitch;
+        }
+    });
+    */
+};
+TimeData.prototype = Object.create(DataProto.prototype);
+TimeData.prototype.constructor = TimeData;
+
+// Prototpye for the Spectrum data type
+/*globals Float64Array */
+var SpectrumData = function (N, sampleRate, parent) {
+    // N specifies the number of elements to create. Actually creates 2N to hold amplitudes and frequencies.
+    // If sampleRate is null, calculate using radians per second [0, pi/2]
+    if (N === undefined || N <= 0) {
+        throw ("SpectrumData constructor requires N to be a defined, whole number");
+    }
+    if (sampleRate === undefined) {
+        sampleRate = Math.PI;
+    }
+    DataProto.call(this, 2 * N, sampleRate);
+    var _amps = this.data.subarray(0, N);
+    var _freqs = this.data.subarray(N, 2 * N);
+    var _length = N;
+    var _Fs = sampleRate;
+    var _f0;
+    var _mfcc, _bark, _dct, _chroma;
+
+    function computeFrequencies() {
+        for (var i = 0; i < N; i++) {
+            _freqs[i] = (i / N) * (_Fs / 2);
+        }
+    }
+
+    computeFrequencies();
+
+    this.zeroData = function () {
+        this.zeroDataRange(0, N);
+    };
+
+    Object.defineProperties(this, {
+        "features": {
+            'get': function () {
+                return this.constructor.prototype.features;
+            },
+            'set': function () {}
+        },
+        "sampleRate": {
+            'get': function () {
+                return _Fs;
+            },
+            'set': function (sampleRate) {
+                if (_Fs === Math.PI) {
+                    _Fs = sampleRate;
+                    computeFrequencies();
+                    _bark = xtract_init_bark(N, _Fs);
+                } else {
+                    throw ("Cannot set one-time variable");
+                }
+            }
+        },
+        "f0": {
+            'get': function () {
+                return _f0;
+            },
+            'set': function (f0) {
+                if (typeof f0 === "number") {
+                    _f0 = f0;
+                }
+                return _f0;
+            }
+        },
+        "init_mfcc": {
+            "value": function (num_bands, freq_min, freq_max, style) {
+                _mfcc = this.createMfccCoefficients(_length, _Fs * 0.5, style, freq_min, freq_max, num_bands);
+                this.result.mfcc = undefined;
+                return _mfcc;
+            }
+        },
+        "init_bark": {
+            "value": function (numBands) {
+                if (typeof numBands !== "number" || numBands < 0 || numBands > 26) {
+                    numBands = 26;
+                }
+                _bark = this.createBarkCoefficients(_length, _Fs, numBands);
+                return _bark;
+            }
+        },
+        "init_chroma": {
+            "value": function (nbins, A440, f_ctr, octwidth) {
+                if (typeof nbins !== "number" || nbins <= 1) {
+                    nbins = 12;
+                }
+                if (typeof A440 !== "number" || A440 <= 27.5) {
+                       A440 = 440;
+                }    
+                if (typeof f_ctr !== "number") {
+                       f_ctr = 1000;
+                }    
+                if (typeof octwidth !== "number") {
+                       octwidth = 1;
+                }
+                _chroma = this.createChromaCoefficients(_length, _Fs, nbins, A440, f_ctr, octwidth);
+                this.result.chroma = undefined;
+                return _chroma;
+            }
+        },
+        "length": {
+            'value': _length,
+            'writable': false,
+            'enumerable': true
+        },
+        "minimum": {
+            'value': function () {
+                if (this.result.minimum === undefined) {
+                    this.result.minimum = xtract_array_min(_amps);
+                }
+                return this.result.minimum;
+            }
+        },
+        "maximum": {
+            'value': function () {
+                if (this.result.maximum === undefined) {
+                    this.result.maximum = xtract_array_max(_amps);
+                }
+                return this.result.maximum;
+            }
+        },
+        "sum": {
+            'value': function () {
+                if (this.result.sum === undefined) {
+                    this.result.sum = xtract_array_sum(_amps);
+                }
+                return this.result.sum;
+            }
+        },
+        "spectral_centroid": {
+            'value': function () {
+                if (this.result.spectral_centroid === undefined) {
+                    this.result.spectral_centroid = xtract_spectral_centroid(this.data);
+                }
+                return this.result.spectral_centroid;
+            }
+        },
+        "spectral_mean": {
+            'value': function () {
+                if (this.result.spectral_mean === undefined) {
+                    this.result.spectral_mean = xtract_spectral_mean(this.data);
+                }
+                return this.result.spectral_mean;
+            }
+        },
+        "spectral_variance": {
+            'value': function () {
+                if (this.result.spectral_variance === undefined) {
+                    this.result.spectral_variance = xtract_spectral_variance(this.data, this.spectral_centroid());
+                }
+                return this.result.spectral_variance;
+            }
+        },
+        "spectral_spread": {
+            'value': function () {
+                if (this.result.spectral_spread === undefined) {
+                    this.result.spectral_spread = xtract_spectral_spread(this.data, this.spectral_centroid());
+                }
+                return this.result.spectral_spread;
+            }
+        },
+        "spectral_standard_deviation": {
+            'value': function () {
+                if (this.result.spectral_standard_deviation === undefined) {
+                    this.result.spectral_standard_deviation = xtract_spectral_standard_deviation(this.data, this.spectral_variance());
+                }
+                return this.result.spectral_standard_deviation;
+            }
+        },
+        "spectral_skewness": {
+            'value': function () {
+                if (this.result.spectral_skewness === undefined) {
+                    this.result.spectral_skewness = xtract_spectral_skewness(this.data, this.spectral_centroid(), this.spectral_standard_deviation());
+                }
+                return this.result.spectral_skewness;
+            }
+        },
+        "spectral_kurtosis": {
+            'value': function () {
+                if (this.result.spectral_kurtosis === undefined) {
+                    this.result.spectral_kurtosis = xtract_spectral_kurtosis(this.data, this.spectral_centroid(), this.spectral_standard_deviation());
+                }
+                return this.result.spectral_kurtosis;
+            }
+        },
+        "irregularity_k": {
+            'value': function () {
+                if (this.result.irregularity_k === undefined) {
+                    this.result.irregularity_k = xtract_irregularity_k(this.data);
+                }
+                return this.result.irregularity_k;
+            }
+        },
+        "irregularity_j": {
+            'value': function () {
+                if (this.result.irregularity_j === undefined) {
+                    this.result.irregularity_j = xtract_irregularity_j(this.data);
+                }
+                return this.result.irregularity_j;
+            }
+        },
+        "tristimulus_1": {
+            'value': function () {
+                if (_f0 === undefined) {
+                    this.spectral_fundamental();
+                }
+                if (this.result.tristimulus_1 === undefined) {
+                    this.result.tristimulus_1 = xtract_tristimulus_1(this.data, _f0);
+                }
+                return this.result.tristimulus_1;
+            }
+        },
+        "tristimulus_2": {
+            'value': function () {
+                if (_f0 === undefined) {
+                    this.spectral_fundamental();
+                }
+                if (this.result.tristimulus_2 === undefined) {
+                    this.result.tristimulus_2 = xtract_tristimulus_2(this.data, _f0);
+                }
+                return this.result.tristimulus_2;
+            }
+        },
+        "tristimulus_3": {
+            'value': function () {
+                if (_f0 === undefined) {
+                    this.spectral_fundamental();
+                }
+                if (this.result.tristimulus_3 === undefined) {
+                    this.result.tristimulus_3 = xtract_tristimulus_3(this.data, _f0);
+                }
+                return this.result.tristimulus_3;
+            }
+        },
+        "smoothness": {
+            'value': function () {
+                if (this.result.smoothness === undefined) {
+                    this.result.smoothness = xtract_smoothness(this.data);
+                }
+                return this.result.smoothness;
+            }
+        },
+        "rolloff": {
+            'value': function (threshold) {
+                if (this.result.rolloff === undefined) {
+                    this.result.rolloff = xtract_rolloff(this.data, _Fs, threshold);
+                }
+                return this.result.rolloff;
+            }
+        },
+        "loudness": {
+            'value': function () {
+                if (this.result.loudness === undefined) {
+                    this.result.loudness = xtract_loudness(this.bark_coefficients());
+                }
+                return this.result.loudness;
+            }
+        },
+        "sharpness": {
+            'value': function () {
+                if (this.result.sharpness === undefined) {
+                    this.result.sharpness = xtract_sharpness(this.bark_coefficients());
+                }
+                return this.result.sharpness;
+            }
+        },
+        "flatness": {
+            'value': function () {
+                if (this.result.flatness === undefined) {
+                    this.result.flatness = xtract_flatness(this.data);
+                }
+                return this.result.flatness;
+            }
+        },
+        "flatness_db": {
+            'value': function () {
+                if (this.result.flatness_db === undefined) {
+                    this.result.flatness_db = xtract_flatness_db(this.data, this.flatness());
+                }
+                return this.result.flatness_db;
+            }
+        },
+        "tonality": {
+            'value': function () {
+                if (this.result.tonality === undefined) {
+                    this.result.tonality = xtract_tonality(this.data, this.flatness_db());
+                }
+                return this.result.tonality;
+            }
+        },
+        "spectral_crest_factor": {
+            'value': function () {
+                if (this.result.spectral_crest_factor === undefined) {
+                    this.result.spectral_crest_factor = xtract_crest(_amps, this.maximum(), this.spectral_mean());
+                }
+                return this.result.spectral_crest_factor;
+            }
+        },
+        "spectral_slope": {
+            'value': function () {
+                if (this.result.spectral_slope === undefined) {
+                    this.result.spectral_slope = xtract_spectral_slope(this.data);
+                }
+                return this.result.spectral_slope;
+            }
+        },
+        "spectral_fundamental": {
+            'value': function () {
+                if (this.result.spectral_fundamental === undefined) {
+                    this.result.spectral_fundamental = xtract_spectral_fundamental(this.data, _Fs);
+                    this.f0 = this.result.spectral_fundamental;
+                }
+                return this.result.spectral_fundamental;
+            }
+        },
+        "nonzero_count": {
+            'value': function () {
+                if (this.result.nonzero_count === undefined) {
+                    this.result.nonzero_count = xtract_nonzero_count(_amps);
+                }
+                return this.result.nonzero_count;
+            }
+        },
+        "hps": {
+            'value': function () {
+                if (this.result.hps === undefined) {
+                    this.result.hps = xtract_hps(this.data);
+                }
+                return this.result.hps;
+            }
+        },
+        "mfcc": {
+            'value': function (num_bands, freq_min, freq_max) {
+                if (_mfcc === undefined) {
+                    if (freq_min === undefined) {
+                        throw ("Run init_mfcc(num_bands, freq_min, freq_max, style) first");
+                    } else {
+                        _mfcc = this.init_mfcc(num_bands, freq_min, freq_max);
+                    }
+                }
+                if (this.result.mfcc === undefined) {
+                    this.result.mfcc = xtract_mfcc(this.data, _mfcc);
+                }
+                return this.result.mfcc;
+            }
+        },
+        "dct": {
+            'value': function () {
+                if (_dct === undefined) {
+                    _dct = this.createDctCoefficients(_length);
+                }
+                if (this.result.dct === undefined) {
+                    this.result.dct = xtract_dct_2(_amps, _dct);
+                }
+                return this.result.dct;
+            }
+        },
+        "bark_coefficients": {
+            'value': function (num_bands) {
+                if (this.result.bark_coefficients === undefined) {
+                    if (_bark === undefined) {
+                        _bark = this.init_bark(num_bands);
+                    }
+                    this.result.bark_coefficients = xtract_bark_coefficients(this.data, _bark);
+                }
+                return this.result.bark_coefficients;
+            }
+        },
+        "chroma": {
+            'value': function (nbins, A440, f_ctr, octwidth) {
+                if(this.result.chroma === undefined) {
+                    if (_chroma === undefined) {
+                        _chroma = this.init_chroma(nbins, A440, f_ctr, octwidth);
+                    }
+                    this.result.chroma = xtract_chroma(this.data, _chroma);                    
+                }
+                return this.result.chroma;
+            }
+        },        
+        "peak_spectrum": {
+            'value': function (threshold) {
+                if (this.result.peak_spectrum === undefined) {
+                    this.result.peak_spectrum = new PeakSpectrumData(_length, _Fs, this);
+                    var ps = xtract_peak_spectrum(this.data, _Fs / _length, threshold);
+                    this.result.peak_spectrum.copyDataFrom(ps.subarray(0, _length));
+                }
+                return this.result.peak_spectrum;
+            }
+        }
+    });
+
+};
+SpectrumData.prototype = Object.create(DataProto.prototype);
+SpectrumData.prototype.constructor = SpectrumData;
+
+var PeakSpectrumData = function (N, sampleRate, parent) {
+    if (N === undefined || N <= 0) {
+        throw ("SpectrumData constructor requires N to be a defined, whole number");
+    }
+    if (sampleRate === undefined) {
+        sampleRate = Math.PI;
+    }
+    SpectrumData.call(this, N);
+
+    Object.defineProperties(this, {
+        "spectral_inharmonicity": {
+            'value': function () {
+                if (this.result.spectral_inharmonicity === undefined) {
+                    this.result.spectral_inharmonicity = xtract_spectral_inharmonicity(this.data, this.sampleRate);
+                }
+                return this.result.spectral_inharmonicity;
+            }
+        },
+        "harmonic_spectrum": {
+            'value': function (threshold) {
+                if (this.result.harmonic_spectrum === undefined) {
+                    if (this.f0 === undefined) {
+                        this.spectral_fundamental(this.data, this.sampleRate);
+                    }
+                    this.result.harmonic_spectrum = new HarmonicSpectrumData(this.length, this.sampleRate, this);
+                    var hs = xtract_harmonic_spectrum(this.data, this.f0, threshold);
+                    this.result.harmonic_spectrum.copyDataFrom(hs.subarray(0, this.length));
+                }
+                return this.result.harmonic_spectrum;
+            }
+        }
+    });
+};
+PeakSpectrumData.prototype = Object.create(SpectrumData.prototype);
+PeakSpectrumData.prototype.constructor = PeakSpectrumData;
+
+/*globals Float32Array, Float64Array */
+/*globals window, console */
+var HarmonicSpectrumData = function (N, sampleRate, parent) {
+    if (N === undefined || N <= 0) {
+        console.error("SpectrumData constructor requires N to be a defined, whole number");
+        return;
+    }
+    if (sampleRate === undefined) {
+        sampleRate = Math.PI;
+    }
+    PeakSpectrumData.call(this, N);
+
+    Object.defineProperties(this, {
+        "odd_even_ratio": {
+            'value': function () {
+                if (this.result.odd_even_ratio === undefined) {
+                    if (this.f0 === undefined) {
+                        this.spectral_fundamental(this.data, this.sampleRate);
+                    }
+                    this.result.odd_even_ratio = xtract_odd_even_ratio(this.data, this.f0);
+                }
+                return this.result.odd_even_ratio;
+            }
+        },
+        "noisiness": {
+            'value': function () {
+                if (parent.constructor !== PeakSpectrumData) {
+                    this.result.noisiness = null;
+                } else {
+                    this.result.noisiness = xtract_noisiness(this.nonzero_count(), parent.nonzero_count());
+                }
+                return this.result.noisiness;
+            }
+        }
+    });
+};
+HarmonicSpectrumData.prototype = Object.create(PeakSpectrumData.prototype);
+HarmonicSpectrumData.prototype.constructor = HarmonicSpectrumData;
+
+/*globals Float32Array, Float64Array */
+/*globals TimeData, SpectrumData, PeakSpectrumData, HarmonicSpectrumData */
+TimeData.prototype.features = [
+    {
+        name: "Minimum",
+        function: "minimum",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Maximum",
+        function: "maximum",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Sum",
+        function: "sum",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Mean",
+        function: "mean",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Temporal Centroid",
+        function: "temporal_centroid",
+        sub_features: ["energy"],
+        parameters: [{
+            name: "Window Time",
+            unit: "ms",
+            type: "number",
+            minimum: 1,
+            maximum: undefined,
+            default: 100
+        }],
+        returns: "number"
+    }, {
+        name: "Variance",
+        function: "variance",
+        sub_features: ["mean"],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Standard Deviation",
+        function: "standard_deviation",
+        sub_features: ["variance"],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Average Deviation",
+        function: "average_deviation",
+        sub_features: ["mean"],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Skewness",
+        function: "skewness",
+        sub_features: ["mean", "standard_deviation"],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Kurtosis",
+        function: "kurtosis",
+        sub_features: ["mean", "standard_deviation"],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Zero Crossing Rate",
+        function: "zcr",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Crest Factor",
+        function: "crest_factor",
+        sub_features: ["maximum", "mean"],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "RMS Amplitude",
+        function: "rms_amplitude",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Lowest Value",
+        function: "lowest_value",
+        sub_features: [],
+        parameters: [{
+            name: "Threshold",
+            unit: "",
+            type: "number",
+            minimum: undefined,
+            maximum: undefined,
+            default: undefined
+        }],
+        returns: "number"
+    }, {
+        name: "Highest Value",
+        function: "highest_value",
+        sub_features: [],
+        parameters: [{
+            name: "Threshold",
+            unit: "",
+            type: "number",
+            minimum: undefined,
+            maximum: undefined,
+            default: undefined
+        }],
+        returns: "number"
+    }, {
+        name: "Non-Zero Count",
+        function: "nonzero_count",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Fundamental Frequency",
+        function: "f0",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }, {
+        name: "Energy",
+        function: "energy",
+        sub_features: [],
+        parameters: [{
+            name: "Window",
+            unit: "ms",
+            type: "number",
+            minimum: 1,
+            maximum: undefined,
+            default: 100
+        }],
+        returns: "object"
+    }, {
+        name: "Spectrum",
+        function: "spectrum",
+        sub_features: [],
+        parameters: [],
+        returns: "SpectrumData"
+    }, {
+        name: "DCT",
+        function: "dct",
+        sub_features: [],
+        parameters: [],
+        returns: "array"
+    }, {
+        name: "Autocorrelation",
+        function: "autocorrelation",
+        sub_features: [],
+        parameters: [],
+        returns: "array"
+    }, {
+        name: "AMDF",
+        function: "amdf",
+        sub_features: [],
+        parameters: [],
+        returns: "array"
+    }, {
+        name: "ASDF",
+        function: "asdf",
+        sub_features: [],
+        parameters: [],
+        returns: "array"
+    }, {
+        name: "YIN Pitch",
+        function: "yin",
+        sub_features: [],
+        parameters: [],
+        returns: "array"
+    }, {
+        name: "Onset Detection",
+        function: "onset",
+        sub_features: [],
+        parameters: [{
+            name: "Frame Size",
+            unit: "samples",
+            type: "number",
+            minimum: 1,
+            maximum: undefined,
+            default: 1024
+        }],
+        returns: "array"
+    }, {
+        name: "Resample",
+        function: "resample",
+        sub_features: [],
+        parameters: [{
+            name: "Target Sample Rate",
+            unit: "Hz",
+            type: "number",
+            minimum: 0,
+            maximum: undefined,
+            default: 8000
+        }],
+        returns: "TimeData"
+    }];
+
+
+SpectrumData.prototype.features = [
+    {
+        name: "Minimum",
+        function: "minimum",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Maximum",
+        function: "maximum",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Sum",
+        function: "sum",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Centroid",
+        function: "spectral_centroid",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Mean",
+        function: "spectral_mean",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Variance",
+        function: "spectral_variance",
+        sub_features: ["spectral_mean"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Spread",
+        function: "spectral_spread",
+        sub_features: ["spectral_centroid"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Standard Deviation",
+        function: "spectral_standard_deviation",
+        sub_features: ["spectral_variance"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Skewness",
+        function: "spectral_skewness",
+        sub_features: ["spectral_mean", "spectral_standard_deviation"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Kurtosis",
+        function: "spectral_kurtosis",
+        sub_features: ["spectral_mean", "spectral_standard_deviation"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Irregularity K",
+        function: "irregularity_k",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Irregularity J",
+        function: "irregularity_j",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Tristimulus 1",
+        function: "tristimulus_1",
+        sub_features: ["spectral_fundamental"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Tristimulus 2",
+        function: "tristimulus_2",
+        sub_features: ["spectral_fundamental"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Tristimulus 3",
+        function: "tristimulus_3",
+        sub_features: ["spectral_fundamental"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Smoothness",
+        function: "smoothness",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Rolloff",
+        function: "rolloff",
+        sub_features: [],
+        parameters: [{
+            name: "Threshold",
+            unit: "%",
+            type: "number",
+            minimum: 0,
+            maximum: 100,
+            default: 90
+    }],
+        returns: "number"
+}, {
+        name: "Loudness",
+        function: "loudness",
+        sub_features: ["bark_coefficients"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Sharpness",
+        function: "sharpness",
+        sub_features: ["bark_coefficients"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Flatness",
+        function: "flatness",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Flatness DB",
+        function: "flatness_db",
+        sub_features: ["flatness"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Tonality",
+        function: "tonality",
+        sub_features: ["flatness_db"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Crest Factor",
+        function: "spectral_crest_factor",
+        sub_features: ["maximum", "spectral_mean"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Spectral Slope",
+        function: "spectral_slope",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Fundamental Frequency",
+        function: "spectral_fundamental",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Non-Zero count",
+        function: "nonzero_count",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "HPS",
+        function: "hps",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "MFCC",
+        function: "mfcc",
+        sub_features: [],
+        parameters: [{
+            name: "Band Count",
+            unit: "",
+            type: "number",
+            minimum: 0,
+            maximum: undefined,
+            default: 26
+    }, {
+            name: "Minimum Frequency",
+            unit: "Hz",
+            type: "number",
+            minimum: 0,
+            maximum: undefined,
+            default: 400
+    }, {
+            name: "Maximum Frequency",
+            unit: "Hz",
+            minimum: 0,
+            maximum: undefined,
+            default: 20000
+    }],
+        returns: "array"
+}, {
+        name: "Chroma",
+        function: "chroma",
+        sub_features: [],
+        parameters: [{
+            name: "nbins",
+            unit: "",
+            type: "number",
+            minimum: 2,
+            maximum: undefined,
+            default: 12
+    }, {
+            name: "A440",
+            unit: "",
+            type: "number",
+            minimum: 220,
+            maximum: 880,
+            default: 440
+    }, {
+            name: "f_ctr",
+            unit: "",
+            type: "number",
+            minimum: undefined,
+            maximum: undefined,
+            default: 1000
+    }, {
+            name: "octwidth",
+            unit: "",
+            type: "number",
+            minimum: undefined,
+            maximum: undefined,
+            default: 1
+    }],
+        returns: "array"
+}, {
+        name: "DCT",
+        function: "dct",
+        sub_features: [],
+        parameters: [],
+        returns: "array"
+}, {
+        name: "Bark Coefficients",
+        function: "bark_coefficients",
+        sub_features: [],
+        parameters: [{
+            name: "Band Count",
+            unit: "",
+            type: "number",
+            minimum: 0,
+            maximum: 26,
+            default: 26
+    }],
+        returns: "array"
+}, {
+        name: "Peak Spectrum",
+        function: "peak_spectrum",
+        sub_features: [],
+        parameters: [{
+            name: "Threshold",
+            unit: "",
+            type: "number",
+            minimum: 0,
+            maximum: 100,
+            default: 30
+    }],
+        returns: "PeakSpectrumData"
+}];
+
+PeakSpectrumData.prototype.features = SpectrumData.prototype.features.concat([
+    {
+        name: "Spectral Inharmonicity",
+        function: "spectral_inharmonicity",
+        sub_features: ["f0"],
+        parameters: [],
+        returns: "number"
+}, {
+        name: "Harmonic Spectrum",
+        function: "harmonic_spectrum",
+        sub_features: [],
+        parameters: [{
+            name: "Threshold",
+            unit: "",
+            type: "number",
+            minimum: 0,
+            maximum: 100,
+            default: 30
+    }],
+        returns: "HarmonicSpectrumData"
+}]);
+
+HarmonicSpectrumData.prototype.features = PeakSpectrumData.prototype.features.concat([
+    {
+        name: "Odd Even Ration",
+        function: "odd_even_ratio",
+        sub_features: [],
+        parameters: [],
+        returns: "number"
+    }
+]);
+
+/*
+ * Copyright (C) 2016 Nicholas Jillings
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ *
+ */
+
+// This binds the js-xtract with the Web Audio API AudioBuffer and AnalyserNodes
+/*globals AudioBuffer, AnalyserNode, Float32Array, Float64Array */
+/*globals Uint8Array */
+
+if (typeof AnalyserNode !== "undefined") {
+
+    AnalyserNode.prototype.timeData = undefined;
+    AnalyserNode.prototype.spectrumData = undefined;
+    AnalyserNode.prototype.callbackObject = undefined;
+    AnalyserNode.prototype.fooGain = undefined;
+    AnalyserNode.prototype.getXtractData = function () {
+        if (this.timeData === undefined || this.scpectrumData === undefined) {
+            this.timeData = new TimeData(this.fftSize, this.context.sampleRate);
+            this.spectrumData = new SpectrumData(this.frequencyBinCount, this.context.sampleRate);
+        }
+        var dst = new Float32Array(this.fftSize);
+        var i;
+        if (this.getFloatTimeDomainData) {
+            this.getFloatTimeDomainData(dst);
+        } else {
+            var view = new Uint8Array(this.fftSize);
+            this.getByteTimeDomainData(view);
+            for (i = 0; i < this.fftSize; i++) {
+                dst[i] = view[i];
+                dst[i] = (dst[i] / 127.5) - 1;
+            }
+        }
+        this.timeData.copyDataFrom(dst);
+        this.timeData.result.spectrum = this.spectrumData;
+        var LogStore = new Float32Array(this.frequencyBinCount);
+        this.getFloatFrequencyData(LogStore);
+        for (i = 0; i < this.frequencyBinCount; i++) {
+            LogStore[i] = Math.pow(10.0, LogStore[i] / 20);
+        }
+        this.spectrumData.copyDataFrom(LogStore);
+        return this.timeData;
+    };
+    AnalyserNode.prototype.previousFrame = undefined;
+    AnalyserNode.prototype.previousResult = undefined;
+    AnalyserNode.prototype.frameCallback = function (func, arg_this) {
+        // Perform a callback on each frame
+        // The function callback has the arguments (current_frame, previous_frame, previous_result)
+        if (this.callbackObject === undefined) {
+            this.callbackObject = this.context.createScriptProcessor(this.fftSize, 1, 1);
+            this.connect(this.callbackObject);
+        }
+        var _func = func;
+        var _arg_this = arg_this;
+        var self = this;
+        this.callbackObject.onaudioprocess = function (e) {
+            var current_frame = self.getXtractData();
+            this.previousResult = _func.call(_arg_this, current_frame, this.previousFrame, this.previousResult);
+            this.previousFrame = current_frame;
+            var N = e.outputBuffer.length;
+            var output = new Float32Array(N);
+            var result = this.previousResult;
+            if (typeof this.previousResult !== "number") {
+                result = 0.0;
+            }
+            for (var i = 0; i < N; i++) {
+                output[i] = result;
+            }
+            e.outputBuffer.copyToChannel(output, 0, 0);
+        };
+
+        // For chrome and other efficiency browsers
+        if (!this.fooGain) {
+            this.fooGain = this.context.createGain();
+            this.fooGain.gain.value = 0;
+            this.callbackObject.connect(this.fooGain);
+            this.fooGain.connect(this.context.destination);
+        }
+    };
+
+    AnalyserNode.prototype.clearCallback = function () {
+        this.disconnect(this.callbackObject);
+        this.callbackObject.onaudioprocess = undefined;
+    };
+
+    AnalyserNode.prototype.xtractFrame = function (func, arg_this) {
+        // Collect the current frame of data and perform the callback function
+        func.call(arg_this, this.getXtractData());
+    };
+}
+
+if (typeof AudioBuffer !== "undefined") {
+
+    AudioBuffer.prototype.xtract_get_data_frames = function (frame_size, hop_size) {
+        if (hop_size === undefined) {
+            hop_size = frame_size;
+        }
+        (function () {
+            if (!xtract_assert_positive_integer(frame_size)) {
+                throw ("xtract_get_data_frames requires the frame_size to be defined, positive integer");
+            }
+            if (!xtract_assert_positive_integer(hop_size)) {
+                throw ("xtract_get_data_frames requires the hop_size to be a positive integer");
+            }
+        })();
+        this.frames = [];
+        var N = this.length;
+        var K = this.xtract_get_number_of_frames(hop_size);
+        for (var c = 0; c < this.numberOfChannels; c++) {
+            var data = this.getChannelData(c);
+            this.frames[c] = [];
+            for (var k = 0; k < K; k++) {
+                var frame = new TimeData(frame_size, this.sampleRate);
+                frame.copyDataFrom(data.subarray(hop_size * k, hop_size * k + frame_size));
+                this.frames[c].push(frame);
+                frame = undefined;
+            }
+            data = undefined;
+        }
+        return this.frames;
+    };
+
+    AudioBuffer.prototype.xtract_get_number_of_frames = function (hop_size) {
+        return xtract_get_number_of_frames(this, hop_size);
+    };
+
+    AudioBuffer.prototype.xtract_get_frame = function (dst, channel, index, frame_size) {
+        (function () {
+            if (typeof dst !== "object" || dst.constructor !== Float32Array) {
+                throw ("dst must be a Float32Array object equal in length to hop_size");
+            }
+            if (!xtract_assert_positive_integer(channel)) {
+                throw ("xtract_get_frame requires the channel to be an integer value");
+            }
+            if (!xtract_assert_positive_integer(index)) {
+                throw ("xtract_get_frame requires the index to be an integer value");
+            }
+            if (!xtract_assert_positive_integer(frame_size)) {
+                throw ("xtract_get_frame requires the frame_size to be defined, positive integer");
+            }
+        })();
+        if (channel < 0 || channel > this.numberOfChannels) {
+            throw ("channel number " + channel + " out of bounds");
+        }
+        var K = this.xtract_get_number_of_frames(frame_size);
+        if (index < 0 || index >= K) {
+            throw ("index number " + index + " out of bounds");
+        }
+        return this.copyFromChannel(dst, channel, frame_size * index);
+    };
+
+    AudioBuffer.prototype.xtract_process_frame_data = function () {
+        throw ("AudioBuffer::xtract_process_frame_data has been deprecated");
+    };
+}
+

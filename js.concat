@@ -1,5 +1,5 @@
 concatOnSave = true;
-output = jsXtract.min.js;
+output = jsXtract.js;
 minify = false;
 
 -modules/jsXtract.js;

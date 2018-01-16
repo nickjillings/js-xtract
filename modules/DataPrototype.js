@@ -1,5 +1,5 @@
 /*globals Float32Array, Float64Array */
-/*globals xtract_init_dct, xtract_init_mfcc, xtract_init_bark */
+/*globals jsXtract, xtract_array_to_JSON, xtract_init_dct, xtract_init_mfcc, xtract_init_bark */
 
 // Create the Singleton
 var DataProto = function (N, sampleRate) {
@@ -115,7 +115,7 @@ var DataProto = function (N, sampleRate) {
         if (a.result && b.result) {
             return recursiveDelta(a[param].result, b[param].result);
         } else if (a.length && b.length) {
-            return deltaArray(a[param], b[param])
+            return deltaArray(a[param], b[param]);
         }
         return undefined;
     }
