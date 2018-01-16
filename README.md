@@ -1,7 +1,5 @@
 # JS-Xtract
 
-[![Code Climate](https://codeclimate.com/github/nickjillings/js-xtract/badges/gpa.svg)](https://codeclimate.com/github/nickjillings/js-xtract)
-
 Branch | Status 
  --- | --- 
 Master | [![Build Status](https://travis-ci.org/nickjillings/js-xtract.svg?branch=master)](https://travis-ci.org/nickjillings/js-xtract)
