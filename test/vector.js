@@ -457,8 +457,8 @@ describe("Vector", function () {
             assert.equal(0, sandbox.xtract_chroma([]));
             done();
         });
-        var chroma_filters = sandbox.xtract_init_chroma(impulse_spectrum.length / 2, 44100, 12, 4410, 1000, 1);
         it("should return array if array is data", function (done) {
+            var chroma_filters = sandbox.xtract_init_chroma(impulse_spectrum.length / 2, 44100, 12, 440, 1000, 1);
             var ret = sandbox.xtract_chroma(impulse_spectrum, chroma_filters);
             assert.equal("object", typeof ret);
             assert.ok(ret.length);
@@ -466,6 +466,7 @@ describe("Vector", function () {
             done();
         });
         it("should return a result summing to 0.025097024593591352", function (done) {
+            var chroma_filters = sandbox.xtract_init_chroma(impulse_spectrum.length / 2, 44100, 12, 440, 1000, 1);
             var check = 0.025097024593591352;
             var ret = sandbox.xtract_chroma(impulse_spectrum, chroma_filters);
             var sum = ret.reduce(function (a, b) {
