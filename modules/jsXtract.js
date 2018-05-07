@@ -140,6 +140,9 @@ var jsXtract = (function () {
             Module.xtract_array_scale = {};
             Module.xtract_array_scale.fp32 = Module.cwrap("xtract_array_scale_fp32", "number", ["number", "number"]);
             Module.xtract_array_scale.fp64 = Module.cwrap("xtract_array_scale_fp64", "number", ["number", "number"]);
+            Module.xtract_variance = {};
+            Module.xtract_variance.fp32 = Module.cwrap("xtract_variance_fp32", "number", ["array", "number"]);
+            Module.xtract_variance.fp64 = Module.cwrap("xtract_variance_fp64", "number", ["array", "number"]);
         }
         fetch("jsXtract.wasm").then(function(response) {
             return response.arrayBuffer();
@@ -290,6 +293,27 @@ var jsXtract = (function () {
         return a;
     }
     
+    function xtract_variance(array, mean) {
+        if (!xtract_assert_array(array))
+            return 0;
+        if (typeof mean !== "number") {
+            mean = xtract_mean(array);
+        }
+        var result = 0.0;
+        if (array.reduce) {
+            result = array.reduce(function (a, b) {
+                a += Math.pow(b - mean, 2);
+                return a;
+            }, 0);
+        } else {
+            for (var n = 0; n < array.length; n++) {
+                result += Math.pow(array[n] - mean, 2);
+            }
+        }
+        result /= (array.length - 1);
+        return result;
+    }
+    
     Object.defineProperties(functions, {
         "array_sum": {
             "value": function(data) {
@@ -353,6 +377,21 @@ var jsXtract = (function () {
                     }
                 } else {
                     return xtract_array_scale(data, factor);
+                }
+            }
+        },
+        "variance": {
+            "value": function(data, mean) {
+                if (!Module) {
+                    return xtract_variance(data,mean);
+                }
+                switch(data.constructor) {
+                    case Float32Array:
+                        return Module.xtract_variance.fp32(data, mean, data.length);
+                    case Float64Array:
+                        return Module.xtract_variance.fp64(data, mean, data.length);
+                    default:
+                        return xtract_variance(data,mean);
                 }
             }
         }
@@ -657,19 +696,7 @@ function xtract_variance(array, mean) {
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
-    var result = 0.0;
-    if (array.reduce) {
-        result = array.reduce(function (a, b) {
-            a += Math.pow(b - mean, 2);
-            return a;
-        }, 0);
-    } else {
-        for (var n = 0; n < array.length; n++) {
-            result += Math.pow(array[n] - mean, 2);
-        }
-    }
-    result /= (array.length - 1);
-    return result;
+    return jsXtract.functions.variance(array, mean);
 }
 
 function xtract_standard_deviation(array, variance) {

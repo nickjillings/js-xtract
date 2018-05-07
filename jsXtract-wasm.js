@@ -2050,6 +2050,18 @@ var real__xtract_array_sum_fp64 = asm["_xtract_array_sum_fp64"]; asm["_xtract_ar
   return real__xtract_array_sum_fp64.apply(null, arguments);
 };
 
+var real__xtract_variance_fp32 = asm["_xtract_variance_fp32"]; asm["_xtract_variance_fp32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__xtract_variance_fp32.apply(null, arguments);
+};
+
+var real__xtract_variance_fp64 = asm["_xtract_variance_fp64"]; asm["_xtract_variance_fp64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__xtract_variance_fp64.apply(null, arguments);
+};
+
 var real_establishStackSpace = asm["establishStackSpace"]; asm["establishStackSpace"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -2152,6 +2164,14 @@ var _xtract_array_sum_fp64 = Module["_xtract_array_sum_fp64"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["_xtract_array_sum_fp64"].apply(null, arguments) };
+var _xtract_variance_fp32 = Module["_xtract_variance_fp32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_xtract_variance_fp32"].apply(null, arguments) };
+var _xtract_variance_fp64 = Module["_xtract_variance_fp64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_xtract_variance_fp64"].apply(null, arguments) };
 var establishStackSpace = Module["establishStackSpace"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');

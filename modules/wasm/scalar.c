@@ -110,3 +110,37 @@ int xtract_array_scale_fp32(float* data, double factor, int N)
         data[i] *= factor;
     return 0;
 }
+
+// ****************
+//
+// SCALAR FUNCTIONS
+//
+// ****************
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_variance_fp64(double* data, double mean, int N)
+{
+    double variance = 0.0;
+    double x;
+    if (data == 0x0)
+        return 0.0;
+    for (int i=0; i<N; i++) {
+        x = data[i] - mean;
+        variance = variance + x*x;
+    }
+    return variance;
+}
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_variance_fp32(float* data, double mean, int N)
+{
+    double variance = 0.0;
+    double x;
+    if (data == 0x0)
+        return 0.0;
+    for (int i=0; i<N; i++) {
+        x = (double)data[i] - mean;
+        variance = variance + x*x;
+    }
+    return variance;
+}
