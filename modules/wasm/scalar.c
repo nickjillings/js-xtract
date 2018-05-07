@@ -144,3 +144,65 @@ double xtract_variance_fp32(float* data, double mean, int N)
     }
     return variance;
 }
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_average_deviation_fp64(double* data, double mean, int N)
+{
+    double result = 0.0;
+    if (data == 0x0) {
+        return 0.0;
+    }
+    for (int i=0; i<N; i++)
+        result += fabs(data[i] - mean);
+    return result;
+}
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_average_deviation_fp32(float* data, double mean, int N)
+{
+    double result = 0.0;
+    if (data == 0x0) {
+        return 0.0;
+    }
+    for (int i=0; i<N; i++)
+        result += fabs((double)data[i] - mean);
+    return result;
+}
+
+// ****************
+//
+// VECTOR FUNCTIONS
+//
+// ****************
+
+EMSCRIPTEN_KEEPALIVE
+void xtract_autocorrelation_fp64(double* array, double* result, int N)
+{
+    double corr;
+    double recip = 1.0/(double)N;
+    int i, n;
+    for(n=N-1; n>=0; n--)
+    {
+        corr = 0.0;
+        for (i=0; i<N-n; i++) {
+            corr = corr + (array[i] * array[i + n]);
+        }
+        result[n] = corr*recip;
+    }
+}
+
+EMSCRIPTEN_KEEPALIVE
+void xtract_autocorrelation_fp32(float* array, float* result, int N)
+{
+    double corr;
+    double recip = 1.0/(double)N;
+    int i, n;
+    for(n=N-1; n>=0; n--)
+    {
+        corr = 0.0;
+        for (i=0; i<N-n; i++) {
+            corr = corr + (array[i] * array[i + n]);
+        }
+        result[n] = (float)(corr*recip);
+    }
+}

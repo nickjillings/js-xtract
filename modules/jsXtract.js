@@ -143,6 +143,12 @@ var jsXtract = (function () {
             Module.xtract_variance = {};
             Module.xtract_variance.fp32 = Module.cwrap("xtract_variance_fp32", "number", ["array", "number"]);
             Module.xtract_variance.fp64 = Module.cwrap("xtract_variance_fp64", "number", ["array", "number"]);
+            Module.xtract_average_deviation = {};
+            Module.xtract_average_deviation.fp32 = Module.cwrap("xtract_average_deviation_fp32", "number", ["array", "number"]);
+            Module.xtract_average_deviation.fp64 = Module.cwrap("xtract_average_deviation_fp64", "number", ["array", "number"]);
+            Module.xtract_autocorrelation = {};
+            Module.xtract_autocorrelation.fp32 = Module.cwrap("xtract_autocorrelation_fp32", "number", ["number", "number", "number"]);
+            Module.xtract_autocorrelation.fp64 = Module.cwrap("xtract_autocorrelation_fp64", "number", ["number", "number", "number"]);
         }
         fetch("jsXtract.wasm").then(function(response) {
             return response.arrayBuffer();
@@ -194,8 +200,12 @@ var jsXtract = (function () {
         }
     });
     
+    function wasm_memalloc(size) {
+        return Module._malloc(size);
+    }
+    
     function wasm_memcopy_in(typedArray) {
-        var buffer = Module._malloc(typedArray.length * typedArray.BYTES_PER_ELEMENT);
+        var buffer = wasm_memalloc(typedArray.length * typedArray.BYTES_PER_ELEMENT);
         if (typedArray.constructor == Float32Array) {
             Module.HEAPF32.set(typedArray, buffer >> 2);
         } else if (typedArray.constructor == Float64Array) {
@@ -314,6 +324,40 @@ var jsXtract = (function () {
         return result;
     }
     
+    function xtract_average_deviation(array, mean) {
+        if (!xtract_assert_array(array))
+            return 0;
+        if (typeof mean !== "number") {
+            mean = xtract_mean(array);
+        }
+        var result = 0.0;
+        if (array.reduce) {
+            result = array.reduce(function (a, b) {
+                return a + Math.abs(b - mean);
+            }, 0);
+        } else {
+            for (var n = 0; n < array.length; n++) {
+                result += Math.abs(array[n] - mean);
+            }
+        }
+        return result / array.length;
+    }
+    
+    function xtract_autocorrelation(array) {
+        if (!xtract_assert_array(array))
+            return 0;
+        var n = array.length;
+        var result = new Float64Array(n);
+        while (n--) {
+            var corr = 0;
+            for (var i = 0; i < array.length - n; i++) {
+                corr += array[i] * array[i + n];
+            }
+            result[n] = corr / array.length;
+        }
+        return result;
+    }
+    
     Object.defineProperties(functions, {
         "array_sum": {
             "value": function(data) {
@@ -392,6 +436,42 @@ var jsXtract = (function () {
                         return Module.xtract_variance.fp64(data, mean, data.length);
                     default:
                         return xtract_variance(data,mean);
+                }
+            }
+        },
+        "average_deviation": {
+            "value": function(data, mean) {
+                if (!Module) {
+                    return xtract_average_deviation(data, mean);
+                }
+                switch(data.constructor) {
+                    case Float32Array:
+                        return Module.xtract_average_deivation.fp32(data, mean, data.length);
+                    case Float64Array:
+                        return Module.xtraxt_average_deviation.fp64(data, mean, data.length);
+                    default:
+                        return xtract_average_deviation(data, mean);
+                }
+            }
+        },
+        "autocorrelation": {
+            "value": function(array) {
+                if (!Module) {
+                    return xtract_autocorrelation(array);
+                }
+                var newmem = wasm_memalloc(array.length * array.BYTES_PER_ELEMENT);
+                var buffer = wasm_memcopy_in(array);
+                switch(array.constructor) {
+                    case Float32Array:
+                        Module.xtract_autocorrelation.fp32(buffer, newmem, array.length);
+                        Module._free(buffer);
+                        return wasm_memcopy_out_free("fp32", newmem, array.length);
+                    case Float64Array:
+                        Module.xtract_autocorrelation.fp64(buffer, newmem, array.length);
+                        Module._free(buffer);
+                        return wasm_memcopy_out_free("fp64", newmem, array.length);
+                    default:
+                        return xtract_autocorrelation(array);
                 }
             }
         }
@@ -714,17 +794,7 @@ function xtract_average_deviation(array, mean) {
     if (typeof mean !== "number") {
         mean = xtract_mean(array);
     }
-    var result = 0.0;
-    if (array.reduce) {
-        result = array.reduce(function (a, b) {
-            return a + Math.abs(b - mean);
-        }, 0);
-    } else {
-        for (var n = 0; n < array.length; n++) {
-            result += Math.abs(array[n] - mean);
-        }
-    }
-    return result / array.length;
+    return jsXtract.functions.average_deviation(array, mean);
 }
 
 function xtract_skewness_kurtosis(array, mean, standard_deviation) {
@@ -1974,16 +2044,7 @@ function xtract_dct_2(array, dct) {
 function xtract_autocorrelation(array) {
     if (!xtract_assert_array(array))
         return 0;
-    var n = array.length;
-    var result = new Float64Array(n);
-    while (n--) {
-        var corr = 0;
-        for (var i = 0; i < array.length - n; i++) {
-            corr += array[i] * array[i + n];
-        }
-        result[n] = corr / array.length;
-    }
-    return result;
+    return jsXtract.functions.autocorrelation(array);
 }
 
 function xtract_amdf(array) {
