@@ -124,8 +124,37 @@ var jsXtract = (function () {
             return match.data;
         }
     };
+    var Module;
+    if (WebAssembly) {
+        function postRun() {
+            Module = window.Module;
+            Module.xtract_array_sum = {};
+            Module.xtract_array_sum.fp32 = Module.cwrap("xtract_array_sum_fp32", "number", ["array", "number"]);
+            Module.xtract_array_sum.fp64 = Module.cwrap("xtract_array_sum_fp64", "number", ["array", "number"]);
+            Module.xtract_array_max = {};
+            Module.xtract_array_max.fp32 = Module.cwrap("xtract_array_max_fp32", "number", ["array", "number"]);
+            Module.xtract_array_max.fp64 = Module.cwrap("xtract_array_max_fp64", "number", ["array", "number"]);
+            Module.xtract_array_min = {};
+            Module.xtract_array_min.fp32 = Module.cwrap("xtract_array_min_fp32", "number", ["array", "number"]);
+            Module.xtract_array_min.fp64 = Module.cwrap("xtract_array_min_fp64", "number", ["array", "number"]);
+            Module.xtract_array_scale = {};
+            Module.xtract_array_scale.fp32 = Module.cwrap("xtract_array_scale_fp32", "number", ["number", "number"]);
+            Module.xtract_array_scale.fp64 = Module.cwrap("xtract_array_scale_fp64", "number", ["number", "number"]);
+        }
+        fetch("jsXtract.wasm").then(function(response) {
+            return response.arrayBuffer();
+        }).then(function(bytes) {
+            window.Module = {};
+            window.Module['wasmBinary'] = bytes;
+            window.Module['postRun'] = [postRun];
+            var sc = document.createElement("script");
+            sc.setAttribute("src", "jsXtract-wasm.js");
+            document.querySelector("head").appendChild(sc);
+        });
+    }
 
     var pub_obj = {};
+    var functions ={};
     Object.defineProperties(pub_obj, {
         "createDctCoefficients": {
             "value": function (N) {
@@ -149,12 +178,187 @@ var jsXtract = (function () {
             "value": function (N, sampleRate, nbins, A440, f_ctr, octwidth) {
                 return chroma_map.createCoefficients(N, sampleRate, nbins, A440, f_ctr, octwidth);
             }
+        },
+        "wasm": {
+            "get": function() {
+                return Module;
+            }
+        },
+        "functions": {
+            get: function() {
+                return functions;
+            }
         }
     });
+    
+    function wasm_memcopy_in(typedArray) {
+        var buffer = Module._malloc(typedArray.length * typedArray.BYTES_PER_ELEMENT);
+        if (typedArray.constructor == Float32Array) {
+            Module.HEAPF32.set(typedArray, buffer >> 2);
+        } else if (typedArray.constructor == Float64Array) {
+            Module.HEAPF64.set(typedArray, buffer >> 4);
+        }
+        return buffer;
+    }
+    
+    function wasm_memcopy_out(type, buffer, length) {
+        if (type == "fp32")
+            return new Float32Array(Module.HEAPF32.subarray(buffer>>2, (buffer>>2) + length));
+        else if (type == "fp64") {
+            return new Float64Array(Module.HEAPF32.subarray(buffer>>4, (buffer>>4) + length));
+        } else {
+            throw ("Invalid types");
+        }
+    }
+    
+    function wasm_memcopy_out_free(type, buffer, length) {
+        var array = wasm_memcopy_out(type, buffer, length);
+        Module._free(buffer);
+        return array;
+    }
+    
+    function xtract_array_sum(data) {
+        if (!xtract_assert_array(data))
+            return 0;
+        if (data.reduce) {
+            return data.reduce(function (a, b) {
+                return a + b;
+            }, 0);
+        }
+        var sum = 0,
+            l = data.length;
+        for (var n = 0; n < l; n++) {
+            sum += data[n];
+        }
+        return sum;
+    }
+    
+    function xtract_array_max(data) {
+        if (!xtract_assert_array(data))
+            return -Infinity;
+        if (data.reduce) {
+            return data.reduce(function (a, b) {
+                if (b > a) {
+                    return b;
+                }
+                return a;
+            }, data[0]);
+        }
+        var max = data[0],
+            l = data.length;
+        for (var n = 1; n < l; n++) {
+            if (data[n] > max) {
+                max = data[n];
+            }
+        }
+        return max;
+    }
+    
+    function xtract_array_min(data) {
+        if (!xtract_assert_array(data))
+            return Infinity;
+        if (data.reduce) {
+            return data.reduce(function (a, b) {
+                if (b < a) {
+                    return b;
+                }
+                return a;
+            }, data[0]);
+        }
+        var min = Infinity,
+            l = data.length;
+        for (var n = 0; n < l; n++) {
+            if (data[n] < min) {
+                min = data[n];
+            }
+        }
+        return min;
+    }
+    
+    function xtract_array_scale(data, factor) {
+        if (!xtract_assert_array(data))
+            return 0;
+        if (typeof factor !== "number") {
+            return 0;
+        }
+        var i = 0,
+            l = data.length,
+            a = xtract_array_copy(data);
+        for (i = 0; i < l; i++) {
+            a[i] *= factor;
+        }
+        return a;
+    }
+    
+    Object.defineProperties(functions, {
+        "array_sum": {
+            "value": function(data) {
+                if (!Module) {
+                    return xtract_array_sum(data);
+                }
+                switch(data.constructor) {
+                    case Float32Array:
+                        return Module.xtract_array_sum.fp32(new Uint8Array(data.buffer), data.length);
+                    case Float64Array:
+                        return Module.xtract_array_sum.fp64(new Uint8Array(data.buffer), data.length);
+                    default:
+                        return xtract_array_sum(data);
+                }
+            }
+        },
+        "array_max": {
+            "value": function (data) {
+                if (!Module) {
+                    return xtract_array_max(data);
+                }
+                switch(data.constructor) {
+                    case Float32Array:
+                        return Module.xtract_array_max.fp32(new Uint8Array(data.buffer), data.length);
+                    case Float64Array:
+                        return Module.xtract_array_max.fp64(new Uint8Array(data.buffer), data.length);
+                    default:
+                        return xtract_array_max(data);
+                }
+            }
+        },
+        "array_min": {
+            "value": function (data) {
+                if (!Module) {
+                    return xtract_array_min(data);
+                }
+                switch(data.constructor) {
+                    case Float32Array:
+                        return Module.xtract_array_min.fp32(new Uint8Array(data.buffer), data.length);
+                    case Float64Array:
+                        return Module.xtract_array_min.fp64(new Uint8Array(data.buffer), data.length);
+                    default:
+                        return xtract_array_min(data);
+                }
+            }
+        },
+        "array_scale": {
+            "value": function (data, factor) {
+                if (!Module) {
+                    return xtract_array_scale(data, factor);
+                }
+                if (data.constructor == Float32Array || data.constructor == Float64Array) {
+                    var buffer = wasm_memcopy_in(data);
+                    var N = data.length;
+                    if (data.constructor == Float32Array) {
+                        Module.xtract_array_scale.fp32(buffer, factor, N);
+                        return wasm_memcopy_out_free("fp32", buffer, N);
+                    } else {
+                        Module.xtract_array_scale.fp64(buffer, factor, N);
+                        return wasm_memcopy_out_free("fp64", buffer, N);
+                    }
+                } else {
+                    return xtract_array_scale(data, factor);
+                }
+            }
+        }
+    })
     return pub_obj;
 })();
-
-
 
 function xtract_is_denormal(num) {
     if (Math.abs(num) <= 2.2250738585072014e-308) {
@@ -174,17 +378,7 @@ function xtract_assert_positive_integer(number) {
 function xtract_array_sum(data) {
     if (!xtract_assert_array(data))
         return 0;
-    if (data.reduce) {
-        return data.reduce(function (a, b) {
-            return a + b;
-        }, 0);
-    }
-    var sum = 0,
-        l = data.length;
-    for (var n = 0; n < l; n++) {
-        sum += data[n];
-    }
-    return sum;
+    return jsXtract.functions.array_sum(data);
 }
 
 function xtract_array_copy(src) {
@@ -197,58 +391,20 @@ function xtract_array_copy(src) {
 
 function xtract_array_min(data) {
     if (!xtract_assert_array(data))
-        return Infinity;
-    if (data.reduce) {
-        return data.reduce(function (a, b) {
-            if (b < a) {
-                return b;
-            }
-            return a;
-        }, data[0]);
-    }
-    var min = Infinity,
-        l = data.length;
-    for (var n = 0; n < l; n++) {
-        if (data[n] < min) {
-            min = data[n];
-        }
-    }
-    return min;
+        return 0;
+    return jsXtract.functions.array_min(data);
 }
 
 function xtract_array_max(data) {
     if (!xtract_assert_array(data))
-        return -Infinity;
-    if (data.reduce) {
-        return data.reduce(function (a, b) {
-            if (b > a) {
-                return b;
-            }
-            return a;
-        }, data[0]);
-    }
-    var max = data[0],
-        l = data.length;
-    for (var n = 1; n < l; n++) {
-        if (data[n] > max) {
-            max = data[n];
-        }
-    }
-    return max;
+        return 0;
+    return jsXtract.functions.array_max(data);
 }
 
 function xtract_array_scale(data, factor) {
     if (!xtract_assert_array(data))
         return 0;
-    if (typeof factor !== "number") {
-        return 0;
-    }
-    var i = 0,
-        l = data.length;
-    for (i = 0; i < l; i++) {
-        data[i] *= factor;
-    }
-    return data;
+    return jsXtract.functions.array_scale(data, factor);
 }
 
 function xtract_array_normalise(data) {
