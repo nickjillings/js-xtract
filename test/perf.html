@@ -1,0 +1,75 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script type="application/javascript" src="../jsXtract.js"></script>
+    <script>
+        var numElements = 256
+        function setSize(event) {
+            var pow = Number(document.querySelector("#element-count").value);
+            if (!isFinite(pow)) {
+                return;
+            }
+            numElements = Math.pow(2,pow);
+            document.querySelector("#report-elements").textContent = numElements;
+        }
+        function execTests() {
+            return new Promise(function(resolve, reject) {
+                var fp32 = new Float32Array(numElements);
+                var fp64 = new Float64Array(numElements);
+                for (var i=0; i<numElements; i++)
+                {
+                    fp32[i] = fp64[i] = Math.random();
+                }
+                resolve({fp32: fp32, fp64: fp64});
+            }).then(function(data) {
+                var tic, toc;
+                var fp32 = data.fp32,
+                    fp64 = data.fp64;
+                var table = document.querySelector("#results-table");
+                var entry = document.createElement("tr");
+                var title = document.createElement("td");
+                title.textContent = "xtract_array_sum";
+                entry.appendChild(title);
+                var fp32p = document.createElement("td");
+                var fp64p = document.createElement("td");
+                entry.appendChild(fp32p);
+                entry.appendChild(fp64p);
+                
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_sum(fp32);
+                toc = performance.now();
+                fp32p.textContent = ((toc-tic)/1000.0).toFixed(3);
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_sum(fp64);
+                toc = performance.now();
+                fp64p.textContent = ((toc-tic)/1000.0).toFixed(3);
+                
+                table.appendChild(entry);
+            })
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>js-Xtract Performance Test</h1>
+        <p class="lead">Use this page to test the performance of the various js-xtract functions</p>
+        <button class="btn btn-lg btn-success" onclick="execTests();">Run Tests</button>
+        <div>
+            <span>Number of Elements</span>
+            <input id="element-count" type="range" min="8" max="16" step="1" value="8" onmousemove="setSize(event);"/>
+            <span id="report-elements">256</span>
+        </div>
+        <table border="1" id="results-table">
+            <tr><th>Func.</th><th>FP32</th><th>FP64</th></tr>
+        </table>
+    </div>
+</body>
+
+</html>
