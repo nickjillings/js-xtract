@@ -125,7 +125,7 @@ var jsXtract = (function () {
         }
     };
     var Module;
-    if (WebAssembly) {
+    if (window.WebAssembly !== undefined) {
         function postRun() {
             Module = window.Module;
             Module.xtract_array_sum = {};
@@ -150,16 +150,28 @@ var jsXtract = (function () {
             Module.xtract_autocorrelation.fp32 = Module.cwrap("xtract_autocorrelation_fp32", "number", ["number", "number", "number"]);
             Module.xtract_autocorrelation.fp64 = Module.cwrap("xtract_autocorrelation_fp64", "number", ["number", "number", "number"]);
         }
-        fetch("jsXtract.wasm").then(function(response) {
-            return response.arrayBuffer();
-        }).then(function(bytes) {
+        function load(bytes) {
             window.Module = {};
             window.Module['wasmBinary'] = bytes;
             window.Module['postRun'] = [postRun];
             var sc = document.createElement("script");
             sc.setAttribute("src", "jsXtract-wasm.js");
             document.querySelector("head").appendChild(sc);
-        });
+        }
+        if (window.fetch !== undefined) {
+            fetch("jsXtract.wasm").then(function(response) {
+                return response.arrayBuffer();
+            }).then(load);
+	} else {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "jsXtract.wasm");
+            xhr.responseType = "ArrayBuffer";
+            xhr.onload = function(xhr) {
+                var reader = new Reader();
+                reader.onload = load;
+                reader.readAsArrayBuffer(xhr.response);
+            }
+	}
     }
 
     var pub_obj = {};
