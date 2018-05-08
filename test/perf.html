@@ -16,8 +16,27 @@
             numElements = Math.pow(2,pow);
             document.querySelector("#report-elements").textContent = numElements;
         }
+        function makeEntry(name) {
+            var table = document.querySelector("#results-table");
+            var entry = document.createElement("tr");
+            var title = document.createElement("td");
+            title.textContent = name;
+            entry.appendChild(title);
+            var fp32p = document.createElement("td");
+            var fp64p = document.createElement("td");
+            entry.appendChild(fp32p);
+            entry.appendChild(fp64p);
+            table.appendChild(entry);
+            return {fp32: fp32p,fp64: fp64p};
+        }
+        function resetTable() {
+            var table = document.querySelector("#results-table");
+            table.innerHTML = "<tr><th>Func.</th><th>FP32</th><th>FP64</th></tr>";
+            
+        }
         function execTests() {
             return new Promise(function(resolve, reject) {
+                resetTable();
                 var fp32 = new Float32Array(numElements);
                 var fp64 = new Float64Array(numElements);
                 for (var i=0; i<numElements; i++)
@@ -28,29 +47,71 @@
             }).then(function(data) {
                 var tic, toc;
                 var fp32 = data.fp32,
-                    fp64 = data.fp64;
-                var table = document.querySelector("#results-table");
-                var entry = document.createElement("tr");
-                var title = document.createElement("td");
-                title.textContent = "xtract_array_sum";
-                entry.appendChild(title);
-                var fp32p = document.createElement("td");
-                var fp64p = document.createElement("td");
-                entry.appendChild(fp32p);
-                entry.appendChild(fp64p);
+                    fp64 = data.fp64,
+                    entry = makeEntry("xtract_array_sum");
                 
                 tic = performance.now();
                 for (var i=0; i<1000; i++)
                     xtract_array_sum(fp32);
                 toc = performance.now();
-                fp32p.textContent = ((toc-tic)/1000.0).toFixed(3);
+                entry.fp32.textContent = ((toc-tic)/1000.0).toFixed(3);
                 tic = performance.now();
                 for (var i=0; i<1000; i++)
                     xtract_array_sum(fp64);
                 toc = performance.now();
-                fp64p.textContent = ((toc-tic)/1000.0).toFixed(3);
+                entry.fp64.textContent = ((toc-tic)/1000.0).toFixed(3);
+                return data;
+            }).then(function(data) {
+                var tic, toc;
+                var fp32 = data.fp32,
+                    fp64 = data.fp64,
+                    entry = makeEntry("xtract_array_min");
                 
-                table.appendChild(entry);
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_min(fp32);
+                toc = performance.now();
+                entry.fp32.textContent = ((toc-tic)/1000.0).toFixed(3);
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_min(fp64);
+                toc = performance.now();
+                entry.fp64.textContent = ((toc-tic)/1000.0).toFixed(3);
+                return data;
+            }).then(function(data) {
+                var tic, toc;
+                var fp32 = data.fp32,
+                    fp64 = data.fp64,
+                    entry = makeEntry("xtract_array_max");
+                
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_max(fp32);
+                toc = performance.now();
+                entry.fp32.textContent = ((toc-tic)/1000.0).toFixed(3);
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_max(fp64);
+                toc = performance.now();
+                entry.fp64.textContent = ((toc-tic)/1000.0).toFixed(3);
+                return data;
+            }).then(function(data) {
+                var tic, toc;
+                var fp32 = data.fp32,
+                    fp64 = data.fp64,
+                    entry = makeEntry("xtract_array_scale");
+                
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_scale(fp32, 2.0);
+                toc = performance.now();
+                entry.fp32.textContent = ((toc-tic)/1000.0).toFixed(3);
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_array_scale(fp64, 2.0);
+                toc = performance.now();
+                entry.fp64.textContent = ((toc-tic)/1000.0).toFixed(3);
+                return data;
             })
         }
     </script>
