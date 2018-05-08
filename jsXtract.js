@@ -125,7 +125,7 @@ var jsXtract = (function () {
         }
     };
     var Module;
-    if (WebAssembly) {
+    if (window.WebAssembly !== undefined) {
         function postRun() {
             Module = window.Module;
             Module.xtract_array_sum = {};
@@ -150,16 +150,28 @@ var jsXtract = (function () {
             Module.xtract_autocorrelation.fp32 = Module.cwrap("xtract_autocorrelation_fp32", "number", ["number", "number", "number"]);
             Module.xtract_autocorrelation.fp64 = Module.cwrap("xtract_autocorrelation_fp64", "number", ["number", "number", "number"]);
         }
-        fetch("jsXtract.wasm").then(function(response) {
-            return response.arrayBuffer();
-        }).then(function(bytes) {
+        function load(bytes) {
             window.Module = {};
             window.Module['wasmBinary'] = bytes;
             window.Module['postRun'] = [postRun];
             var sc = document.createElement("script");
             sc.setAttribute("src", "jsXtract-wasm.js");
             document.querySelector("head").appendChild(sc);
-        });
+        }
+        if (window.fetch !== undefined) {
+            fetch("jsXtract.wasm").then(function(response) {
+                return response.arrayBuffer();
+            }).then(load);
+	} else {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "jsXtract.wasm");
+            xhr.responseType = "ArrayBuffer";
+            xhr.onload = function(xhr) {
+                var reader = new Reader();
+                reader.onload = load;
+                reader.readAsArrayBuffer(xhr.response);
+            }
+	}
     }
 
     var pub_obj = {};
@@ -2921,7 +2933,6 @@ function xtract_chroma(spectrum, chromaFilters) {
     }
     return result;
 }
-
 /* 
  * Free FFT and convolution (JavaScript)
  * 
@@ -3161,7 +3172,6 @@ function convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag) {
         outimag[i] = ximag[i] / n;
     }
 }
-
 /*globals Float32Array, Float64Array */
 /*globals jsXtract, xtract_array_to_JSON, xtract_init_dct, xtract_init_mfcc, xtract_init_bark */
 
@@ -3338,7 +3348,6 @@ DataProto.prototype.createChromaCoefficients = function (N, sampleRate, nbins, A
     octwidth = Number(octwidth);
     return jsXtract.createChromaCoefficients(N, sampleRate, nbins, A440, f_ctr, octwidth);
 };
-
 // Prototype for Time Domain based data
 /*globals console, Float32Array, Float64Array */
 var TimeData = function (N, sampleRate, parent) {
@@ -3672,7 +3681,6 @@ var TimeData = function (N, sampleRate, parent) {
 };
 TimeData.prototype = Object.create(DataProto.prototype);
 TimeData.prototype.constructor = TimeData;
-
 // Prototpye for the Spectrum data type
 /*globals Float64Array */
 var SpectrumData = function (N, sampleRate, parent) {
@@ -4065,7 +4073,6 @@ var SpectrumData = function (N, sampleRate, parent) {
 };
 SpectrumData.prototype = Object.create(DataProto.prototype);
 SpectrumData.prototype.constructor = SpectrumData;
-
 var PeakSpectrumData = function (N, sampleRate, parent) {
     if (N === undefined || N <= 0) {
         throw ("SpectrumData constructor requires N to be a defined, whole number");
@@ -4101,7 +4108,6 @@ var PeakSpectrumData = function (N, sampleRate, parent) {
 };
 PeakSpectrumData.prototype = Object.create(SpectrumData.prototype);
 PeakSpectrumData.prototype.constructor = PeakSpectrumData;
-
 /*globals Float32Array, Float64Array */
 /*globals window, console */
 var HarmonicSpectrumData = function (N, sampleRate, parent) {
@@ -4140,7 +4146,6 @@ var HarmonicSpectrumData = function (N, sampleRate, parent) {
 };
 HarmonicSpectrumData.prototype = Object.create(PeakSpectrumData.prototype);
 HarmonicSpectrumData.prototype.constructor = HarmonicSpectrumData;
-
 /*globals Float32Array, Float64Array */
 /*globals TimeData, SpectrumData, PeakSpectrumData, HarmonicSpectrumData */
 TimeData.prototype.features = [
@@ -4640,7 +4645,6 @@ HarmonicSpectrumData.prototype.features = PeakSpectrumData.prototype.features.co
         returns: "number"
     }
 ]);
-
 /*
  * Copyright (C) 2016 Nicholas Jillings
  *
@@ -4813,4 +4817,3 @@ if (typeof AudioBuffer !== "undefined") {
         throw ("AudioBuffer::xtract_process_frame_data has been deprecated");
     };
 }
-
