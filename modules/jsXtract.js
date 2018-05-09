@@ -162,7 +162,7 @@ var jsXtract = (function () {
             fetch("jsXtract.wasm").then(function(response) {
                 return response.arrayBuffer();
             }).then(load);
-	} else {
+	   } else {
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "jsXtract.wasm");
             xhr.responseType = "ArrayBuffer";
@@ -171,7 +171,7 @@ var jsXtract = (function () {
                 reader.onload = load;
                 reader.readAsArrayBuffer(xhr.response);
             }
-	}
+	   }
     }
 
     var pub_obj = {};
