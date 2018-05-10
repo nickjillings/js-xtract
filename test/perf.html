@@ -37,8 +37,8 @@
         function execTests() {
             return new Promise(function(resolve, reject) {
                 resetTable();
-                var fp32 = new Float32Array(numElements);
-                var fp64 = new Float64Array(numElements);
+                var fp32 = jsXtract.memory.allocateFP32Array(numElements);
+                var fp64 = jsXtract.memory.allocateFP64Array(numElements);
                 for (var i=0; i<numElements; i++)
                 {
                     fp32[i] = fp64[i] = Math.random();
@@ -112,7 +112,10 @@
                 toc = performance.now();
                 entry.fp64.textContent = ((toc-tic)/1000.0).toFixed(3);
                 return data;
-            })
+            }).then(function(data){
+                jsXtract.memory.free(data.fp32);
+                jsXtract.memory.free(data.fp64);
+            });
         }
     </script>
 </head>

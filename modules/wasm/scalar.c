@@ -53,8 +53,13 @@ double xtract_array_max_fp64(double* data, int N) {
     if (data == 0x0) {
         return 0.0;
     }
-    for (int i=0; i<N; i++)
-        maxvar = fmax(data[i], maxvar);
+    maxvar = data[0];
+    for (int i=1; i<N; i++)
+    {
+        if (data[i] > maxvar) {
+            maxvar = data[i];
+        }
+    }
     return maxvar;
 }
 
@@ -64,8 +69,13 @@ double xtract_array_max_fp32(float* data, int N) {
     if (data == 0x0) {
         return 0.0;
     }
-    for (int i=0; i<N; i++)
-        maxvar = fmax((double)data[i], maxvar);
+    maxvar = data[0];
+    for (int i=1; i<N; i++)
+    {
+        if (data[i] > maxvar) {
+            maxvar = data[i];
+        }
+    }
     return maxvar;
 }
 
@@ -75,8 +85,13 @@ double xtract_array_min_fp64(double* data, int N) {
     if (data == 0x0) {
         return 0.0;
     }
-    for (int i=0; i<N; i++)
-        minvar = fmin(data[i], minvar);
+    minvar = data[0];
+    for (int i=1; i<N; i++)
+    {
+        if (data[i] < minvar) {
+            minvar = data[i];
+        }
+    }
     return minvar;
 }
 
@@ -86,8 +101,13 @@ double xtract_array_min_fp32(float* data, int N) {
     if (data == 0x0) {
         return 0.0;
     }
-    for (int i=0; i<N; i++)
-        minvar = fmin((double)data[i], minvar);
+    minvar = data[0];
+    for (int i=1; i<N; i++)
+    {
+        if (data[i] < minvar) {
+            minvar = data[i];
+        }
+    }
     return minvar;
 }
 
