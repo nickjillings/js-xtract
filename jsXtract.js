@@ -338,6 +338,15 @@ var jsXtract = (function () {
                 "value": function (array) {
                     free(array);
                 }
+            },
+            "copy": {
+                "value": function (src, dst) {
+                    var i;
+                    for (i=0; i<src.length; i++)
+                        dst[i] = src[i];
+                    for (i=src.length; i<dst.length; i++)
+                        dst[i] = 0.0;
+                }
             }
         });
         return memoryController;
@@ -608,8 +617,10 @@ var jsXtract = (function () {
                         return Module.xtract_array_scale.fp32(ptr, factor, N);
                     } else {
                         var mem = memory.allocateFP32Array(data.length);
+                        memory.copy(data,mem);
                         ptr = memory.getPinnedAddress(mem);
                         var result = Module.xtract_array_scale.fp32(ptr, factor, N);
+                        memory.copy(mem,data);
                         memory.free(mem);
                         return result;
                     }
@@ -620,8 +631,10 @@ var jsXtract = (function () {
                         return Module.xtract_array_scale.fp32(ptr, factor, N);
                     } else {
                         var mem = memory.allocateFP64Array(data.length);
+                        memory.copy(data,mem);
                         ptr = memory.getPinnedAddress(mem);
                         var result = Module.xtract_array_scale.fp64(ptr, factor, N);
+                        memory.copy(mem,data);
                         memory.free(mem);
                         return result;
                     }
@@ -686,39 +699,43 @@ var jsXtract = (function () {
             }
         },
         "autocorrelation": {
-            "value": function(array) {
+            "value": function(data) {
                 var N = data.length, ptr, copymem;
                 if (!Module) {
-                    return xtract_autocorrelation(data, factor);
+                    return xtract_autocorrelation(data);
                 }
                 if (data.constructor == Float32Array) {
                     copymem = memory.allocateFP32Array(data.length);
                     if (memory.isPinned(data)) {
                         ptr = memory.getPinnedAddress(data);
-                        return Module.xtract_autocorrelation.fp32(ptr, copymem, N);
+                        Module.xtract_autocorrelation.fp32(ptr, memory.getPinnedAddress(copymem), N);
+                        return copymem;
                     } else {
                         var mem = memory.allocateFP32Array(data.length);
+                        memory.copy(data, mem);
                         ptr = memory.getPinnedAddress(mem);
-                        var result = Module.xtract_autocorrelation.fp32(ptr, copymem, N);
+                        Module.xtract_autocorrelation.fp32(ptr, memory.getPinnedAddress(copymem), N);
                         memory.free(mem);
-                        return result;
+                        return copymem;
                     }
                 }
                 else if (data.constructor == Float64Array) {
                     copymem = memory.allocateFP64Array(data.length);
                     if (memory.isPinned(data)) {
                         ptr = memory.getPinnedAddress(data);
-                        return Module.xtract_autocorrelation.fp32(ptr, copymem, N);
+                        Module.xtract_autocorrelation.fp64(ptr, memory.getPinnedAddress(copymem), N);
+                        return copymem;
                     } else {
                         var mem = memory.allocateFP64Array(data.length);
+                        memory.copy(data, mem);
                         ptr = memory.getPinnedAddress(mem);
-                        var result = Module.xtract_autocorrelation.fp64(ptr, copymem, N);
+                        Module.xtract_autocorrelation.fp64(ptr, memory.getPinnedAddress(copymem), N);
                         memory.free(mem);
-                        return result;
+                        return copymem;
                     }
                 }
                 else {
-                    return xtract_autocorrelation(data, factor);
+                    return xtract_autocorrelation(data);
                 }
             }
         }

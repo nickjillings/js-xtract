@@ -196,12 +196,19 @@ double xtract_average_deviation_fp32(float* data, double mean, int N)
 // ****************
 
 EMSCRIPTEN_KEEPALIVE
-void xtract_autocorrelation_fp64(double* array, double* result, int N)
+int xtract_autocorrelation_fp64(double* array, double* result, int N)
 {
-    double corr;
-    double recip = 1.0/(double)N;
-    int i, n;
-    for(n=N-1; n>=0; n--)
+    double corr, recip;
+    int n, i;
+    
+    if (array == 0x0 || result == 0x0)
+        return 1;
+    if (N <= 0)
+        return 2;
+    
+    recip = 1.0/(double)N;
+    n = N;
+    while(n--)
     {
         corr = 0.0;
         for (i=0; i<N-n; i++) {
@@ -209,15 +216,23 @@ void xtract_autocorrelation_fp64(double* array, double* result, int N)
         }
         result[n] = corr*recip;
     }
+    return 0;
 }
 
 EMSCRIPTEN_KEEPALIVE
-void xtract_autocorrelation_fp32(float* array, float* result, int N)
+int xtract_autocorrelation_fp32(float* array, float* result, int N)
 {
-    double corr;
-    double recip = 1.0/(double)N;
-    int i, n;
-    for(n=N-1; n>=0; n--)
+    double corr, recip;
+    int n, i;
+    
+    if (array == 0x0 || result == 0x0)
+        return 1;
+    if (N <= 0)
+        return 2;
+    
+    recip = 1.0/(double)N;
+    n = N;
+    while(n--)
     {
         corr = 0.0;
         for (i=0; i<N-n; i++) {
@@ -225,4 +240,5 @@ void xtract_autocorrelation_fp32(float* array, float* result, int N)
         }
         result[n] = (float)(corr*recip);
     }
+    return 0;
 }
