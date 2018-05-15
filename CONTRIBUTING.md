@@ -58,3 +58,36 @@ Closing the issue will occur when one of the following is met:
 - Issue has the tag 'Resolved' and is in the master branch
 - Issue is rejected and no counter given as to why it should be reconsidered.
 - Issue it 'No Issue' and no-one elects a suitable reason as to why the original reason is incorrect
+
+## Requesting Features
+
+Generally, this is not a space to request a feature or an extractor directly.
+It is not entirely fair to expect a developer to devote free-time to develop one new extractor.
+So instead, give it a go yourself and submit a pull request with your new feature included.
+However, to ensure no-one else is also working on the implementation, and to at least alert others to what you are doing, please open an issue stating as such.
+Usually this done by explicitly stating you are working on feature 'x' with an outline of how it works, papers to refer to with the feature etc.
+
+## Pull Requests
+
+This work definitely supports and actively encourages you to submit a pull request.
+But to ensure a seamless, turbulence free environment, please use the following check list.
+
+### 1. Don't edit jsXtract.js directly
+
+The `jsXtract.js` file is made by concatenating the files inside `/modules/` rather than editing itself. If you implement into jsXtract.js, your changes will not be preserved!
+
+### 2. Edit the correct file in `/modules`
+
+If you are building a low-level feature, it can be introduced into `/modules/jsXtract.js` for implementation. Then make sure you also extend the relevant modules ('TimeData' or 'SpectrumData' etc.).
+
+### 3. Add a test!
+
+Add a new test to the `/test/` folder (either vector, scalar or arrays depending on the feature return type) to preserve your feature.
+That way, should anyone else harm your wonderfully crafted code, they'll get an error and have to fix their mistakes.
+
+### 4. Detail your pull request
+
+Include as much detail as would be required for others to use your code.
+Give credit where due to the feature creator.
+Ideally, write a short paragraph which can be put straight into the documentation.
+
