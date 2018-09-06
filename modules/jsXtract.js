@@ -156,6 +156,21 @@ var jsXtract = (function () {
             Module.xtract_average_deviation.fp64 = Module.cwrap("xtract_average_deviation_fp64", "number", ["array", "number"]);
             Module.xtract_average_deviation.fp32_pinned = Module.cwrap("xtract_average_deviation_fp32", "number", ["number", "number"]);
             Module.xtract_average_deviation.fp64_pinned = Module.cwrap("xtract_average_deviation_fp64", "number", ["number", "number"]);
+            Module.xtract_spectral_centroid = {};
+            Module.xtract_spectral_centroid.fp32 = Module.cwrap("xtract_spectral_centroid_fp32", "number", ["array", "number"]);
+            Module.xtract_spectral_centroid.fp64 = Module.cwrap("xtract_spectral_centroid_fp64", "number", ["array", "number"]);
+            Module.xtract_spectral_centroid.fp32_pinned = Module.cwrap("xtract_spectral_centroid_fp32", "number", ["number", "number"]);
+            Module.xtract_spectral_centroid.fp64_pinned = Module.cwrap("xtract_spectral_centroid_fp64", "number", ["number", "number"]);
+            Module.xtract_spectral_variance = {};
+            Module.xtract_spectral_variance.fp32 = Module.cwrap("xtract_spectral_variance_fp32", "number", ["array", "number", "number"]);
+            Module.xtract_spectral_variance.fp64 = Module.cwrap("xtract_spectral_variance_fp64", "number", ["array", "number", "number"]);
+            Module.xtract_spectral_variance.fp32_pinned = Module.cwrap("xtract_spectral_variance_fp32", "number", ["number", "number", "number"]);
+            Module.xtract_spectral_variance.fp64_pinned = Module.cwrap("xtract_spectral_variance_fp64", "number", ["number", "number", "number"]);
+            Module.xtract_rms_amplitude = {};
+            Module.xtract_rms_amplitude.fp32 = Module.cwrap("xtract_rms_amplitude_fp32", "number", ["array", "number"]);
+            Module.xtract_rms_amplitude.fp64 = Module.cwrap("xtract_rms_amplitude_fp64", "number", ["array", "number"]);
+            Module.xtract_rms_amplitude.fp32_pinned = Module.cwrap("xtract_rms_amplitude_fp32", "number", ["number", "number"]);
+            Module.xtract_rms_amplitude.fp64_pinned = Module.cwrap("xtract_rms_amplitude_fp64", "number", ["number", "number"]);
             Module.xtract_autocorrelation = {};
             Module.xtract_autocorrelation.fp32 = Module.cwrap("xtract_autocorrelation_fp32", "number", ["number", "number", "number"]);
             Module.xtract_autocorrelation.fp64 = Module.cwrap("xtract_autocorrelation_fp64", "number", ["number", "number", "number"]);
@@ -169,12 +184,12 @@ var jsXtract = (function () {
             document.querySelector("head").appendChild(sc);
         }
         if (window.fetch !== undefined) {
-            fetch("jsXtract.wasm").then(function(response) {
+            fetch("jsXtract-wasm.wasm").then(function(response) {
                 return response.arrayBuffer();
             }).then(load);
 	   } else {
             var xhr = new XMLHttpRequest();
-            xhr.open("GET", "jsXtract.wasm");
+            xhr.open("GET", "jsXtract-wasm.wasm");
             xhr.responseType = "ArrayBuffer";
             xhr.onload = function(xhr) {
                 var reader = new Reader();
@@ -183,7 +198,7 @@ var jsXtract = (function () {
             }
 	   }
     }
-    
+
     var memory = (function() {
         function malloc(size) {
             if (typeof size !== "number" || size <= 0 || size != Math.floor(size)) {
@@ -194,7 +209,7 @@ var jsXtract = (function () {
             }
             return 0;
         }
-        
+
         function createFP32Array(ptr, number) {
             var elem = ptr >> 2,
                 array;
@@ -206,7 +221,7 @@ var jsXtract = (function () {
             }
             return array;
         }
-        
+
         function createFP64Array(ptr, number) {
             var elem = ptr >> 4,
                 array;
@@ -218,7 +233,7 @@ var jsXtract = (function () {
             }
             return array;
         }
-        
+
         function isMemoryPinned(array) {
             var heap;
             if (Module === undefined) {
@@ -233,7 +248,7 @@ var jsXtract = (function () {
             }
             return heap.buffer == array.buffer;
         }
-        
+
         function findPinnedObjectIndex(array) {
             var heap;
             if (array.constructor == Float32Array) {
@@ -248,7 +263,7 @@ var jsXtract = (function () {
             });
             return index;
         }
-        
+
         function getPinnedObject(array) {
             var i = findPinnedObjectIndex(array);
             if (i >= 0) {
@@ -256,7 +271,7 @@ var jsXtract = (function () {
             }
             return false;
         }
-        
+
         function free(array) {
             var heap, index, memblock;
             if (isMemoryPinned(array) === false) {
@@ -273,7 +288,7 @@ var jsXtract = (function () {
             Module._free(memblock.ptr);
             allocations.splice(index, 1);
         }
-        
+
         var allocations = [];
         var MemoryObject = function(array, ptr, number, heap) {
             Object.defineProperties(this, {
@@ -291,7 +306,7 @@ var jsXtract = (function () {
                 }
             });
         }
-        
+
         var memoryController = {};
         Object.defineProperties(memoryController, {
             "allocateFP32Array": {
@@ -300,7 +315,7 @@ var jsXtract = (function () {
                     if (typeof numElements != "number" || numElements <= 0 || numElements != Math.floor(numElements)) {
                         throw("Elemnt count must be positive integer");
                     }
-                    
+
                     ptr = malloc(numElements*4);
                     return createFP32Array(ptr, numElements);
                 }
@@ -311,7 +326,7 @@ var jsXtract = (function () {
                     if (typeof numElements != "number" || numElements <= 0 || numElements != Math.floor(numElements)) {
                         throw("Elemnt count must be positive integer");
                     }
-                    
+
                     ptr = malloc(numElements*8);
                     return createFP64Array(ptr, numElements);
                 }
@@ -394,7 +409,7 @@ var jsXtract = (function () {
             }
         }
     });
-    
+
     function xtract_array_sum(data) {
         if (!xtract_assert_array(data))
             return 0;
@@ -410,7 +425,7 @@ var jsXtract = (function () {
         }
         return sum;
     }
-    
+
     function xtract_array_max(data) {
         if (!xtract_assert_array(data))
             return -Infinity;
@@ -431,7 +446,7 @@ var jsXtract = (function () {
         }
         return max;
     }
-    
+
     function xtract_array_min(data) {
         if (!xtract_assert_array(data))
             return Infinity;
@@ -452,7 +467,7 @@ var jsXtract = (function () {
         }
         return min;
     }
-    
+
     function xtract_array_scale(data, factor) {
         if (!xtract_assert_array(data))
             return 0;
@@ -467,7 +482,7 @@ var jsXtract = (function () {
         }
         return a;
     }
-    
+
     function xtract_variance(array, mean) {
         if (!xtract_assert_array(array))
             return 0;
@@ -488,7 +503,7 @@ var jsXtract = (function () {
         result /= (array.length - 1);
         return result;
     }
-    
+
     function xtract_average_deviation(array, mean) {
         if (!xtract_assert_array(array))
             return 0;
@@ -508,6 +523,43 @@ var jsXtract = (function () {
         return result / array.length;
     }
     
+    function xtract_spectral_centroid(spectrum) {
+        if (!xtract_assert_array(spectrum))
+            return 0;
+        var N = spectrum.length;
+        var n = N >> 1;
+        var amps = spectrum.subarray(0, n);
+        var freqs = spectrum.subarray(n);
+        var A_d = xtract_array_sum(amps);
+        if (A_d === 0.0) {
+            return 0.0;
+        }
+        var sum = 0.0;
+        while (n--) {
+            sum += freqs[n] * (amps[n] / A_d);
+        }
+        return sum;
+    }
+    
+    function xtract_spectral_variance(spectrum, spectral_centroid) {
+        if (!xtract_assert_array(spectrum))
+            return 0;
+        if (typeof spectral_centroid !== "number") {
+            spectral_centroid = xtract_spectral_centroid(spectrum);
+        }
+        var A = 0,
+            result = 0;
+        var N = spectrum.length;
+        var n = N >> 1;
+        var amps = spectrum.subarray(0, n);
+        var freqs = spectrum.subarray(n, N);
+        var A_d = xtract_array_sum(amps);
+        while (n--) {
+            result += Math.pow(freqs[n] - spectral_centroid, 2) * (amps[n] / A_d);
+        }
+        return result;
+    }
+
     function xtract_autocorrelation(array) {
         if (!xtract_assert_array(array))
             return 0;
@@ -523,6 +575,22 @@ var jsXtract = (function () {
         return result;
     }
     
+    function xtract_rms_amplitude(timeArray) {
+        if (!xtract_assert_array(timeArray))
+            return 0;
+        var result = 0;
+        if (timeArray.reduce) {
+            result = timeArray.reduce(function (a, b) {
+                return a + b * b;
+            }, 0);
+        } else {
+            for (var n = 0; n < timeArray.length; n++) {
+                result += timeArray[n] * timeArray[n];
+            }
+        }
+        return Math.sqrt(result / timeArray.length);
+    }
+
     Object.defineProperties(functions, {
         "array_sum": {
             "value": function(data) {
@@ -695,6 +763,81 @@ var jsXtract = (function () {
                 }
                 else {
                     return xtract_average_deviation(data);
+                }
+            }
+        },
+        "spectral_centroid": {
+            "value": function (data) {
+                var N = data.length, ptr;
+                if (!Module) {
+                    return xtract_spectral_centroid(data);
+                }
+                if (data.constructor == Float32Array) {
+                    if (memory.isPinned(data)) {
+                        ptr = memory.getPinnedAddress(data);
+                        return Module.xtract_spectral_centroid.fp32_pinned(ptr, N);
+                    } else {
+                        return Module.xtract_spectral_centroid.fp32(new Uint8Array(data.buffer), N);
+                    }
+                } else if (data.constructor == Float64Array) {
+                    if (memory.isPinned(data)) {
+                        ptr = memory.getPinnedAddress(data);
+                        return Module.xtract_spectral_centroid.fp64_pinned(ptr, N);
+                    } else {
+                        return Module.xtract_spectral_centroid.fp64(new Uint8Array(data.buffer), N);
+                    }
+                } else {
+                    return xtract_spectral_centroid(data);
+                }
+            }
+        },
+        "spectral_variance": {
+            "value": function (data, spectral_centroid) {
+                var N = data.length, ptr;
+                if (!Module) {
+                    return xtract_spectral_variance(data, spectral_centroid);
+                }
+                if (data.constructor == Float32Array) {
+                    if (memory.isPinned(data)) {
+                        ptr = memory.getPinnedAddress(data);
+                        return Module.xtract_spectral_variance.fp32_pinned(ptr, N);
+                    } else {
+                        return Module.xtract_spectral_variance.fp32(new Uint8Array(data.buffer), spectral_centroid, N);
+                    }
+                } else if (data.constructor == Float64Array) {
+                    if (memory.isPinned(data)) {
+                        ptr = memory.getPinnedAddress(data);
+                        return Module.xtract_spectral_variance.fp64_pinned(ptr, N);
+                    } else {
+                        return Module.xtract_spectral_variance.fp64(new Uint8Array(data.buffer), spectral_centroid, N);
+                    }
+                } else {
+                    return xtract_spectral_variance(data, spectral_centroid);
+                }
+            }
+        },
+        "rms_amplitude": {
+            "value": function (data) {
+                var N = data.length, ptr;
+                if (!Module) {
+                    return xtract_rms_amplitude(data);
+                }
+                if (data.constructor == Float32Array) {
+                    if (memory.isPinned(data)) {
+                        ptr = memory.getPinnedAddress(data);
+                        return Module.xtract_rms_amplitude.fp32_pinned(ptr, N);
+                    } else {
+                        return Module.xtract_rms_amplitude.fp32(new Uint8Array(data.buffer), N);
+                    }
+                } else if (data.constructor == Float64Array) {
+                    if (memory.isPinned(data)) {
+                        ptr = memory.getPinnedAddress(data);
+                        return Module.xtract_rms_amplitude.fp64_pinned(ptr, N);
+                    } else {
+                        return Module.xtract_rms_amplitude.fp64(new Uint8Array(data.buffer), N);
+                    }
+                } else {
+                    return xtract_rms_amplitude(data);
                 }
             }
         },
@@ -1094,19 +1237,7 @@ function xtract_kurtosis(array, mean, standard_deviation) {
 function xtract_spectral_centroid(spectrum) {
     if (!xtract_assert_array(spectrum))
         return 0;
-    var N = spectrum.length;
-    var n = N >> 1;
-    var amps = spectrum.subarray(0, n);
-    var freqs = spectrum.subarray(n);
-    var A_d = xtract_array_sum(amps);
-    if (A_d === 0.0) {
-        return 0.0;
-    }
-    var sum = 0.0;
-    while (n--) {
-        sum += freqs[n] * (amps[n] / A_d);
-    }
-    return sum;
+    return jsXtract.functions.spectral_centroid(spectrum);
 }
 
 function xtract_spectral_mean(spectrum) {
@@ -1126,17 +1257,7 @@ function xtract_spectral_variance(spectrum, spectral_centroid) {
     if (typeof spectral_centroid !== "number") {
         spectral_centroid = xtract_spectral_centroid(spectrum);
     }
-    var A = 0,
-        result = 0;
-    var N = spectrum.length;
-    var n = N >> 1;
-    var amps = spectrum.subarray(0, n);
-    var freqs = spectrum.subarray(n, N);
-    var A_d = xtract_array_sum(amps);
-    while (n--) {
-        result += Math.pow(freqs[n] - spectral_centroid, 2) * (amps[n] / A_d);
-    }
-    return result;
+    return jsXtract.functions.spectral_variance(spectrum, spectral_centroid);
 }
 
 function xtract_spectral_spread(spectrum, spectral_centroid) {
@@ -1417,16 +1538,7 @@ function xtract_rms_amplitude(timeArray) {
     if (!xtract_assert_array(timeArray))
         return 0;
     var result = 0;
-    if (timeArray.reduce) {
-        result = timeArray.reduce(function (a, b) {
-            return a + b * b;
-        }, 0);
-    } else {
-        for (var n = 0; n < timeArray.length; n++) {
-            result += timeArray[n] * timeArray[n];
-        }
-    }
-    return Math.sqrt(result / timeArray.length);
+    return jsXtract.functions.rms_amplitude(timeArray);
 }
 
 function xtract_spectral_inharmonicity(peakSpectrum, f0) {
@@ -2997,9 +3109,9 @@ function xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth) {
     if (typeof octwidth !== "number") {
         octwidth = 1;
     }
-    var A0 = 27.5; // A0 in Hz 
+    var A0 = 27.5; // A0 in Hz
     var N2 = N; // ignore freq values returned by xtract_spectrum - this relies on dc-offset being kept
-    var ctroct = Math.log(f_ctr / A0) / Math.LN2; // f_ctr in octaves    
+    var ctroct = Math.log(f_ctr / A0) / Math.LN2; // f_ctr in octaves
     var chromaFilters = {
         wts: [],
         nfft: N2,
@@ -3015,7 +3127,7 @@ function xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth) {
     for (i = 1; i < N2; i++) {
         fftfrqbins[i] = nbins * hz2octs(i / N * sampleRate);
     }
-    fftfrqbins[0] = fftfrqbins[1] - 1.5 * nbins; //DC offset bin         
+    fftfrqbins[0] = fftfrqbins[1] - 1.5 * nbins; //DC offset bin
     for (i = 0; i < N2 - 1; i++) {
         var diffVal = fftfrqbins[i + 1] - fftfrqbins[i];
         if (diffVal >= 1) {

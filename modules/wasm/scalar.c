@@ -189,6 +189,106 @@ double xtract_average_deviation_fp32(float* data, double mean, int N)
     return result;
 }
 
+EMSCRIPTEN_KEEPALIVE
+double xtract_spectral_centroid_fp64(double* data, int N)
+{
+    double result = 0.0;
+    if (data == 0x0) {
+        return 0.0;
+    }
+    int N2 = N/2;
+    double A_d = xtract_array_sum_fp64(data, N2);
+    if (A_d == 0.0) {
+        return 0.0;
+    }
+    int n = N2;
+    while(n--) {
+        result += data[n+N/2] * (data[n] / A_d);
+    }
+    return result;
+}
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_spectral_centroid_fp32(float* data, int N)
+{
+    double result = 0.0;
+    if (data == 0x0) {
+        return 0.0;
+    }
+    int N2 = N/2;
+    double A_d = xtract_array_sum_fp32(data, N2);
+    if (A_d == 0.0) {
+        return 0.0;
+    }
+    int n = N2;
+    while(n--) {
+        result += (double)data[n+N/2] * ((double)data[n] / A_d);
+    }
+    return result;
+}
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_spectral_variance_fp64(double* data, double spectral_centroid, int N)
+{
+    double result = 0.0;
+	double A = 0;
+	int N2 = N >> 1;
+	int n = N2;
+	double A_d = xtract_array_sum_fp64(data, N2);
+	if (A_d == 0.0) {
+		return 0.0;
+	}
+	double freq;
+	while (n--) {
+		// Math.pow(freqs[n] - spectral_centroid, 2)
+		freq = data[n + N / 2] - spectral_centroid;
+		freq = freq * freq;
+		result += freq * (data[n] / A_d);
+	}
+	return result;
+}
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_spectral_variance_fp32(float* data, double spectral_centroid, int N)
+{
+	double result = 0.0;
+	double A = 0;
+	int N2 = N >> 1;
+	int n = N2;
+	double A_d = xtract_array_sum_fp32(data, N2);
+	if (A_d == 0.0) {
+		return 0.0;
+	}
+	double freq;
+	while (n--) {
+		// Math.pow(freqs[n] - spectral_centroid, 2)
+		freq = (double)data[n + N / 2] - spectral_centroid;
+		freq = freq * freq;
+		result += freq * ((double)data[n] / A_d);
+	}
+	return result;
+}
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_rms_amplitude_fp64(double* data, int N) {
+	double result = 0.0;
+	for (int n = 0; n < N; n++) {
+		result += data[n] * data[n];
+	}
+	result /= (double)N;
+	return sqrt(result);
+}
+
+EMSCRIPTEN_KEEPALIVE
+double xtract_rms_amplitude_fp32(float* data, int N) {
+	double result = 0.0;
+	for (int n = 0; n < N; n++) {
+		result += (double)data[n] * (double)data[n];
+	}
+	result /= (double)N;
+	return sqrt(result);
+}
+
 // ****************
 //
 // VECTOR FUNCTIONS
@@ -200,12 +300,12 @@ int xtract_autocorrelation_fp64(double* array, double* result, int N)
 {
     double corr, recip;
     int n, i;
-    
+
     if (array == 0x0 || result == 0x0)
         return 1;
     if (N <= 0)
         return 2;
-    
+
     recip = 1.0/(double)N;
     n = N;
     while(n--)
@@ -224,12 +324,12 @@ int xtract_autocorrelation_fp32(float* array, float* result, int N)
 {
     double corr, recip;
     int n, i;
-    
+
     if (array == 0x0 || result == 0x0)
         return 1;
     if (N <= 0)
         return 2;
-    
+
     recip = 1.0/(double)N;
     n = N;
     while(n--)

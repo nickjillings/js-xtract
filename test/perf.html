@@ -112,6 +112,23 @@
                 toc = performance.now();
                 entry.fp64.textContent = ((toc-tic)/1000.0).toFixed(3);
                 return data;
+            }).then(function(data) {
+                var tic, toc;
+                var fp32 = data.fp32,
+                    fp64 = data.fp64,
+                    entry = makeEntry("xtract_rms_amplitude");
+                
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_rms_amplitude(fp32, 2.0);
+                toc = performance.now();
+                entry.fp32.textContent = ((toc-tic)/1000.0).toFixed(3);
+                tic = performance.now();
+                for (var i=0; i<1000; i++)
+                    xtract_rms_amplitude(fp64, 2.0);
+                toc = performance.now();
+                entry.fp64.textContent = ((toc-tic)/1000.0).toFixed(3);
+                return data;
             }).then(function(data){
                 jsXtract.memory.free(data.fp32);
                 jsXtract.memory.free(data.fp64);
