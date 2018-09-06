@@ -125,7 +125,7 @@ var jsXtract = (function () {
         }
     };
     var Module;
-    if (window !== undefied && WebAssembly !== undefined) {
+    if (window !== undefined && WebAssembly !== undefined) {
         function postRun() {
             Module = window.Module;
             Module.xtract_array_sum = {};
