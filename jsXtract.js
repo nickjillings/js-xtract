@@ -129,6 +129,9 @@ var jsXtract = (function (urlroot) {
         }
     };
     var Module;
+    if (global !== undefined) {
+        global.window = global;
+    }
     if ((global !== undefined || window !== undefined) && WebAssembly !== undefined) {
         function postRun() {
             Module.xtract_array_sum = {};
@@ -186,7 +189,7 @@ var jsXtract = (function (urlroot) {
             sc.setAttribute("src", urlroot+"jsXtract-wasm.js");
             document.querySelector("head").appendChild(sc);
         }
-        if (window.fetch !== undefined) {
+        if (global.fetch window.fetch !== undefined) {
             fetch(urlroot+"jsXtract-wasm.wasm").then(function(response) {
                 return response.arrayBuffer();
             }).then(load);
