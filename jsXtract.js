@@ -371,7 +371,7 @@ var jsXtract = (function (urlroot) {
     })();
 
     var pub_obj = {};
-    var functions ={};
+    var functions = {};
     Object.defineProperties(pub_obj, {
         "createDctCoefficients": {
             "value": function (N) {
@@ -402,7 +402,7 @@ var jsXtract = (function (urlroot) {
             }
         },
         "functions": {
-            get: function() {
+            "get": function() {
                 return functions;
             }
         },
@@ -885,7 +885,7 @@ var jsXtract = (function (urlroot) {
                 }
             }
         }
-    })
+    });
     return pub_obj;
 })(urlroot);
 
@@ -5196,5 +5196,5 @@ if (typeof AudioBuffer !== "undefined") {
 if (global !== undefined) {
     // we could be in node
     // this only exports a connected api
-    module.exports = Object.assign({}, {jsXtract});
+    module.exports = jsXtract;
 }
