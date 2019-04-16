@@ -32,7 +32,7 @@
 var jsXtract = (function (urlroot) {
     
     if (urlroot === undefined) {
-        urlroot = "https://cdn.rawgit.com/nickjillings/js-xtract/ASM/";
+        urlroot = "https://cdn.jsdelivr.net/gh/nickjillings/js-xtract@ASM/";
     }
 
     function searchMapProperties(map, properties) {
