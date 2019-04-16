@@ -5192,3 +5192,9 @@ if (typeof AudioBuffer !== "undefined") {
         throw ("AudioBuffer::xtract_process_frame_data has been deprecated");
     };
 }
+
+if (global !== undefined) {
+    // we could be in node
+    // this only exports a connected api
+    module.exports = Object.assign({}, {jsXtract});
+}
