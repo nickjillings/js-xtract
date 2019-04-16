@@ -189,7 +189,7 @@ var jsXtract = (function (urlroot) {
             sc.setAttribute("src", urlroot+"jsXtract-wasm.js");
             document.querySelector("head").appendChild(sc);
         }
-        if (global.fetch window.fetch !== undefined) {
+        if (window.fetch !== undefined) {
             fetch(urlroot+"jsXtract-wasm.wasm").then(function(response) {
                 return response.arrayBuffer();
             }).then(load);
