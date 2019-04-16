@@ -30,7 +30,7 @@
 /*globals inverseTransform, transform */
 
 var jsXtract = (function (urlroot) {
-    
+
     if (urlroot === undefined) {
         urlroot = "https://cdn.jsdelivr.net/gh/nickjillings/js-xtract@ASM/";
     }
@@ -129,7 +129,7 @@ var jsXtract = (function (urlroot) {
         }
     };
     var Module;
-    if (window !== undefined && WebAssembly !== undefined) {
+    if ((global !== undefined || window !== undefined) && WebAssembly !== undefined) {
         function postRun() {
             Module.xtract_array_sum = {};
             Module.xtract_array_sum.fp32 = Module.cwrap("xtract_array_sum_fp32", "number", ["array", "number"]);
@@ -525,7 +525,7 @@ var jsXtract = (function (urlroot) {
         }
         return result / array.length;
     }
-    
+
     function xtract_spectral_centroid(spectrum) {
         if (!xtract_assert_array(spectrum))
             return 0;
@@ -543,7 +543,7 @@ var jsXtract = (function (urlroot) {
         }
         return sum;
     }
-    
+
     function xtract_spectral_variance(spectrum, spectral_centroid) {
         if (!xtract_assert_array(spectrum))
             return 0;
@@ -577,7 +577,7 @@ var jsXtract = (function (urlroot) {
         }
         return result;
     }
-    
+
     function xtract_rms_amplitude(timeArray) {
         if (!xtract_assert_array(timeArray))
             return 0;
@@ -3301,12 +3301,12 @@ function xtract_chroma(spectrum, chromaFilters) {
     return result;
 }
 
-/* 
+/*
  * Free FFT and convolution (JavaScript)
- * 
+ *
  * Copyright (c) 2014 Project Nayuki
  * https://www.nayuki.io/page/free-small-fft-in-multiple-languages
- * 
+ *
  * (MIT License)
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -3326,7 +3326,7 @@ function xtract_chroma(spectrum, chromaFilters) {
  */
 
 
-/* 
+/*
  * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
  * The vector can have any length. This is a wrapper function.
  */
@@ -3344,7 +3344,7 @@ function transform(real, imag) {
 }
 
 
-/* 
+/*
  * Computes the inverse discrete Fourier transform (IDFT) of the given complex vector, storing the result back into the vector.
  * The vector can have any length. This is a wrapper function. This transform does not perform scaling, so the inverse is not a true inverse.
  */
@@ -3353,7 +3353,7 @@ function inverseTransform(real, imag) {
 }
 
 
-/* 
+/*
  * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
  * The vector's length must be a power of 2. Uses the Cooley-Tukey decimation-in-time radix-2 algorithm.
  */
@@ -3443,7 +3443,7 @@ function transformRadix2(real, imag) {
 }
 
 
-/* 
+/*
  * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
  * The vector can have any length. This requires the convolution function, which in turn requires the radix-2 FFT function.
  * Uses Bluestein's chirp z-transform algorithm.
@@ -3499,7 +3499,7 @@ function transformBluestein(real, imag) {
 }
 
 
-/* 
+/*
  * Computes the circular convolution of the given real vectors. Each vector's length must be the same.
  */
 function convolveReal(x, y, out) {
@@ -3512,7 +3512,7 @@ function convolveReal(x, y, out) {
 }
 
 
-/* 
+/*
  * Computes the circular convolution of the given complex vectors. Each vector's length must be the same.
  */
 function convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag) {
@@ -4138,10 +4138,10 @@ var SpectrumData = function (N, sampleRate, parent) {
                 }
                 if (typeof A440 !== "number" || A440 <= 27.5) {
                        A440 = 440;
-                }    
+                }
                 if (typeof f_ctr !== "number") {
                        f_ctr = 1000;
-                }    
+                }
                 if (typeof octwidth !== "number") {
                        octwidth = 1;
                 }
@@ -4424,11 +4424,11 @@ var SpectrumData = function (N, sampleRate, parent) {
                     if (_chroma === undefined) {
                         _chroma = this.init_chroma(nbins, A440, f_ctr, octwidth);
                     }
-                    this.result.chroma = xtract_chroma(this.data, _chroma);                    
+                    this.result.chroma = xtract_chroma(this.data, _chroma);
                 }
                 return this.result.chroma;
             }
-        },        
+        },
         "peak_spectrum": {
             'value': function (threshold) {
                 if (this.result.peak_spectrum === undefined) {
@@ -5192,4 +5192,3 @@ if (typeof AudioBuffer !== "undefined") {
         throw ("AudioBuffer::xtract_process_frame_data has been deprecated");
     };
 }
-
