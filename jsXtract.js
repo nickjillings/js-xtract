@@ -29,11 +29,11 @@
 /*globals window, console, Float32Array, Float64Array, Int32Array */
 /*globals inverseTransform, transform */
 
-var jsXtract = (function (urlroot) {
+if (typeof urlroot === "undefined") {
+    var urlroot = "https://cdn.jsdelivr.net/gh/nickjillings/js-xtract@ASM/";
+}
 
-    if (urlroot === undefined) {
-        urlroot = "https://cdn.jsdelivr.net/gh/nickjillings/js-xtract@ASM/";
-    }
+var jsXtract = (function (urlroot) {
 
     function searchMapProperties(map, properties) {
         var match = map.find(function (e) {
