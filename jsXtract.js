@@ -5193,7 +5193,7 @@ if (typeof AudioBuffer !== "undefined") {
     };
 }
 
-if (global !== undefined) {
+if (typeof global !== "undefined") {
     // we could be in node
     // this only exports a connected api
     module.exports = {
