@@ -29,11 +29,11 @@
 /*globals window, console, Float32Array, Float64Array, Int32Array */
 /*globals inverseTransform, transform */
 
+if (typeof urlroot === "undefined") {
+    var urlroot = "https://cdn.jsdelivr.net/gh/nickjillings/js-xtract@ASM/";
+}
+
 var jsXtract = (function (urlroot) {
-    
-    if (urlroot === undefined) {
-        urlroot = "https://cdn.rawgit.com/nickjillings/js-xtract/ASM/";
-    }
 
     function searchMapProperties(map, properties) {
         var match = map.find(function (e) {
@@ -129,7 +129,7 @@ var jsXtract = (function (urlroot) {
         }
     };
     var Module;
-    if (window !== undefined && WebAssembly !== undefined) {
+    if ((typeof global === "undefined" && typeof window !== "undefined") && typeof WebAssembly !== "undefined") {
         function postRun() {
             Module.xtract_array_sum = {};
             Module.xtract_array_sum.fp32 = Module.cwrap("xtract_array_sum_fp32", "number", ["array", "number"]);
@@ -525,7 +525,7 @@ var jsXtract = (function (urlroot) {
         }
         return result / array.length;
     }
-    
+
     function xtract_spectral_centroid(spectrum) {
         if (!xtract_assert_array(spectrum))
             return 0;
@@ -543,7 +543,7 @@ var jsXtract = (function (urlroot) {
         }
         return sum;
     }
-    
+
     function xtract_spectral_variance(spectrum, spectral_centroid) {
         if (!xtract_assert_array(spectrum))
             return 0;
@@ -577,7 +577,7 @@ var jsXtract = (function (urlroot) {
         }
         return result;
     }
-    
+
     function xtract_rms_amplitude(timeArray) {
         if (!xtract_assert_array(timeArray))
             return 0;

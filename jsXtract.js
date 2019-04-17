@@ -129,7 +129,7 @@ var jsXtract = (function (urlroot) {
         }
     };
     var Module;
-    if ((global === undefined && window !== undefined) && WebAssembly !== undefined) {
+    if ((typeof global === "undefined" && typeof window !== "undefined") && typeof WebAssembly !== "undefined") {
         function postRun() {
             Module.xtract_array_sum = {};
             Module.xtract_array_sum.fp32 = Module.cwrap("xtract_array_sum_fp32", "number", ["array", "number"]);
