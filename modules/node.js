@@ -100,7 +100,7 @@ if (typeof global !== "undefined") {
         TimeData: TimeData,
         jsXtract: jsXtract
     };
-} else if (typeof window !== "undefined") {
+} else if (typeof window !== "undefined" || typeof self !== "undefined") {
     // Browser!!
     Object.defineProperties(jsXtract,{
         xtract_is_denormal: {value: xtract_is_denormal},
