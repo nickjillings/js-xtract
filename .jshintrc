@@ -1,0 +1,12 @@
+{
+    "esversion": 6,
+    "leanswitch": true,
+    "noarg": true,
+    "nocomma": true,
+    "nonbsp": true,
+    "nonew": true,
+    "browser": true,
+    "devel": true,
+    "undef": true,
+    "unused": false
+}

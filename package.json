@@ -1,28 +1,29 @@
 {
-    "name": "JSAP",
-    "description": "JSAP",
+    "name": "js-xtract",
+    "description": "js-xtract",
     "author": "Nick Jillings",
     "version": "0.0.1",
     "devDependencies": {
-        "babel-register": "^6.26.0",
-        "cross-env": "^5.0.5",
-        "mocha": "^3.5.3",
-        "nyc": "^11.2.1"
+        "jshint": "^2.12.0",
+        "webpack": "^4.44.1",
+        "webpack-cli": "^3.3.12"
     },
     "nyc": {
         "check-coverage": true,
         "include": [
-      "*.js"
-    ],
+            "*.js"
+        ],
         "sourceMap": true,
         "instrument": true,
         "require": [
-      "babel-register"
-    ],
+            "babel-register"
+        ],
         "register": "babel-register",
         "all": true
     },
     "scripts": {
-        "test": "mocha"
-    }
+        "test": "mocha",
+        "build": "webpack --config webpack.config.js"
+    },
+    "dependencies": {}
 }

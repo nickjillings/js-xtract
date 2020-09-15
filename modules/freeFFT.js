@@ -1,9 +1,9 @@
-/* 
+/*
  * Free FFT and convolution (JavaScript)
- * 
+ *
  * Copyright (c) 2014 Project Nayuki
  * https://www.nayuki.io/page/free-small-fft-in-multiple-languages
- * 
+ *
  * (MIT License)
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -23,11 +23,11 @@
  */
 
 
-/* 
+/*
  * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
  * The vector can have any length. This is a wrapper function.
  */
-function transform(real, imag) {
+export function transform(real, imag) {
     if (real.length !== imag.length)
         throw "Mismatched lengths";
 
@@ -41,21 +41,21 @@ function transform(real, imag) {
 }
 
 
-/* 
+/*
  * Computes the inverse discrete Fourier transform (IDFT) of the given complex vector, storing the result back into the vector.
  * The vector can have any length. This is a wrapper function. This transform does not perform scaling, so the inverse is not a true inverse.
  */
-function inverseTransform(real, imag) {
+export function inverseTransform(real, imag) {
     transform(imag, real);
 }
 
 
-/* 
+/*
  * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
  * The vector's length must be a power of 2. Uses the Cooley-Tukey decimation-in-time radix-2 algorithm.
  */
 
-function transformRadix2(real, imag) {
+export function transformRadix2(real, imag) {
     // Initialization
     if (real.length !== imag.length)
         throw "Mismatched lengths";
@@ -140,12 +140,12 @@ function transformRadix2(real, imag) {
 }
 
 
-/* 
+/*
  * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
  * The vector can have any length. This requires the convolution function, which in turn requires the radix-2 FFT function.
  * Uses Bluestein's chirp z-transform algorithm.
  */
-function transformBluestein(real, imag) {
+export function transformBluestein(real, imag) {
     // Find a power-of-2 convolution length m such that m >= n * 2 + 1
     if (real.length !== imag.length)
         throw "Mismatched lengths";
@@ -196,7 +196,7 @@ function transformBluestein(real, imag) {
 }
 
 
-/* 
+/*
  * Computes the circular convolution of the given real vectors. Each vector's length must be the same.
  */
 function convolveReal(x, y, out) {
@@ -209,10 +209,10 @@ function convolveReal(x, y, out) {
 }
 
 
-/* 
+/*
  * Computes the circular convolution of the given complex vectors. Each vector's length must be the same.
  */
-function convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag) {
+export function convolveComplex(xreal, ximag, yreal, yimag, outreal, outimag) {
     (function () {
         if (xreal.length !== ximag.length || xreal.length !== yreal.length || yreal.length !== yimag.length || xreal.length !== outreal.length || outreal.length !== outimag.length)
             throw "Mismatched lengths";
