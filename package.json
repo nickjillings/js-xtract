@@ -1,8 +1,14 @@
 {
     "name": "js-xtract",
-    "description": "js-xtract",
-    "author": "Nick Jillings",
-    "version": "0.0.1",
+    "description": "JavaScript based audio feature extraction toolkit",
+    "author": "Nicholas Jillings <nicholas.jillings@mail.bcu.ac.uk> (http://dmtlab.bcu.ac.uk/nickjillings/)",
+    "version": "1.0.0",
+    "main": "dist/jsXtract.js",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/nickjillings/js-xtract.git"
+    },
+    "license": "MIT",
     "devDependencies": {
         "jshint": "^2.12.0",
         "webpack": "^4.44.1",
@@ -22,8 +28,11 @@
         "all": true
     },
     "scripts": {
-        "test": "mocha",
         "build": "webpack --config webpack.config.js"
     },
-    "dependencies": {}
+    "dependencies": {},
+    "bugs": {
+      "url": "https://github.com/nickjillings/js-xtract/issues"
+    },
+    "homepage": "https://github.com/nickjillings/js-xtract"
 }
