@@ -7,7 +7,7 @@
 		exports["jsXtract"] = factory();
 	else
 		root["jsXtract"] = factory();
-})(window, function() {
+})(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};

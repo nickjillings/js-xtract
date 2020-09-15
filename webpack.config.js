@@ -8,6 +8,6 @@ module.exports = {
         filename: "jsXtract.js",
         library: "jsXtract",
         libraryTarget: "umd",
-        
+        globalObject: 'this'
     }
 };

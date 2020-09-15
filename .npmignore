@@ -1,0 +1,4 @@
+.codeclimate.yml
+.nycrc
+.travis.yml
+*node_modules*
