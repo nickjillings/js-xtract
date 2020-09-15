@@ -276,7 +276,7 @@ export class TimeData extends DataPrototype {
     }
 }
 
-TimeData.prtotype.features = [
+TimeData.prototype.features = [
     {
         name: "Minimum",
         function: "minimum",
