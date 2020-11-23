@@ -9,7 +9,7 @@
         "url": "git://github.com/nickjillings/js-xtract.git"
     },
     "publishConfig": {
-        "registry": "//registry.npmjs.org/"
+        "registry": "https://registry.npmjs.org/"
     },
     "license": "MIT",
     "devDependencies": {
