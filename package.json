@@ -1,5 +1,5 @@
 {
-    "name": "@nickjillings/js-xtract",
+    "name": "js-xtract",
     "description": "JavaScript based audio feature extraction toolkit",
     "author": "Nicholas Jillings <nicholas.jillings@mail.bcu.ac.uk> (http://dmtlab.bcu.ac.uk/nickjillings/)",
     "version": "1.0.3",
@@ -9,7 +9,7 @@
         "url": "git://github.com/nickjillings/js-xtract.git"
     },
     "publishConfig": {
-        "registry": "https://npm.pkg.github.com/"
+        "registry": "https://registry.npm.org"
     },
     "license": "MIT",
     "devDependencies": {
