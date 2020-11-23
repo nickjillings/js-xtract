@@ -1,4 +1,5 @@
 import {xtract_assert_array} from "./xtract_assert_array";
+import {xtract_array_sum} from "./xtract_array_sum";
 export function xtract_spectral_centroid(spectrum) {
     if (!xtract_assert_array(spectrum))
         return 0;
