@@ -6,7 +6,7 @@
     "main": "dist/jsXtract.js",
     "repository": {
         "type": "git",
-        "url": "https://github.com/nickjillings/js-xtract.git"
+        "url": "git://github.com/nickjillings/js-xtract.git"
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/"
