@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_positive_integer} from "./xtract_assert_positive_integer";
 import {xtract_assert_array} from "./xtract_assert_array";
 import {xtract_get_number_of_frames} from "./xtract_get_number_of_frames";

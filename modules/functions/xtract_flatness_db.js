@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 import {xtract_flatness} from "./xtract_flatness";
 

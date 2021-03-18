@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 import {inverseTransform} from "../freeFFT.js";
 function peak_picking(E, window) {

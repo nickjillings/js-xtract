@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_array_copy(src) {
     var N = src.length,
         dst = new src.constructor(N);

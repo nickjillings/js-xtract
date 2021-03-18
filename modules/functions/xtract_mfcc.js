@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 import {xtract_dct} from "./xtract_dct";
 export function xtract_mfcc(spectrum, mfcc) {

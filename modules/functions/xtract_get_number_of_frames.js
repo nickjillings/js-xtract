@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 export function xtract_get_number_of_frames(data, hop_size) {
     if (!xtract_assert_array(data)) {

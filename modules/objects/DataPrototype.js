@@ -1,4 +1,4 @@
-
+/// <reference path="../../typings/objects/DataPrototype.d.ts" />
 import {xtract_array_to_JSON} from "../functions/xtract_array_to_JSON";
 import {createDctCoefficients, createMfccCoefficients, createBarkCoefficients, createChromaCoefficients} from "./CommonMemory";
 

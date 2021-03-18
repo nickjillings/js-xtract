@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_midicent(f0) {
     if (typeof f0 !== "number") {
         return -1;

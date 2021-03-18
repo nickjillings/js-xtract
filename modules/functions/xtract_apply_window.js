@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 export function xtract_apply_window(X, W) {
     if (!xtract_assert_array(X) || !xtract_assert_array(W)) {

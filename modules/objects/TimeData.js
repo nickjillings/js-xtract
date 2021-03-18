@@ -1,3 +1,4 @@
+/// <reference path="../../typings/objects/TimeData.d.ts" />
 import {DataPrototype} from "./DataPrototype";
 import {SpectrumData} from "./SpectrumData";
 import {xtract_init_wavelet} from "../functions/xtract_init_wavelet";

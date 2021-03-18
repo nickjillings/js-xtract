@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_positive_integer} from "./xtract_assert_positive_integer";
 
 function welch(N) {

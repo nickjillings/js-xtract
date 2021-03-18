@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_init_dct(N) {
     var dct = {
         N: N,

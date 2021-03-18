@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_array_sum} from "./xtract_array_sum";
 export function xtract_init_chroma(N, sampleRate, nbins, A440, f_ctr, octwidth) {
     /*run arg checks here... (if(nbins=='undefined')*/

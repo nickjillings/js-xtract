@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_array_sum} from "./xtract_array_sum";
 export function xtract_temporal_centroid(energyArray, sample_rate, window_ms) {
     if (typeof sample_rate !== "number") {

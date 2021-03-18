@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_init_dft(N) {
     var dft = {
         N: N / 2 + 1,

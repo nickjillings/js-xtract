@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {transform} from "../freeFFT";
 import {xtract_array_interlace} from "./xtract_array_interlace";
 import {xtract_assert_array} from "./xtract_assert_array";

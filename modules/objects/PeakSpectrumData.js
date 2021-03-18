@@ -1,3 +1,4 @@
+/// <reference path="../../typings/objects/PeakSpectrumData.d.ts" />
 import {SpectrumData} from "./SpectrumData";
 import {HarmonicSpectrumData} from "./HarmonicSpectrumData";
 import {xtract_spectral_inharmonicity} from "../functions/xtract_spectral_inharmonicity";

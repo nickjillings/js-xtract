@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 export function xtract_nonzero_count(data) {
     if (!xtract_assert_array(data))

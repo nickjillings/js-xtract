@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_array_to_JSON(array) {
     if (array.join) {
         return '[' + array.join(', ') + ']';

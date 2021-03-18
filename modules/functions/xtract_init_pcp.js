@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_init_pcp(N, fs, f_ref) {
     if (typeof fs !== "number" || typeof N !== "number") {
         throw ('The Sample Rate and sample count have to be defined: xtract_init_pcp(N, fs, f_ref)');

@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_get_data_frames} from "./xtract_get_data_frames";
 import {xtract_spectrum} from "./xtract_spectrum";
 export function xtract_process_frame_data(array, func, sample_rate, frame_size, hop_size, arg_this) {

@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 import {xtract_array_copy} from "./xtract_array_copy";
 export function xtract_array_scale(data, factor) {

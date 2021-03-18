@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_lowhigh(data, threshold) {
     var r = {
         min: null,

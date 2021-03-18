@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {transform, inverseTransform} from "../freeFFT";
 import {xtract_get_data_frames} from "./xtract_get_data_frames";
 import {xtract_assert_array} from "./xtract_assert_array";

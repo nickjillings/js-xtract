@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 import {xtract_assert_array} from "./xtract_assert_array";
 import {xtract_init_dct} from "./xtract_init_dct";
 import {xtract_array_sum} from "./xtract_array_sum";

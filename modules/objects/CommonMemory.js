@@ -1,3 +1,4 @@
+/// <reference path="../../typings/objects/CommonMemory.d.ts" />
 
 import {xtract_init_dct} from "../functions/xtract_init_dct";
 import {xtract_init_mfcc} from "../functions/xtract_init_mfcc";

@@ -1,3 +1,4 @@
+/// <reference path="../../typings/objects/SpectrumData.d.ts" />
 import {DataPrototype} from "./DataPrototype";
 import {PeakSpectrumData} from "./PeakSpectrumData";
 import {xtract_init_bark} from "../functions/xtract_init_bark";

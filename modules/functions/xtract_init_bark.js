@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 export function xtract_init_bark(N, sampleRate, bands) {
     if (typeof bands !== "number" || bands < 0 || bands > 26) {
         bands = 26;

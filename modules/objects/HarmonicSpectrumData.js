@@ -1,3 +1,4 @@
+/// <reference path="../../typings/objects/PeakSpectrumData.d.ts" />
 import {PeakSpectrumData} from "./PeakSpectrumData";
 import {xtract_odd_even_ratio} from "../functions/xtract_odd_even_ratio";
 import {xtract_noisiness} from "../functions/xtract_noisiness";

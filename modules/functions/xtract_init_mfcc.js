@@ -1,3 +1,4 @@
+/// <reference path="../../typings/functions.d.ts" />
 
 function get_fft_peak(N, freq_max, freq_min, freq_bands, nyquist, style) {
     var norm = 1,
