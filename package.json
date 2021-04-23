@@ -2,7 +2,7 @@
     "name": "js-xtract",
     "description": "JavaScript based audio feature extraction toolkit",
     "author": "Nicholas Jillings <nicholas.jillings@mail.bcu.ac.uk> (http://dmtlab.bcu.ac.uk/nickjillings/)",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "main": "dist/jsXtract.js",
     "repository": {
         "type": "git",
